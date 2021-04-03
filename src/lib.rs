@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
+use ssbh_data::mesh_data::AttributeData;
 use ssbh_lib::SsbhFile;
 
 #[pyclass]
@@ -8,6 +9,23 @@ struct Mesh {
 
     #[pyo3(get)]
     pub objects: Vec<MeshObjectData>,
+}
+
+#[pymethods]
+impl Mesh {
+    // TODO: What should this return type be?
+    fn save(&mut self, path: &str) -> PyResult<()> {
+        let objects: Vec<_> = self
+            .objects
+            .iter()
+            .map(|o| ssbh_data::mesh_data::MeshObjectData::from(o))
+            .collect();
+        ssbh_data::mesh_data::update_mesh(&mut self.data, objects.as_slice()).unwrap();
+
+        // TODO: add a write_mesh method?
+        ssbh_lib::write_mesh_to_file(path, &self.data).unwrap();
+        Ok(())
+    }
 }
 
 #[pyclass]
@@ -39,6 +57,60 @@ pub struct MeshObjectData {
 
     #[pyo3(get)]
     pub color_sets: Vec<AttributeDataVec4>,
+}
+
+// The Python library only uses a separate type to able to create a pyclass from it.
+// TODO: Can this be shared with the original implementation?
+impl From<&ssbh_data::mesh_data::MeshObjectData> for MeshObjectData {
+    fn from(data: &ssbh_data::mesh_data::MeshObjectData) -> Self {
+        Self {
+            name: data.name.clone(),
+            sub_index: data.sub_index,
+            parent_bone_name: data.parent_bone_name.clone(),
+            vertex_indices: data.vertex_indices.clone(),
+            positions: data.positions.clone().into(),
+            normals: data.normals.clone().into(),
+            tangents: data.tangents.clone().into(),
+            texture_coordinates: data
+                .texture_coordinates
+                .iter()
+                .map(|a| a.clone().into())
+                .collect(),
+            color_sets: data.color_sets.iter().map(|a| a.clone().into()).collect(),
+        }
+    }
+}
+
+impl From<ssbh_data::mesh_data::MeshObjectData> for MeshObjectData {
+    fn from(data: ssbh_data::mesh_data::MeshObjectData) -> Self {
+        data.into()
+    }
+}
+
+impl From<&MeshObjectData> for ssbh_data::mesh_data::MeshObjectData {
+    fn from(data: &MeshObjectData) -> Self {
+        Self {
+            name: data.name.clone(),
+            sub_index: data.sub_index,
+            parent_bone_name: data.parent_bone_name.clone(),
+            vertex_indices: data.vertex_indices.clone(),
+            positions: data.positions.clone().into(),
+            normals: data.normals.clone().into(),
+            tangents: data.tangents.clone().into(),
+            texture_coordinates: data
+                .texture_coordinates
+                .iter()
+                .map(|a| a.clone().into())
+                .collect(),
+            color_sets: data.color_sets.iter().map(|a| a.clone().into()).collect(),
+        }
+    }
+}
+
+impl From<MeshObjectData> for ssbh_data::mesh_data::MeshObjectData {
+    fn from(data: MeshObjectData) -> Self {
+        data.into()
+    }
 }
 
 // Generics aren't allowed, so list the types explicitly.
@@ -73,32 +145,31 @@ pub struct AttributeDataVec3 {
 }
 
 // TODO: Use a macro for this?
-impl From<ssbh_data::mesh_data::AttributeData<3>> for AttributeDataVec3 {
-    fn from(v: ssbh_data::mesh_data::AttributeData<3>) -> Self {
-        Self {
-            name: v.name,
-            data: v.data,
+macro_rules! attribute_data_impl {
+    ($ty1:ident, $ty2:ident <$n:literal>) => {
+        impl From<$ty1> for $ty2<$n> {
+            fn from(v: $ty1) -> Self {
+                Self {
+                    name: v.name,
+                    data: v.data,
+                }
+            }
         }
-    }
+
+        impl From<$ty2<$n>> for $ty1 {
+            fn from(v: $ty2<$n>) -> Self {
+                Self {
+                    name: v.name,
+                    data: v.data,
+                }
+            }
+        }
+    };
 }
 
-impl From<ssbh_data::mesh_data::AttributeData<4>> for AttributeDataVec4 {
-    fn from(v: ssbh_data::mesh_data::AttributeData<4>) -> Self {
-        Self {
-            name: v.name,
-            data: v.data,
-        }
-    }
-}
-
-impl From<ssbh_data::mesh_data::AttributeData<2>> for AttributeDataVec2 {
-    fn from(v: ssbh_data::mesh_data::AttributeData<2>) -> Self {
-        Self {
-            name: v.name,
-            data: v.data,
-        }
-    }
-}
+attribute_data_impl!(AttributeDataVec2, AttributeData<2>);
+attribute_data_impl!(AttributeDataVec3, AttributeData<3>);
+attribute_data_impl!(AttributeDataVec4, AttributeData<4>);
 
 #[pyclass]
 struct Skel {
@@ -115,24 +186,12 @@ fn read_mesh(path: &str) -> PyResult<Mesh> {
     // TODO: How to handle errors or return None?
     match ssbh_lib::read_ssbh(path).unwrap().data {
         SsbhFile::Mesh(mesh) => {
-            let objects = ssbh_data::mesh_data::get_mesh_object_data(&mesh)
-                .into_iter()
-                .map(|m| MeshObjectData {
-                    name: m.name,
-                    sub_index: m.sub_index,
-                    parent_bone_name: m.parent_bone_name,
-                    vertex_indices: m.vertex_indices,
-                    positions: m.positions.into(),
-                    normals: m.normals.into(),
-                    tangents: m.tangents.into(),
-                    texture_coordinates: m
-                        .texture_coordinates
-                        .iter()
-                        .map(|a| a.clone().into())
-                        .collect(),
-                    color_sets: m.color_sets.iter().map(|a| a.clone().into()).collect(),
-                })
+            let objects: Vec<_> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
+                .unwrap()
+                .iter()
+                .map(|m| m.into())
                 .collect();
+
             Ok(Mesh {
                 data: mesh,
                 objects,
