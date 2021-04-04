@@ -47,7 +47,7 @@ pub struct MeshObjectData {
     pub positions: AttributeDataVec3,
 
     #[pyo3(get)]
-    pub normals: AttributeDataVec3,
+    pub normals: AttributeDataVec4,
 
     #[pyo3(get)]
     pub tangents: AttributeDataVec4,
