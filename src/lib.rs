@@ -1,28 +1,30 @@
-use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
-use ssbh_data::mesh_data::AttributeData;
+use pyo3::{prelude::*, types::PyList};
 use ssbh_lib::SsbhFile;
 
 #[pyclass]
 struct Mesh {
     data: ssbh_lib::formats::mesh::Mesh,
 
-    #[pyo3(get)]
-    pub objects: Vec<MeshObjectData>,
+    #[pyo3(get, set)]
+    pub objects: Py<PyList>,
 }
 
 #[pymethods]
 impl Mesh {
-    // TODO: What should this return type be?
-    fn save(&mut self, path: &str) -> PyResult<()> {
+    fn save(&mut self, py: Python, path: &str) -> PyResult<()> {
+        // Filter out objects of the wrong type.
+        // TODO: Throw an error instead?
         let objects: Vec<_> = self
             .objects
+            .as_ref(py)
             .iter()
-            .map(|o| ssbh_data::mesh_data::MeshObjectData::from(o))
+            .filter_map(|o| o.extract::<MeshObjectData>().ok())
+            .map(|o| create_mesh_object_rs(py, &o))
             .collect();
+
         ssbh_data::mesh_data::update_mesh(&mut self.data, objects.as_slice()).unwrap();
 
-        // TODO: add a write_mesh method?
         ssbh_lib::write_mesh_to_file(path, &self.data).unwrap();
         Ok(())
     }
@@ -31,182 +33,190 @@ impl Mesh {
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct MeshObjectData {
-    #[pyo3(get)]
+    #[pyo3(get, set)]
     pub name: String,
 
-    #[pyo3(get)]
+    #[pyo3(get, set)]
     pub sub_index: i64,
 
-    #[pyo3(get)]
+    #[pyo3(get, set)]
     pub parent_bone_name: String,
 
-    #[pyo3(get)]
+    #[pyo3(get, set)]
     pub vertex_indices: Vec<u32>,
 
-    #[pyo3(get)]
-    pub positions: AttributeDataVec3,
+    #[pyo3(get, set)]
+    pub positions: Py<AttributeData>,
 
-    #[pyo3(get)]
-    pub normals: AttributeDataVec4,
+    #[pyo3(get, set)]
+    pub normals: Py<AttributeData>,
 
-    #[pyo3(get)]
-    pub tangents: AttributeDataVec4,
+    #[pyo3(get, set)]
+    pub tangents: Py<AttributeData>,
 
-    #[pyo3(get)]
-    pub texture_coordinates: Vec<AttributeDataVec2>,
+    #[pyo3(get, set)]
+    pub texture_coordinates: Py<PyList>,
 
-    #[pyo3(get)]
-    pub color_sets: Vec<AttributeDataVec4>,
+    #[pyo3(get, set)]
+    pub color_sets: Py<PyList>,
+}
+
+fn create_mesh_object_rs(
+    py: Python,
+    data: &MeshObjectData,
+) -> ssbh_data::mesh_data::MeshObjectData {
+    ssbh_data::mesh_data::MeshObjectData {
+        name: data.name.clone(),
+        sub_index: data.sub_index,
+        parent_bone_name: data.parent_bone_name.clone(),
+        vertex_indices: data.vertex_indices.clone(),
+        positions: (*data.positions.as_ref(py).borrow()).to_rs(py),
+        normals: (*data.normals.as_ref(py).borrow()).to_rs(py),
+        tangents: (*data.tangents.as_ref(py).borrow()).to_rs(py),
+        // TODO: This could be a function to simplify the conversion?
+        texture_coordinates: data
+            .texture_coordinates
+            .as_ref(py)
+            .iter()
+            .filter_map(|a| a.extract::<AttributeData>().ok())
+            .map(|a| a.to_rs(py))
+            .collect(),
+        color_sets: data
+            .color_sets
+            .as_ref(py)
+            .iter()
+            .filter_map(|a| a.extract::<AttributeData>().ok())
+            .map(|a| a.to_rs(py))
+            .collect(),
+    }
 }
 
 // The Python library only uses a separate type to able to create a pyclass from it.
 // TODO: Can this be shared with the original implementation?
-impl From<&ssbh_data::mesh_data::MeshObjectData> for MeshObjectData {
-    fn from(data: &ssbh_data::mesh_data::MeshObjectData) -> Self {
-        Self {
-            name: data.name.clone(),
-            sub_index: data.sub_index,
-            parent_bone_name: data.parent_bone_name.clone(),
-            vertex_indices: data.vertex_indices.clone(),
-            positions: data.positions.clone().into(),
-            normals: data.normals.clone().into(),
-            tangents: data.tangents.clone().into(),
-            texture_coordinates: data
-                .texture_coordinates
+fn create_mesh_object_py(
+    py: Python,
+    data: &ssbh_data::mesh_data::MeshObjectData,
+) -> MeshObjectData {
+    // TODO: This is truly horrifying...
+    MeshObjectData {
+        name: data.name.clone(),
+        sub_index: data.sub_index,
+        parent_bone_name: data.parent_bone_name.clone(),
+        vertex_indices: data.vertex_indices.clone(),
+        positions: Py::new(py, create_attribute_data_3(py, &data.positions)).unwrap(),
+        normals: Py::new(py, create_attribute_data_4(py, &data.normals)).unwrap(),
+        tangents: Py::new(py, create_attribute_data_4(py, &data.tangents)).unwrap(),
+        texture_coordinates: PyList::new(
+            py,
+            data.texture_coordinates
                 .iter()
-                .map(|a| a.clone().into())
-                .collect(),
-            color_sets: data.color_sets.iter().map(|a| a.clone().into()).collect(),
-        }
-    }
-}
-
-impl From<ssbh_data::mesh_data::MeshObjectData> for MeshObjectData {
-    fn from(data: ssbh_data::mesh_data::MeshObjectData) -> Self {
-        data.into()
-    }
-}
-
-impl From<&MeshObjectData> for ssbh_data::mesh_data::MeshObjectData {
-    fn from(data: &MeshObjectData) -> Self {
-        Self {
-            name: data.name.clone(),
-            sub_index: data.sub_index,
-            parent_bone_name: data.parent_bone_name.clone(),
-            vertex_indices: data.vertex_indices.clone(),
-            positions: data.positions.clone().into(),
-            normals: data.normals.clone().into(),
-            tangents: data.tangents.clone().into(),
-            texture_coordinates: data
-                .texture_coordinates
+                .map(|a| Py::new(py, create_attribute_data_2(py, a)).unwrap())
+                .collect::<Vec<Py<AttributeData>>>(),
+        )
+        .into(),
+        color_sets: PyList::new(
+            py,
+            data.color_sets
                 .iter()
-                .map(|a| a.clone().into())
-                .collect(),
-            color_sets: data.color_sets.iter().map(|a| a.clone().into()).collect(),
-        }
+                .map(|a| Py::new(py, create_attribute_data_4(py, a)).unwrap())
+                .collect::<Vec<Py<AttributeData>>>(),
+        )
+        .into(),
     }
 }
 
-impl From<MeshObjectData> for ssbh_data::mesh_data::MeshObjectData {
-    fn from(data: MeshObjectData) -> Self {
-        data.into()
+// PyO3 doesn't seem to have const generics yet for converting [T;N] to Python types.
+fn create_attribute_data_4(
+    py: Python,
+    attribute_data: &ssbh_data::mesh_data::AttributeData<4>,
+) -> AttributeData {
+    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
+    AttributeData {
+        name: attribute_data.name.clone(),
+        data,
+    }
+}
+
+fn create_attribute_data_3(
+    py: Python,
+    attribute_data: &ssbh_data::mesh_data::AttributeData<3>,
+) -> AttributeData {
+    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
+    AttributeData {
+        name: attribute_data.name.clone(),
+        data,
+    }
+}
+
+fn create_attribute_data_2(
+    py: Python,
+    attribute_data: &ssbh_data::mesh_data::AttributeData<2>,
+) -> AttributeData {
+    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
+    AttributeData {
+        name: attribute_data.name.clone(),
+        data,
     }
 }
 
 // Generics aren't allowed, so list the types explicitly.
 #[pyclass]
 #[derive(Debug, Clone)]
-pub struct AttributeDataVec4 {
-    #[pyo3(get)]
+pub struct AttributeData {
+    #[pyo3(get, set)]
     pub name: String,
 
-    #[pyo3(get)]
-    pub data: Vec<[f32; 4]>,
+    #[pyo3(get, set)]
+    pub data: Py<PyList>,
 }
 
-#[pyclass]
-#[derive(Debug, Clone)]
-pub struct AttributeDataVec2 {
-    #[pyo3(get)]
-    pub name: String,
-
-    #[pyo3(get)]
-    pub data: Vec<[f32; 2]>,
+// TODO: Improve this trait name.
+trait ToRs<T> {
+    fn to_rs(&self, py: Python) -> T;
 }
 
-#[pyclass]
-#[derive(Debug, Clone)]
-pub struct AttributeDataVec3 {
-    #[pyo3(get)]
-    pub name: String,
-
-    #[pyo3(get)]
-    pub data: Vec<[f32; 3]>,
-}
-
-// TODO: Use a macro for this?
-macro_rules! attribute_data_impl {
-    ($ty1:ident, $ty2:ident <$n:literal>) => {
-        impl From<$ty1> for $ty2<$n> {
-            fn from(v: $ty1) -> Self {
-                Self {
-                    name: v.name,
-                    data: v.data,
-                }
-            }
-        }
-
-        impl From<$ty2<$n>> for $ty1 {
-            fn from(v: $ty2<$n>) -> Self {
-                Self {
-                    name: v.name,
-                    data: v.data,
+macro_rules! from_py_impl {
+    ($ty1:ident, $ty2:path) => {
+        impl ToRs<$ty2> for $ty1 {
+            fn to_rs(&self, py: Python) -> $ty2 {
+                // Filter out objects of the wrong type.
+                // TODO: Throw an error instead?
+                let data = self
+                    .data
+                    .as_ref(py)
+                    .iter()
+                    .filter_map(|e| e.extract().ok())
+                    .collect();
+                $ty2 {
+                    name: self.name.clone(),
+                    data,
                 }
             }
         }
     };
 }
 
-attribute_data_impl!(AttributeDataVec2, AttributeData<2>);
-attribute_data_impl!(AttributeDataVec3, AttributeData<3>);
-attribute_data_impl!(AttributeDataVec4, AttributeData<4>);
-
-#[pyclass]
-struct Skel {
-    data: ssbh_lib::formats::skel::Skel,
-}
-
-#[pyclass]
-struct Matl {
-    data: ssbh_lib::formats::matl::Matl,
-}
+from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<2>);
+from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<3>);
+from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<4>);
 
 #[pyfunction]
-fn read_mesh(path: &str) -> PyResult<Mesh> {
+fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
     // TODO: How to handle errors or return None?
     match ssbh_lib::read_ssbh(path).unwrap().data {
         SsbhFile::Mesh(mesh) => {
             let objects: Vec<_> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
                 .unwrap()
                 .iter()
-                .map(|m| m.into())
+                .map(|o| Py::new(py, create_mesh_object_py(py, o)).unwrap())
                 .collect();
 
             Ok(Mesh {
                 data: mesh,
-                objects,
+                objects: PyList::new(py, objects).into(),
             })
         }
         _ => panic!("Failed to read mesh."),
-    }
-}
-
-#[pyfunction]
-fn read_skel(path: &str) -> PyResult<Skel> {
-    // TODO: How to handle errors or return None?
-    match ssbh_lib::read_ssbh(path).unwrap().data {
-        SsbhFile::Skel(data) => Ok(Skel { data }),
-        _ => panic!("Failed to read skel."),
     }
 }
 
@@ -214,10 +224,9 @@ fn read_skel(path: &str) -> PyResult<Skel> {
 fn ssbh_data_py(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Mesh>()?;
     m.add_class::<MeshObjectData>()?;
-    m.add_class::<Skel>()?;
+    m.add_class::<AttributeData>()?;
 
     m.add_function(wrap_pyfunction!(read_mesh, m)?)?;
-    m.add_function(wrap_pyfunction!(read_skel, m)?)?;
 
     Ok(())
 }
