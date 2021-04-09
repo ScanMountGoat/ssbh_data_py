@@ -1,3 +1,5 @@
+use std::{borrow::Borrow, convert::TryInto};
+
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
 use ssbh_lib::SsbhFile;
@@ -70,24 +72,11 @@ fn create_mesh_object_rs(
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.clone(),
-        positions: (*data.positions.as_ref(py).borrow()).to_rs(py),
-        normals: (*data.normals.as_ref(py).borrow()).to_rs(py),
-        tangents: (*data.tangents.as_ref(py).borrow()).to_rs(py),
-        // TODO: This could be a function to simplify the conversion?
-        texture_coordinates: data
-            .texture_coordinates
-            .as_ref(py)
-            .iter()
-            .filter_map(|a| a.extract::<AttributeData>().ok())
-            .map(|a| a.to_rs(py))
-            .collect(),
-        color_sets: data
-            .color_sets
-            .as_ref(py)
-            .iter()
-            .filter_map(|a| a.extract::<AttributeData>().ok())
-            .map(|a| a.to_rs(py))
-            .collect(),
+        positions: create_attribute_rs_from_ref(py, &data.positions),
+        normals: create_attribute_rs_from_ref(py, &data.normals),
+        tangents: create_attribute_rs_from_ref(py, &data.tangents),
+        texture_coordinates: create_attributes_rs(py, &data.texture_coordinates),
+        color_sets: create_attributes_rs(py, &data.color_sets),
     }
 }
 
@@ -170,35 +159,50 @@ pub struct AttributeData {
     pub data: Py<PyList>,
 }
 
-// TODO: Improve this trait name.
-trait ToRs<T> {
-    fn to_rs(&self, py: Python) -> T;
+fn create_attribute_rs<const N: usize>(
+    py: Python,
+    attribute: &AttributeData,
+) -> ssbh_data::mesh_data::AttributeData<N> {
+    // Filter out objects of the wrong type.
+    // TODO: Throw an error instead?
+    // HACK: Convert to vec first to get around PyO3 not supporting arrays with length larger than 32.
+    let data: Vec<_> = attribute
+        .data
+        .as_ref(py)
+        .iter()
+        .filter_map(|e| e.extract::<Vec<f32>>().ok())
+        .filter_map(|e| e.try_into().ok())
+        .collect();
+    ssbh_data::mesh_data::AttributeData::<N> {
+        name: attribute.name.clone(),
+        data,
+    }
 }
 
-macro_rules! from_py_impl {
-    ($ty1:ident, $ty2:path) => {
-        impl ToRs<$ty2> for $ty1 {
-            fn to_rs(&self, py: Python) -> $ty2 {
-                // Filter out objects of the wrong type.
-                // TODO: Throw an error instead?
-                let data = self
-                    .data
-                    .as_ref(py)
-                    .iter()
-                    .filter_map(|e| e.extract().ok())
-                    .collect();
-                $ty2 {
-                    name: self.name.clone(),
-                    data,
-                }
-            }
-        }
-    };
+fn create_attribute_rs_from_ref<const N: usize>(
+    py: Python,
+    attribute: &Py<AttributeData>,
+) -> ssbh_data::mesh_data::AttributeData<N> {
+    // Filter out objects of the wrong type.
+    // TODO: Throw an error instead?
+    // HACK: Convert to vec first to get around PyO3 not supporting arrays with length larger than 32.
+    let attribute = &*attribute.as_ref(py).borrow();
+    create_attribute_rs(py, &attribute)
 }
 
-from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<2>);
-from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<3>);
-from_py_impl!(AttributeData, ssbh_data::mesh_data::AttributeData<4>);
+fn create_attributes_rs<const N: usize>(
+    py: Python,
+    attributes: &Py<PyList>,
+) -> Vec<ssbh_data::mesh_data::AttributeData<N>> {
+    // Filter out objects of the wrong type.
+    // TODO: Throw an error instead?
+    attributes
+        .as_ref(py)
+        .iter()
+        .filter_map(|a| a.extract::<AttributeData>().ok())
+        .map(|a| create_attribute_rs(py, &a))
+        .collect()
+}
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
