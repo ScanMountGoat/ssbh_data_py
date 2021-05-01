@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, convert::TryInto};
+use std::convert::TryInto;
 
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
@@ -39,7 +39,7 @@ pub struct MeshObjectData {
     pub name: String,
 
     #[pyo3(get, set)]
-    pub sub_index: i64,
+    pub sub_index: u64,
 
     #[pyo3(get, set)]
     pub parent_bone_name: String,
@@ -61,6 +61,30 @@ pub struct MeshObjectData {
 
     #[pyo3(get, set)]
     pub color_sets: Py<PyList>,
+
+    #[pyo3(get, set)]
+    pub bone_influences: Py<PyList>,
+}
+
+// TODO: Use macros to automatically generate these wrapper types?
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct BoneInfluence {
+    #[pyo3(get, set)]
+    pub bone_name: String,
+    // TODO: This should probably be pylist to allow for mutability.
+    #[pyo3(get, set)]
+    pub vertex_weights: Vec<VertexWeight>,
+}
+
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct VertexWeight {
+    #[pyo3(get, set)]
+    pub vertex_index: u32,
+
+    #[pyo3(get, set)]
+    pub vertex_weight: f32,
 }
 
 fn create_mesh_object_rs(
@@ -77,6 +101,7 @@ fn create_mesh_object_rs(
         tangents: create_attribute_rs_from_ref(py, &data.tangents),
         texture_coordinates: create_attributes_rs(py, &data.texture_coordinates),
         color_sets: create_attributes_rs(py, &data.color_sets),
+        bone_influences: create_bone_influences_rs(py, &data.bone_influences),
     }
 }
 
@@ -92,14 +117,14 @@ fn create_mesh_object_py(
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.clone(),
-        positions: Py::new(py, create_attribute_data_3(py, &data.positions)).unwrap(),
+        positions: Py::new(py, create_attribute_data_4(py, &data.positions)).unwrap(),
         normals: Py::new(py, create_attribute_data_4(py, &data.normals)).unwrap(),
         tangents: Py::new(py, create_attribute_data_4(py, &data.tangents)).unwrap(),
         texture_coordinates: PyList::new(
             py,
             data.texture_coordinates
                 .iter()
-                .map(|a| Py::new(py, create_attribute_data_2(py, a)).unwrap())
+                .map(|a| Py::new(py, create_attribute_data_4(py, a)).unwrap())
                 .collect::<Vec<Py<AttributeData>>>(),
         )
         .into(),
@@ -111,6 +136,28 @@ fn create_mesh_object_py(
                 .collect::<Vec<Py<AttributeData>>>(),
         )
         .into(),
+        bone_influences: PyList::new(
+            py,
+            data.bone_influences
+                .iter()
+                .map(|i| Py::new(py, create_bone_influence(py, i)).unwrap())
+                .collect::<Vec<Py<BoneInfluence>>>(),
+        )
+        .into(),
+    }
+}
+
+fn create_bone_influence(_py: Python, i: &ssbh_data::mesh_data::BoneInfluence) -> BoneInfluence {
+    BoneInfluence {
+        bone_name: i.bone_name.clone(),
+        vertex_weights: i
+            .vertex_weights
+            .iter()
+            .map(|w| VertexWeight {
+                vertex_index: w.vertex_index,
+                vertex_weight: w.vertex_weight,
+            })
+            .collect(),
     }
 }
 
@@ -204,11 +251,40 @@ fn create_attributes_rs<const N: usize>(
         .collect()
 }
 
+fn create_bone_influences_rs(
+    py: Python,
+    bone_influences: &Py<PyList>,
+) -> Vec<ssbh_data::mesh_data::BoneInfluence> {
+    bone_influences
+        .as_ref(py)
+        .iter()
+        .filter_map(|i| i.extract::<BoneInfluence>().ok())
+        .map(|i| create_bone_influence_rs(py, &i))
+        .collect()
+}
+
+fn create_bone_influence_rs(
+    py: Python,
+    influence: &BoneInfluence,
+) -> ssbh_data::mesh_data::BoneInfluence {
+    ssbh_data::mesh_data::BoneInfluence {
+        bone_name: influence.bone_name.clone(),
+        vertex_weights: influence
+            .vertex_weights
+            .iter()
+            .map(|w| ssbh_data::mesh_data::VertexWeight {
+                vertex_index: w.vertex_index,
+                vertex_weight: w.vertex_weight,
+            })
+            .collect(),
+    }
+}
+
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
     // TODO: How to handle errors or return None?
-    match ssbh_lib::read_ssbh(path).unwrap().data {
-        SsbhFile::Mesh(mesh) => {
+    match ssbh_lib::formats::mesh::Mesh::from_file(path) {
+        Ok(mesh) => {
             let objects: Vec<_> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
                 .unwrap()
                 .iter()
