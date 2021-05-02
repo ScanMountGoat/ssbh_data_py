@@ -117,14 +117,14 @@ fn create_mesh_object_py(
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.clone(),
-        positions: Py::new(py, create_attribute_data_4(py, &data.positions)).unwrap(),
-        normals: Py::new(py, create_attribute_data_4(py, &data.normals)).unwrap(),
-        tangents: Py::new(py, create_attribute_data_4(py, &data.tangents)).unwrap(),
+        positions: Py::new(py, create_attribute_data_py(py, &data.positions)).unwrap(),
+        normals: Py::new(py, create_attribute_data_py(py, &data.normals)).unwrap(),
+        tangents: Py::new(py, create_attribute_data_py(py, &data.tangents)).unwrap(),
         texture_coordinates: PyList::new(
             py,
             data.texture_coordinates
                 .iter()
-                .map(|a| Py::new(py, create_attribute_data_4(py, a)).unwrap())
+                .map(|a| Py::new(py, create_attribute_data_py(py, a)).unwrap())
                 .collect::<Vec<Py<AttributeData>>>(),
         )
         .into(),
@@ -132,7 +132,7 @@ fn create_mesh_object_py(
             py,
             data.color_sets
                 .iter()
-                .map(|a| Py::new(py, create_attribute_data_4(py, a)).unwrap())
+                .map(|a| Py::new(py, create_attribute_data_py(py, a)).unwrap())
                 .collect::<Vec<Py<AttributeData>>>(),
         )
         .into(),
@@ -161,34 +161,16 @@ fn create_bone_influence(_py: Python, i: &ssbh_data::mesh_data::BoneInfluence) -
     }
 }
 
-// PyO3 doesn't seem to have const generics yet for converting [T;N] to Python types.
-fn create_attribute_data_4(
+fn create_attribute_data_py(
     py: Python,
-    attribute_data: &ssbh_data::mesh_data::AttributeData<4>,
+    attribute_data: &ssbh_data::mesh_data::AttributeData,
 ) -> AttributeData {
-    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
-    AttributeData {
-        name: attribute_data.name.clone(),
-        data,
-    }
-}
 
-fn create_attribute_data_3(
-    py: Python,
-    attribute_data: &ssbh_data::mesh_data::AttributeData<3>,
-) -> AttributeData {
-    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
-    AttributeData {
-        name: attribute_data.name.clone(),
-        data,
-    }
-}
-
-fn create_attribute_data_2(
-    py: Python,
-    attribute_data: &ssbh_data::mesh_data::AttributeData<2>,
-) -> AttributeData {
-    let data = PyList::new(py, attribute_data.data.iter().map(|m| m.into_py(py))).into();
+    let data = match &attribute_data.data {
+        ssbh_data::mesh_data::VectorData::Vector2(v) => PyList::new(py, v.iter().map(|m| m.into_py(py))).into(),
+        ssbh_data::mesh_data::VectorData::Vector3(v) => PyList::new(py, v.iter().map(|m| m.into_py(py))).into(),
+        ssbh_data::mesh_data::VectorData::Vector4(v) => PyList::new(py, v.iter().map(|m| m.into_py(py))).into()
+    };
     AttributeData {
         name: attribute_data.name.clone(),
         data,
@@ -206,30 +188,40 @@ pub struct AttributeData {
     pub data: Py<PyList>,
 }
 
-fn create_attribute_rs<const N: usize>(
+fn create_attribute_rs(
     py: Python,
     attribute: &AttributeData,
-) -> ssbh_data::mesh_data::AttributeData<N> {
+) -> ssbh_data::mesh_data::AttributeData {
     // Filter out objects of the wrong type.
     // TODO: Throw an error instead?
     // HACK: Convert to vec first to get around PyO3 not supporting arrays with length larger than 32.
-    let data: Vec<_> = attribute
-        .data
-        .as_ref(py)
-        .iter()
-        .filter_map(|e| e.extract::<Vec<f32>>().ok())
-        .filter_map(|e| e.try_into().ok())
-        .collect();
-    ssbh_data::mesh_data::AttributeData::<N> {
-        name: attribute.name.clone(),
-        data,
+
+    // We don't know the type from Python at this, point so try all of them.
+    // TODO: Is there a nicer way to write this?
+    if let Ok(v) = attribute.data.extract::<Vec<[f32; 2]>>(py) {
+        ssbh_data::mesh_data::AttributeData {
+            name: attribute.name.clone(),
+            data: ssbh_data::mesh_data::VectorData::Vector2(v),
+        }
+    } else if let Ok(v) = attribute.data.extract::<Vec<[f32; 3]>>(py) {
+        ssbh_data::mesh_data::AttributeData {
+            name: attribute.name.clone(),
+            data: ssbh_data::mesh_data::VectorData::Vector3(v),
+        }
+    } else if let Ok(v) = attribute.data.extract::<Vec<[f32; 4]>>(py) {
+        ssbh_data::mesh_data::AttributeData {
+            name: attribute.name.clone(),
+            data: ssbh_data::mesh_data::VectorData::Vector4(v),
+        }
+    }  else {
+        panic!("Unsupported type")
     }
 }
 
-fn create_attribute_rs_from_ref<const N: usize>(
+fn create_attribute_rs_from_ref(
     py: Python,
     attribute: &Py<AttributeData>,
-) -> ssbh_data::mesh_data::AttributeData<N> {
+) -> ssbh_data::mesh_data::AttributeData {
     // Filter out objects of the wrong type.
     // TODO: Throw an error instead?
     // HACK: Convert to vec first to get around PyO3 not supporting arrays with length larger than 32.
@@ -237,10 +229,10 @@ fn create_attribute_rs_from_ref<const N: usize>(
     create_attribute_rs(py, &attribute)
 }
 
-fn create_attributes_rs<const N: usize>(
+fn create_attributes_rs(
     py: Python,
     attributes: &Py<PyList>,
-) -> Vec<ssbh_data::mesh_data::AttributeData<N>> {
+) -> Vec<ssbh_data::mesh_data::AttributeData> {
     // Filter out objects of the wrong type.
     // TODO: Throw an error instead?
     attributes
