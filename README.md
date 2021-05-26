@@ -2,6 +2,7 @@
 Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library.
 
 ## Installing - WIP
+`pip install ssbh-data-py`
 
 ## Mesh Example
 ```python
