@@ -29,7 +29,7 @@ jobs:
           pip install maturin
       
       - name: Build wheel
-        run: maturin build --release --manylinux 2014 --no-sdist --strip --interpreter python${{matrix.python_version}}
+        run: maturin build --release --no-sdist --strip --interpreter python${{matrix.python_version}}
 
       # Note: Windows doesn't support glob
       # https://stackoverflow.com/a/52481267/270334
