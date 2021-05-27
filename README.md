@@ -68,6 +68,12 @@ for o in mesh.objects:
         # List comprehension will be faster in many cases.
         color_set.data = [[0.5, 0.5, 0.5, a] for [r, g, b, a] in color_set.data]
 
+    # Add a new color set attribute with the appropriate number of data elements.
+    # This works for positions, normals, etc. 
+    new_color_set = ssbh_data_py.mesh_data.AttributeData('colorSet3')
+    new_color_set.data = [[0.5, 0.5, 0.5, 0.5]] * len(o.positions[0].data)
+    o.color_sets.append(new_color_set)
+
     for influence in o.bone_influences:
         # Vertex skinning information is stored separately for each bone.
         # Not all vertices will be influenced by each bone.

@@ -77,6 +77,18 @@ pub struct BoneInfluence {
     pub vertex_weights: Vec<VertexWeight>,
 }
 
+// TODO: Test these methods.
+#[pymethods]
+impl BoneInfluence {
+    #[new]
+    fn new(bone_name: &str, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
+        Ok(BoneInfluence {
+            bone_name: bone_name.to_string(),
+            vertex_weights
+        })
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct VertexWeight {
@@ -85,6 +97,17 @@ pub struct VertexWeight {
 
     #[pyo3(get, set)]
     pub vertex_weight: f32,
+}
+
+#[pymethods]
+impl VertexWeight {
+    #[new]
+    fn new(vertex_index: u32, vertex_weight: f32) -> PyResult<Self> {
+        Ok(VertexWeight {
+            vertex_index,
+            vertex_weight
+        })
+    }
 }
 
 fn create_mesh_object_rs(
@@ -193,6 +216,17 @@ pub struct AttributeData {
     pub data: Py<PyList>,
 }
 
+#[pymethods]
+impl AttributeData {
+    #[new]
+    fn new(py: Python, name: &str) -> PyResult<Self> {
+        Ok(AttributeData {
+            name: name.to_string(),
+            data: PyList::empty(py).into()
+        })
+    }
+}
+
 fn create_attribute_rs(
     py: Python,
     attribute: &AttributeData,
@@ -291,6 +325,9 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_class::<Mesh>()?;
     mesh_data.add_class::<MeshObjectData>()?;
     mesh_data.add_class::<AttributeData>()?;
+    mesh_data.add_class::<BoneInfluence>()?;
+    mesh_data.add_class::<VertexWeight>()?;
+
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
 
     module.add_submodule(mesh_data)?;
