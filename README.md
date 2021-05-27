@@ -1,8 +1,11 @@
 # ssbh_data_py
 Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library.
 
-## Installing - WIP
-`pip install ssbh-data-py`
+## Installing
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for the latest version of Windows, Linux, and MacOS. The package is available for Linux on Ubuntu 21.04+ and several other supported distributions. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details.
+
+Installing: `pip install ssbh_data_py`  
+Updating: `pip install ssbh_data_py --upgrade`.
 
 ## Mesh Example
 ```python
@@ -74,4 +77,4 @@ mesh.save("model.numshb")
 ```
 
 ## Building
-`cargo build --release` builds the `ssbh_data_py` module that can be imported into Python. Depending on the platform, it may be necessary to rename the file. See the [PyO3 page](https://github.com/PyO3/pyo3) for details. 
+`cargo build --release` builds the `ssbh_data_py` module that can be imported into Python. Depending on the platform, it may be necessary to rename the file. See the [PyO3 page](https://github.com/PyO3/pyo3) for details. The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin).
