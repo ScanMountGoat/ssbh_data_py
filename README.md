@@ -1,11 +1,16 @@
 # ssbh_data_py
-Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library.
+Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library. ssbh_data_py provides a higher level abstraction over 
+the binary data stored in SSBH files such as a "model.numshb". Currently, the library only supports edits to existing files. Creating meshes from scratch or adding new mesh objects is not currently supported.
+
+Report any bugs or installation issues in 
 
 ## Installing
-The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for the latest version of Windows, Linux, and MacOS. The package is available for Linux on Ubuntu 21.04+ and several other supported distributions. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details.
-
 Installing: `pip install ssbh_data_py`  
 Updating: `pip install ssbh_data_py --upgrade`.
+The minimum supported pip version is 20.3. 
+
+## Requirements
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.6, 3.7, 3.8, and 3.9 for the latest versions of Windows, Linux, and Mac OS. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
 
 ## Mesh Example
 ```python
