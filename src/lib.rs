@@ -245,12 +245,11 @@ fn create_bone_influences_rs(
         .as_ref(py)
         .iter()
         .filter_map(|i| i.extract::<BoneInfluence>().ok())
-        .map(|i| create_bone_influence_rs(py, &i))
+        .map(|i| create_bone_influence_rs(&i))
         .collect()
 }
 
 fn create_bone_influence_rs(
-    py: Python,
     influence: &BoneInfluence,
 ) -> ssbh_data::mesh_data::BoneInfluence {
     ssbh_data::mesh_data::BoneInfluence {
@@ -287,12 +286,13 @@ fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
 }
 
 #[pymodule]
-fn ssbh_data_py(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Mesh>()?;
-    m.add_class::<MeshObjectData>()?;
-    m.add_class::<AttributeData>()?;
+fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
+    let mesh_data = PyModule::new(py, "mesh_data")?;
+    mesh_data.add_class::<Mesh>()?;
+    mesh_data.add_class::<MeshObjectData>()?;
+    mesh_data.add_class::<AttributeData>()?;
+    mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
 
-    m.add_function(wrap_pyfunction!(read_mesh, m)?)?;
-
+    module.add_submodule(mesh_data)?;
     Ok(())
 }

@@ -6,10 +6,10 @@ Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib
 
 ## Mesh Example
 ```python
-import ssbh_data_py
+import ssbh_data_py.mesh_data
 
 # Open the mesh from a .numshb file.
-mesh = ssbh_data_py.read_mesh("model.numshb")
+mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
 for o in mesh.objects:
     # Print the mesh object's name (ex: 'bodyShape0' or 'bodyShape1')
     # Mesh objects with different names should have a different sub index.
