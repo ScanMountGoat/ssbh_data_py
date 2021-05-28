@@ -77,14 +77,13 @@ pub struct BoneInfluence {
     pub vertex_weights: Vec<VertexWeight>,
 }
 
-// TODO: Test these methods.
 #[pymethods]
 impl BoneInfluence {
     #[new]
     fn new(bone_name: &str, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
         Ok(BoneInfluence {
             bone_name: bone_name.to_string(),
-            vertex_weights
+            vertex_weights,
         })
     }
 }
@@ -105,7 +104,7 @@ impl VertexWeight {
     fn new(vertex_index: u32, vertex_weight: f32) -> PyResult<Self> {
         Ok(VertexWeight {
             vertex_index,
-            vertex_weight
+            vertex_weight,
         })
     }
 }
@@ -222,7 +221,7 @@ impl AttributeData {
     fn new(py: Python, name: &str) -> PyResult<Self> {
         Ok(AttributeData {
             name: name.to_string(),
-            data: PyList::empty(py).into()
+            data: PyList::empty(py).into(),
         })
     }
 }
@@ -283,9 +282,7 @@ fn create_bone_influences_rs(
         .collect()
 }
 
-fn create_bone_influence_rs(
-    influence: &BoneInfluence,
-) -> ssbh_data::mesh_data::BoneInfluence {
+fn create_bone_influence_rs(influence: &BoneInfluence) -> ssbh_data::mesh_data::BoneInfluence {
     ssbh_data::mesh_data::BoneInfluence {
         bone_name: influence.bone_name.clone(),
         vertex_weights: influence
@@ -332,4 +329,91 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
 
     module.add_submodule(mesh_data)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use pyo3::prelude::*;
+    use pyo3::types::IntoPyDict;
+
+    use crate::ssbh_data_py;
+
+    use indoc::indoc;
+
+    #[test]
+    fn create_modify_attribute_data() {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, &module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(
+            indoc! {r#"
+                a = ssbh_data_py.mesh_data.AttributeData("abc")
+                assert a.name == "abc"
+                assert a.data == []
+
+                a.name = "def"
+                a.data = [[1.0, 2.0]]
+                assert a.name == "def"
+                assert a.data == [[1.0, 2.0]]
+            "#},
+            None,
+            Some(&ctx),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn create_modify_vertex_weight() {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, &module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(
+            indoc! {r#"
+                v = ssbh_data_py.mesh_data.VertexWeight(1, 0.5)
+                assert v.vertex_index == 1
+                assert v.vertex_weight == 0.5
+
+                v.vertex_index = 0
+                v.vertex_weight = 0.0
+                assert v.vertex_index == 0
+                assert v.vertex_weight == 0.0
+            "#},
+            None,
+            Some(&ctx),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn create_modify_bone_influence() {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, &module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(
+            indoc! {r#"
+                b = ssbh_data_py.mesh_data.BoneInfluence("abc", [])
+                assert b.bone_name == "abc"
+                assert b.vertex_weights == []
+
+                b.bone_name = "def"
+                b.vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(1, 0.5)]
+                assert b.bone_name == "def"
+                assert len(b.vertex_weights) == 1
+                assert b.vertex_weights[0].vertex_index == 1
+                assert b.vertex_weights[0].vertex_weight == 0.5
+            "#},
+            None,
+            Some(&ctx),
+        )
+        .unwrap();
+    }
 }
