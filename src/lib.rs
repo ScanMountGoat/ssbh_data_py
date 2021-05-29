@@ -72,18 +72,24 @@ pub struct MeshObjectData {
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
-    // TODO: This should probably be pylist to allow for mutability.
     #[pyo3(get, set)]
-    pub vertex_weights: Vec<VertexWeight>,
+    pub vertex_weights: Py<PyList>,
 }
 
 #[pymethods]
 impl BoneInfluence {
     #[new]
-    fn new(bone_name: &str, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
+    fn new(py: Python, bone_name: &str, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
         Ok(BoneInfluence {
             bone_name: bone_name.to_string(),
-            vertex_weights,
+            vertex_weights: PyList::new(
+                py,
+                vertex_weights
+                    .into_iter()
+                    .map(|w| Py::new(py, w).unwrap())
+                    .collect::<Vec<Py<VertexWeight>>>()
+            )
+            .into()
         })
     }
 }
@@ -128,6 +134,8 @@ fn create_mesh_object_rs(
     }
 }
 
+// TODO: Shared code?
+// TODO: Clean up this conversion code.
 fn create_attribute_list_py(
     py: Python,
     attributes: &[ssbh_data::mesh_data::AttributeData],
@@ -138,6 +146,29 @@ fn create_attribute_list_py(
             .iter()
             .map(|a| Py::new(py, create_attribute_data_py(py, a)).unwrap())
             .collect::<Vec<Py<AttributeData>>>(),
+    )
+    .into()
+}
+
+fn create_vertex_weight_list_py(
+    py: Python,
+    weights: &[ssbh_data::mesh_data::VertexWeight],
+) -> Py<PyList> {
+    PyList::new(
+        py,
+        weights
+            .iter()
+            .map(|w| {
+                Py::new(
+                    py,
+                    VertexWeight {
+                        vertex_index: w.vertex_index,
+                        vertex_weight: w.vertex_weight,
+                    },
+                )
+                .unwrap()
+            })
+            .collect::<Vec<Py<VertexWeight>>>(),
     )
     .into()
 }
@@ -170,17 +201,10 @@ fn create_mesh_object_py(
     }
 }
 
-fn create_bone_influence(_py: Python, i: &ssbh_data::mesh_data::BoneInfluence) -> BoneInfluence {
+fn create_bone_influence(py: Python, influence: &ssbh_data::mesh_data::BoneInfluence) -> BoneInfluence {
     BoneInfluence {
-        bone_name: i.bone_name.clone(),
-        vertex_weights: i
-            .vertex_weights
-            .iter()
-            .map(|w| VertexWeight {
-                vertex_index: w.vertex_index,
-                vertex_weight: w.vertex_weight,
-            })
-            .collect(),
+        bone_name: influence.bone_name.clone(),
+        vertex_weights: create_vertex_weight_list_py(py, &influence.vertex_weights)
     }
 }
 
@@ -278,16 +302,21 @@ fn create_bone_influences_rs(
         .as_ref(py)
         .iter()
         .filter_map(|i| i.extract::<BoneInfluence>().ok())
-        .map(|i| create_bone_influence_rs(&i))
+        .map(|i| create_bone_influence_rs(py, &i))
         .collect()
 }
 
-fn create_bone_influence_rs(influence: &BoneInfluence) -> ssbh_data::mesh_data::BoneInfluence {
+fn create_bone_influence_rs(
+    py: Python,
+    influence: &BoneInfluence,
+) -> ssbh_data::mesh_data::BoneInfluence {
     ssbh_data::mesh_data::BoneInfluence {
         bone_name: influence.bone_name.clone(),
         vertex_weights: influence
             .vertex_weights
+            .as_ref(py)
             .iter()
+            .filter_map(|a| a.extract::<VertexWeight>().ok())
             .map(|w| ssbh_data::mesh_data::VertexWeight {
                 vertex_index: w.vertex_index,
                 vertex_weight: w.vertex_weight,
@@ -358,6 +387,12 @@ mod tests {
                 a.data = [[1.0, 2.0]]
                 assert a.name == "def"
                 assert a.data == [[1.0, 2.0]]
+
+                # Test mutability for nested types.
+                a.data[0][1] = 0.3
+                assert a.data == [[1.0, 0.3]]
+                a.data[0] = [2.5, 3.5]
+                assert a.data == [[2.5, 3.5]]
             "#},
             None,
             Some(&ctx),
@@ -408,8 +443,11 @@ mod tests {
                 b.vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(1, 0.5)]
                 assert b.bone_name == "def"
                 assert len(b.vertex_weights) == 1
-                assert b.vertex_weights[0].vertex_index == 1
                 assert b.vertex_weights[0].vertex_weight == 0.5
+
+                # Test mutability for nested types.
+                b.vertex_weights[0].vertex_index = 2
+                assert b.vertex_weights[0].vertex_index == 2
             "#},
             None,
             Some(&ctx),
