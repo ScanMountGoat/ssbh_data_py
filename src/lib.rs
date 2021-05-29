@@ -36,7 +36,7 @@ pub struct MeshObjectData {
     pub parent_bone_name: String,
 
     #[pyo3(get, set)]
-    pub vertex_indices: Vec<u32>,
+    pub vertex_indices: Py<PyList>,
 
     #[pyo3(get, set)]
     pub positions: Py<PyList>,
@@ -109,6 +109,7 @@ impl VertexWeight {
     }
 }
 
+// TODO: Return result.
 fn create_mesh_object_rs(
     py: Python,
     data: &MeshObjectData,
@@ -117,7 +118,7 @@ fn create_mesh_object_rs(
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: data.vertex_indices.clone(),
+        vertex_indices: data.vertex_indices.extract::<Vec<u32>>(py).unwrap(),
         positions: create_rs_list(py, &data.positions, create_attribute_rs),
         normals: create_rs_list(py, &data.normals, create_attribute_rs),
         binormals: create_rs_list(py, &data.binormals, create_attribute_rs),
@@ -144,6 +145,13 @@ where
     Ok(PyList::new(py, items?).into())
 }
 
+fn create_py_list_from_slice<T: IntoPy<U> + Copy, U: ToPyObject>(
+    py: Python,
+    elements: &[T],
+) -> Py<PyList> {
+    PyList::new(py, elements.iter().map(|m| m.into_py(py))).into()
+}
+
 // TODO: This should return a result.
 fn create_rs_list<T, P: PyClass + Clone, F: Fn(Python, &P) -> T>(
     py: Python,
@@ -167,7 +175,7 @@ fn create_mesh_object_py(
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: data.vertex_indices.clone(),
+        vertex_indices: create_py_list_from_slice(py, &data.vertex_indices),
         positions: create_py_list(py, &data.positions, create_attribute_data_py).unwrap(),
         normals: create_py_list(py, &data.normals, create_attribute_data_py).unwrap(),
         binormals: create_py_list(py, &data.binormals, create_attribute_data_py).unwrap(),
@@ -203,15 +211,9 @@ fn create_attribute_data_py(
     attribute_data: &ssbh_data::mesh_data::AttributeData,
 ) -> AttributeData {
     let data = match &attribute_data.data {
-        ssbh_data::mesh_data::VectorData::Vector2(v) => {
-            PyList::new(py, v.iter().map(|m| m.into_py(py))).into()
-        }
-        ssbh_data::mesh_data::VectorData::Vector3(v) => {
-            PyList::new(py, v.iter().map(|m| m.into_py(py))).into()
-        }
-        ssbh_data::mesh_data::VectorData::Vector4(v) => {
-            PyList::new(py, v.iter().map(|m| m.into_py(py))).into()
-        }
+        ssbh_data::mesh_data::VectorData::Vector2(v) => create_py_list_from_slice(py, v),
+        ssbh_data::mesh_data::VectorData::Vector3(v) => create_py_list_from_slice(py, v),
+        ssbh_data::mesh_data::VectorData::Vector4(v) => create_py_list_from_slice(py, v),
     };
     AttributeData {
         name: attribute_data.name.clone(),
