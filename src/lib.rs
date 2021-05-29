@@ -1,5 +1,6 @@
-use pyo3::wrap_pyfunction;
+use pyo3::type_object::PyBorrowFlagLayout;
 use pyo3::{prelude::*, types::PyList};
+use pyo3::{wrap_pyfunction, PyClass};
 
 #[pyclass]
 struct Mesh {
@@ -12,15 +13,8 @@ struct Mesh {
 #[pymethods]
 impl Mesh {
     fn save(&mut self, py: Python, path: &str) -> PyResult<()> {
-        // Filter out objects of the wrong type.
-        // TODO: Throw an error instead?
-        let objects: Vec<_> = self
-            .objects
-            .as_ref(py)
-            .iter()
-            .filter_map(|o| o.extract::<MeshObjectData>().ok())
-            .map(|o| create_mesh_object_rs(py, &o))
-            .collect();
+        // TODO: This may fail.
+        let objects: Vec<_> = create_rs_list(py, &self.objects, create_mesh_object_rs);
 
         ssbh_data::mesh_data::update_mesh(&mut self.data, objects.as_slice()).unwrap();
 
@@ -87,9 +81,9 @@ impl BoneInfluence {
                 vertex_weights
                     .into_iter()
                     .map(|w| Py::new(py, w).unwrap())
-                    .collect::<Vec<Py<VertexWeight>>>()
+                    .collect::<Vec<Py<VertexWeight>>>(),
             )
-            .into()
+            .into(),
         })
     }
 }
@@ -124,57 +118,47 @@ fn create_mesh_object_rs(
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.clone(),
-        positions: create_attributes_rs(py, &data.positions),
-        normals: create_attributes_rs(py, &data.normals),
-        binormals: create_attributes_rs(py, &data.binormals),
-        tangents: create_attributes_rs(py, &data.tangents),
-        texture_coordinates: create_attributes_rs(py, &data.texture_coordinates),
-        color_sets: create_attributes_rs(py, &data.color_sets),
-        bone_influences: create_bone_influences_rs(py, &data.bone_influences),
+        positions: create_rs_list(py, &data.positions, create_attribute_rs),
+        normals: create_rs_list(py, &data.normals, create_attribute_rs),
+        binormals: create_rs_list(py, &data.binormals, create_attribute_rs),
+        tangents: create_rs_list(py, &data.tangents, create_attribute_rs),
+        texture_coordinates: create_rs_list(py, &data.texture_coordinates, create_attribute_rs),
+        color_sets: create_rs_list(py, &data.color_sets, create_attribute_rs),
+        bone_influences: create_rs_list(py, &data.bone_influences, create_bone_influence_rs),
     }
 }
 
-// TODO: Shared code?
-// TODO: Clean up this conversion code.
-fn create_attribute_list_py(
+fn create_py_list<T, C: PyClass, U: Into<PyClassInitializer<C>>, F: Fn(Python, &T) -> U>(
     py: Python,
-    attributes: &[ssbh_data::mesh_data::AttributeData],
-) -> Py<PyList> {
-    PyList::new(
-        py,
-        attributes
-            .iter()
-            .map(|a| Py::new(py, create_attribute_data_py(py, a)).unwrap())
-            .collect::<Vec<Py<AttributeData>>>(),
-    )
-    .into()
+    elements: &[T],
+    create_p: F,
+) -> PyResult<Py<PyList>>
+where
+    C::BaseLayout: PyBorrowFlagLayout<C::BaseType>,
+{
+    let items: Result<Vec<_>, _> = elements
+        .iter()
+        .map(|e| Py::new(py, create_p(py, e)))
+        .collect();
+
+    Ok(PyList::new(py, items?).into())
 }
 
-fn create_vertex_weight_list_py(
+// TODO: This should return a result.
+fn create_rs_list<T, P: PyClass + Clone, F: Fn(Python, &P) -> T>(
     py: Python,
-    weights: &[ssbh_data::mesh_data::VertexWeight],
-) -> Py<PyList> {
-    PyList::new(
-        py,
-        weights
-            .iter()
-            .map(|w| {
-                Py::new(
-                    py,
-                    VertexWeight {
-                        vertex_index: w.vertex_index,
-                        vertex_weight: w.vertex_weight,
-                    },
-                )
-                .unwrap()
-            })
-            .collect::<Vec<Py<VertexWeight>>>(),
-    )
-    .into()
+    elements: &Py<PyList>,
+    create_t: F,
+) -> Vec<T> {
+    elements
+        .as_ref(py)
+        .iter()
+        .filter_map(|i| i.extract::<P>().ok())
+        .map(|i| create_t(py, &i))
+        .collect()
 }
 
-// The Python library only uses a separate type to able to create a pyclass from it.
-// TODO: Can this be shared with the original implementation?
+// TODO: Return a result?
 fn create_mesh_object_py(
     py: Python,
     data: &ssbh_data::mesh_data::MeshObjectData,
@@ -184,27 +168,33 @@ fn create_mesh_object_py(
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.clone(),
-        positions: create_attribute_list_py(py, &data.positions),
-        normals: create_attribute_list_py(py, &data.normals),
-        binormals: create_attribute_list_py(py, &data.binormals),
-        tangents: create_attribute_list_py(py, &data.tangents),
-        texture_coordinates: create_attribute_list_py(py, &data.texture_coordinates),
-        color_sets: create_attribute_list_py(py, &data.color_sets),
-        bone_influences: PyList::new(
+        positions: create_py_list(py, &data.positions, create_attribute_data_py).unwrap(),
+        normals: create_py_list(py, &data.normals, create_attribute_data_py).unwrap(),
+        binormals: create_py_list(py, &data.binormals, create_attribute_data_py).unwrap(),
+        tangents: create_py_list(py, &data.tangents, create_attribute_data_py).unwrap(),
+        texture_coordinates: create_py_list(
             py,
-            data.bone_influences
-                .iter()
-                .map(|i| Py::new(py, create_bone_influence(py, i)).unwrap())
-                .collect::<Vec<Py<BoneInfluence>>>(),
+            &data.texture_coordinates,
+            create_attribute_data_py,
         )
-        .into(),
+        .unwrap(),
+        color_sets: create_py_list(py, &data.color_sets, create_attribute_data_py).unwrap(),
+        bone_influences: create_py_list(py, &data.bone_influences, create_bone_influence).unwrap(),
     }
 }
 
-fn create_bone_influence(py: Python, influence: &ssbh_data::mesh_data::BoneInfluence) -> BoneInfluence {
+// TODO: Return a result?
+fn create_bone_influence(
+    py: Python,
+    influence: &ssbh_data::mesh_data::BoneInfluence,
+) -> BoneInfluence {
     BoneInfluence {
         bone_name: influence.bone_name.clone(),
-        vertex_weights: create_vertex_weight_list_py(py, &influence.vertex_weights)
+        vertex_weights: create_py_list(py, &influence.vertex_weights, |_, w| VertexWeight {
+            vertex_index: w.vertex_index,
+            vertex_weight: w.vertex_weight,
+        })
+        .unwrap(),
     }
 }
 
@@ -250,6 +240,7 @@ impl AttributeData {
     }
 }
 
+// TODO: Return result.
 fn create_attribute_rs(
     py: Python,
     attribute: &AttributeData,
@@ -280,48 +271,18 @@ fn create_attribute_rs(
     }
 }
 
-fn create_attributes_rs(
-    py: Python,
-    attributes: &Py<PyList>,
-) -> Vec<ssbh_data::mesh_data::AttributeData> {
-    // Filter out objects of the wrong type.
-    // TODO: Throw an error instead?
-    attributes
-        .as_ref(py)
-        .iter()
-        .filter_map(|a| a.extract::<AttributeData>().ok())
-        .map(|a| create_attribute_rs(py, &a))
-        .collect()
-}
-
-fn create_bone_influences_rs(
-    py: Python,
-    bone_influences: &Py<PyList>,
-) -> Vec<ssbh_data::mesh_data::BoneInfluence> {
-    bone_influences
-        .as_ref(py)
-        .iter()
-        .filter_map(|i| i.extract::<BoneInfluence>().ok())
-        .map(|i| create_bone_influence_rs(py, &i))
-        .collect()
-}
-
 fn create_bone_influence_rs(
     py: Python,
     influence: &BoneInfluence,
 ) -> ssbh_data::mesh_data::BoneInfluence {
     ssbh_data::mesh_data::BoneInfluence {
         bone_name: influence.bone_name.clone(),
-        vertex_weights: influence
-            .vertex_weights
-            .as_ref(py)
-            .iter()
-            .filter_map(|a| a.extract::<VertexWeight>().ok())
-            .map(|w| ssbh_data::mesh_data::VertexWeight {
+        vertex_weights: create_rs_list(py, &influence.vertex_weights, |_, w: &VertexWeight| {
+            ssbh_data::mesh_data::VertexWeight {
                 vertex_index: w.vertex_index,
                 vertex_weight: w.vertex_weight,
-            })
-            .collect(),
+            }
+        }),
     }
 }
 
