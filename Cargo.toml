@@ -5,15 +5,15 @@ authors = ["ScanMountGoat <>"]
 edition = "2018"
 
 [dependencies]
-ssbh_lib = "0.6"
-ssbh_data = "0.6"
+ssbh_lib = "0.7"
+ssbh_data = "0.7"
 
 [lib]
 name = "ssbh_data_py"
 crate-type = ["cdylib"]
 
 [dependencies.pyo3]
-version = "0.13.1"
+version = "0.13"
 features = ["extension-module"]
 
 [dev-dependencies]

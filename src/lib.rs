@@ -4,7 +4,11 @@ use pyo3::{wrap_pyfunction, PyClass};
 
 #[pyclass]
 struct Mesh {
-    data: ssbh_lib::formats::mesh::Mesh,
+    #[pyo3(get, set)]
+    pub major_version: u16,
+
+    #[pyo3(get, set)]
+    pub minor_version: u16,
 
     #[pyo3(get, set)]
     pub objects: Py<PyList>,
@@ -12,14 +16,32 @@ struct Mesh {
 
 #[pymethods]
 impl Mesh {
-    fn save(&mut self, py: Python, path: &str) -> PyResult<()> {
-        // TODO: This may fail.
+    fn save(&self, py: Python, path: &str) -> PyResult<()> {
+        // TODO: Convert errors to Python exception?
         let objects: Vec<_> = create_rs_list(py, &self.objects, create_mesh_object_rs);
 
-        ssbh_data::mesh_data::update_mesh(&mut self.data, objects.as_slice()).unwrap();
+        let ssbh_mesh = ssbh_data::mesh_data::create_mesh(
+            self.major_version,
+            self.minor_version,
+            objects.as_slice(),
+        )
+        .unwrap();
 
-        self.data.write_to_file(path).unwrap();
+        ssbh_mesh.write_to_file(path).unwrap();
         Ok(())
+    }
+}
+
+#[pymethods]
+impl Mesh {
+    #[new]
+    #[args(major_version=1, minor_version=10)]
+    fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
+        Ok(Mesh {
+            major_version,
+            minor_version,
+            objects: PyList::empty(py).into(),
+        })
     }
 }
 
@@ -60,7 +82,26 @@ pub struct MeshObjectData {
     pub bone_influences: Py<PyList>,
 }
 
-// TODO: Use macros to automatically generate these wrapper types?
+#[pymethods]
+impl MeshObjectData {
+    #[new]
+    fn new(py: Python, name: &str, sub_index: u64) -> PyResult<Self> {
+        Ok(MeshObjectData {
+            name: name.to_string(),
+            sub_index,
+            parent_bone_name: "".to_string(),
+            vertex_indices: PyList::empty(py).into(),
+            positions: PyList::empty(py).into(),
+            normals: PyList::empty(py).into(),
+            binormals: PyList::empty(py).into(),
+            tangents: PyList::empty(py).into(),
+            texture_coordinates: PyList::empty(py).into(),
+            color_sets: PyList::empty(py).into(),
+            bone_influences: PyList::empty(py).into(),
+        })
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct BoneInfluence {
@@ -300,7 +341,8 @@ fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
                 .collect();
 
             Ok(Mesh {
-                data: mesh,
+                major_version: mesh.major_version,
+                minor_version: mesh.minor_version,
                 objects: PyList::new(py, objects).into(),
             })
         }
@@ -331,6 +373,63 @@ mod tests {
     use crate::ssbh_data_py;
 
     use indoc::indoc;
+
+    #[test]
+    fn create_mesh() {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, &module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(
+            indoc! {r#"
+                m = ssbh_data_py.mesh_data.Mesh(3, 4)
+                assert m.major_version == 3
+                assert m.minor_version == 4
+
+                m = ssbh_data_py.mesh_data.Mesh(3)
+                assert m.major_version == 3
+                assert m.minor_version == 10
+
+                m = ssbh_data_py.mesh_data.Mesh()
+                assert m.major_version == 1
+                assert m.minor_version == 10
+            "#},
+            None,
+            Some(&ctx),
+        )
+        .unwrap();
+    }
+    
+    #[test]
+    fn create_mesh_object() {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, &module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(
+            indoc! {r#"
+                m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
+                assert m.name == "abc"
+                assert m.sub_index == 1
+                assert m.parent_bone_name == ""
+                assert m.vertex_indices == []
+                assert m.positions == []
+                assert m.normals == []
+                assert m.binormals == []
+                assert m.tangents == []
+                assert m.texture_coordinates == []
+                assert m.color_sets == []
+                assert m.bone_influences == []
+            "#},
+            None,
+            Some(&ctx),
+        )
+        .unwrap();
+    }
 
     #[test]
     fn create_modify_attribute_data() {
