@@ -17,9 +17,9 @@ struct Mesh {
 #[pymethods]
 impl Mesh {
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        // TODO: Convert errors to Python exception?
-        let objects: Vec<_> = create_rs_list(py, &self.objects, create_mesh_object_rs);
+        let objects: Vec<_> = try_create_rs_list(py, &self.objects, create_mesh_object_rs)?;
 
+        // TODO: Convert these errors to python exceptions.
         let ssbh_mesh = ssbh_data::mesh_data::create_mesh(
             self.major_version,
             self.minor_version,
@@ -35,7 +35,7 @@ impl Mesh {
 #[pymethods]
 impl Mesh {
     #[new]
-    #[args(major_version=1, minor_version=10)]
+    #[args(major_version = 1, minor_version = 10)]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(Mesh {
             major_version,
@@ -150,27 +150,30 @@ impl VertexWeight {
     }
 }
 
-// TODO: Return result.
 fn create_mesh_object_rs(
     py: Python,
     data: &MeshObjectData,
-) -> ssbh_data::mesh_data::MeshObjectData {
-    ssbh_data::mesh_data::MeshObjectData {
+) -> PyResult<ssbh_data::mesh_data::MeshObjectData> {
+    Ok(ssbh_data::mesh_data::MeshObjectData {
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: data.vertex_indices.extract::<Vec<u32>>(py).unwrap(),
-        positions: create_rs_list(py, &data.positions, create_attribute_rs),
-        normals: create_rs_list(py, &data.normals, create_attribute_rs),
-        binormals: create_rs_list(py, &data.binormals, create_attribute_rs),
-        tangents: create_rs_list(py, &data.tangents, create_attribute_rs),
-        texture_coordinates: create_rs_list(py, &data.texture_coordinates, create_attribute_rs),
-        color_sets: create_rs_list(py, &data.color_sets, create_attribute_rs),
-        bone_influences: create_rs_list(py, &data.bone_influences, create_bone_influence_rs),
-    }
+        positions: try_create_rs_list(py, &data.positions, create_attribute_rs)?,
+        normals: try_create_rs_list(py, &data.normals, create_attribute_rs)?,
+        binormals: try_create_rs_list(py, &data.binormals, create_attribute_rs)?,
+        tangents: try_create_rs_list(py, &data.tangents, create_attribute_rs)?,
+        texture_coordinates: try_create_rs_list(
+            py,
+            &data.texture_coordinates,
+            create_attribute_rs,
+        )?,
+        color_sets: try_create_rs_list(py, &data.color_sets, create_attribute_rs)?,
+        bone_influences: try_create_rs_list(py, &data.bone_influences, create_bone_influence_rs)?,
+    })
 }
 
-fn create_py_list<T, C: PyClass, U: Into<PyClassInitializer<C>>, F: Fn(Python, &T) -> U>(
+fn create_py_list<T, C: PyClass, U: Into<PyClassInitializer<C>>, F: Fn(Python, &T) -> PyResult<U>>(
     py: Python,
     elements: &[T],
     create_p: F,
@@ -180,7 +183,7 @@ where
 {
     let items: Result<Vec<_>, _> = elements
         .iter()
-        .map(|e| Py::new(py, create_p(py, e)))
+        .map(|e| Py::new(py, create_p(py, e)?))
         .collect();
 
     Ok(PyList::new(py, items?).into())
@@ -193,73 +196,74 @@ fn create_py_list_from_slice<T: IntoPy<U> + Copy, U: ToPyObject>(
     PyList::new(py, elements.iter().map(|m| m.into_py(py))).into()
 }
 
-// TODO: This should return a result.
-fn create_rs_list<T, P: PyClass + Clone, F: Fn(Python, &P) -> T>(
+fn try_create_rs_list<T, P: PyClass + Clone, F: Fn(Python, &P) -> PyResult<T>>(
     py: Python,
     elements: &Py<PyList>,
     create_t: F,
-) -> Vec<T> {
-    elements
+) -> PyResult<Vec<T>> {
+    let python_elements: Result<Vec<P>, _> = elements
         .as_ref(py)
         .iter()
-        .filter_map(|i| i.extract::<P>().ok())
-        .map(|i| create_t(py, &i))
-        .collect()
+        .map(|i| i.extract::<P>())
+        .collect();
+
+    let rust_elements: Result<Vec<T>, _> =
+        python_elements?.iter().map(|i| create_t(py, &i)).collect();
+
+    rust_elements
 }
 
-// TODO: Return a result?
 fn create_mesh_object_py(
     py: Python,
     data: &ssbh_data::mesh_data::MeshObjectData,
-) -> MeshObjectData {
-    MeshObjectData {
+) -> PyResult<MeshObjectData> {
+    Ok(MeshObjectData {
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
         vertex_indices: create_py_list_from_slice(py, &data.vertex_indices),
-        positions: create_py_list(py, &data.positions, create_attribute_data_py).unwrap(),
-        normals: create_py_list(py, &data.normals, create_attribute_data_py).unwrap(),
-        binormals: create_py_list(py, &data.binormals, create_attribute_data_py).unwrap(),
-        tangents: create_py_list(py, &data.tangents, create_attribute_data_py).unwrap(),
+        positions: create_py_list(py, &data.positions, create_attribute_data_py)?,
+        normals: create_py_list(py, &data.normals, create_attribute_data_py)?,
+        binormals: create_py_list(py, &data.binormals, create_attribute_data_py)?,
+        tangents: create_py_list(py, &data.tangents, create_attribute_data_py)?,
         texture_coordinates: create_py_list(
             py,
             &data.texture_coordinates,
             create_attribute_data_py,
-        )
-        .unwrap(),
-        color_sets: create_py_list(py, &data.color_sets, create_attribute_data_py).unwrap(),
-        bone_influences: create_py_list(py, &data.bone_influences, create_bone_influence).unwrap(),
-    }
+        )?,
+        color_sets: create_py_list(py, &data.color_sets, create_attribute_data_py)?,
+        bone_influences: create_py_list(py, &data.bone_influences, create_bone_influence)?,
+    })
 }
 
-// TODO: Return a result?
 fn create_bone_influence(
     py: Python,
     influence: &ssbh_data::mesh_data::BoneInfluence,
-) -> BoneInfluence {
-    BoneInfluence {
+) -> PyResult<BoneInfluence> {
+    Ok(BoneInfluence {
         bone_name: influence.bone_name.clone(),
-        vertex_weights: create_py_list(py, &influence.vertex_weights, |_, w| VertexWeight {
-            vertex_index: w.vertex_index,
-            vertex_weight: w.vertex_weight,
-        })
-        .unwrap(),
-    }
+        vertex_weights: create_py_list(py, &influence.vertex_weights, |_, w| {
+            Ok(VertexWeight {
+                vertex_index: w.vertex_index,
+                vertex_weight: w.vertex_weight,
+            })
+        })?,
+    })
 }
 
 fn create_attribute_data_py(
     py: Python,
     attribute_data: &ssbh_data::mesh_data::AttributeData,
-) -> AttributeData {
+) -> PyResult<AttributeData> {
     let data = match &attribute_data.data {
         ssbh_data::mesh_data::VectorData::Vector2(v) => create_py_list_from_slice(py, v),
         ssbh_data::mesh_data::VectorData::Vector3(v) => create_py_list_from_slice(py, v),
         ssbh_data::mesh_data::VectorData::Vector4(v) => create_py_list_from_slice(py, v),
     };
-    AttributeData {
+    Ok(AttributeData {
         name: attribute_data.name.clone(),
         data,
-    }
+    })
 }
 
 #[pyclass]
@@ -283,69 +287,69 @@ impl AttributeData {
     }
 }
 
-// TODO: Return result.
 fn create_attribute_rs(
     py: Python,
     attribute: &AttributeData,
-) -> ssbh_data::mesh_data::AttributeData {
-    // Filter out objects of the wrong type.
-    // TODO: Throw an error instead?
-    // HACK: Convert to vec first to get around PyO3 not supporting arrays with length larger than 32.
-
-    // We don't know the type from Python at this, point so try all of them.
-    // TODO: Is there a nicer way to write this?
+) -> PyResult<ssbh_data::mesh_data::AttributeData> {
+    // We don't know the type from Python at this point.
+    // Try all the supported types and fail if all conversions fail.
     if let Ok(v) = attribute.data.extract::<Vec<[f32; 2]>>(py) {
-        ssbh_data::mesh_data::AttributeData {
+        Ok(ssbh_data::mesh_data::AttributeData {
             name: attribute.name.clone(),
             data: ssbh_data::mesh_data::VectorData::Vector2(v),
-        }
+        })
     } else if let Ok(v) = attribute.data.extract::<Vec<[f32; 3]>>(py) {
-        ssbh_data::mesh_data::AttributeData {
+        Ok(ssbh_data::mesh_data::AttributeData {
             name: attribute.name.clone(),
             data: ssbh_data::mesh_data::VectorData::Vector3(v),
-        }
-    } else if let Ok(v) = attribute.data.extract::<Vec<[f32; 4]>>(py) {
-        ssbh_data::mesh_data::AttributeData {
-            name: attribute.name.clone(),
-            data: ssbh_data::mesh_data::VectorData::Vector4(v),
-        }
+        })
     } else {
-        panic!("Unsupported type")
+        match attribute.data.extract::<Vec<[f32; 4]>>(py) {
+            Ok(v) => Ok(ssbh_data::mesh_data::AttributeData {
+                name: attribute.name.clone(),
+                data: ssbh_data::mesh_data::VectorData::Vector4(v),
+            }),
+            Err(e) => Err(e),
+        }
     }
 }
 
 fn create_bone_influence_rs(
     py: Python,
     influence: &BoneInfluence,
-) -> ssbh_data::mesh_data::BoneInfluence {
-    ssbh_data::mesh_data::BoneInfluence {
+) -> PyResult<ssbh_data::mesh_data::BoneInfluence> {
+    Ok(ssbh_data::mesh_data::BoneInfluence {
         bone_name: influence.bone_name.clone(),
-        vertex_weights: create_rs_list(py, &influence.vertex_weights, |_, w: &VertexWeight| {
-            ssbh_data::mesh_data::VertexWeight {
-                vertex_index: w.vertex_index,
-                vertex_weight: w.vertex_weight,
-            }
-        }),
-    }
+        vertex_weights: try_create_rs_list(
+            py,
+            &influence.vertex_weights,
+            |_, w: &VertexWeight| {
+                Ok(ssbh_data::mesh_data::VertexWeight {
+                    vertex_index: w.vertex_index,
+                    vertex_weight: w.vertex_weight,
+                })
+            },
+        )?,
+    })
 }
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
-    // TODO: How to handle errors or return None?
     match ssbh_lib::formats::mesh::Mesh::from_file(path) {
         Ok(mesh) => {
-            let objects: Vec<_> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
+            let objects: Result<Vec<_>, _> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
                 .unwrap()
                 .iter()
-                .map(|o| Py::new(py, create_mesh_object_py(py, o)).unwrap())
+                .map(|o| Py::new(py, create_mesh_object_py(py, o)?))
                 .collect();
 
             Ok(Mesh {
                 major_version: mesh.major_version,
                 minor_version: mesh.minor_version,
-                objects: PyList::new(py, objects).into(),
+                objects: PyList::new(py, objects?).into(),
             })
         }
+        // TODO: How to handle errors or return None?
         _ => panic!("Failed to read mesh."),
     }
 }
@@ -401,7 +405,7 @@ mod tests {
         )
         .unwrap();
     }
-    
+
     #[test]
     fn create_mesh_object() {
         let gil = Python::acquire_gil();
