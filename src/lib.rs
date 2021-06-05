@@ -19,7 +19,7 @@ impl Mesh {
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         let objects: Vec<_> = try_create_rs_list(py, &self.objects, create_mesh_object_rs)?;
 
-        // TODO: Convert these errors to python exceptions.
+        // TODO: Convert these errors to python exceptions instead of relying on panic handler?
         let ssbh_mesh = ssbh_data::mesh_data::create_mesh(
             self.major_version,
             self.minor_version,
