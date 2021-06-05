@@ -6,7 +6,7 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 
 ## Installing
 Installing: `pip install ssbh_data_py`  
-Updating: `pip install ssbh_data_py --upgrade`.
+Updating: `pip install ssbh_data_py --upgrade`.  
 The minimum supported pip version is 20.3. 
 
 ## Requirements
