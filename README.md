@@ -13,6 +13,7 @@ The minimum supported pip version is 20.3.
 The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.6, 3.7, 3.8, and 3.9 for the latest versions of Windows, Linux, and Mac OS. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
 
 ## Mesh Example
+For additional python samples, see the [examples](https://github.com/ScanMountGoat/ssbh_data_py/tree/main/examples).
 ```python
 import ssbh_data_py.mesh_data
 
