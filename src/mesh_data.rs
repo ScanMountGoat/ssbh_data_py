@@ -18,6 +18,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
+#[derive(Debug, Clone)]
 struct Mesh {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -300,6 +301,8 @@ fn create_bone_influence_rs(
     })
 }
 
+// TODO: In the future, this should be handled entirely by ssbh_data.
+// It should be possible to do this without an ssbh_lib dependency.
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
     match ssbh_lib::formats::mesh::Mesh::from_file(path) {

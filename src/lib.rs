@@ -3,10 +3,12 @@ use pyo3::PyClass;
 use pyo3::{prelude::*, types::PyList};
 
 mod mesh_data;
+mod modl_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::mesh_data::mesh_data(py, module)?;
+    crate::modl_data::modl_data(py, module)?;
     Ok(())
 }
 
