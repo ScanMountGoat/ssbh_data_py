@@ -101,9 +101,9 @@ pub struct MeshObjectData {
 #[pymethods]
 impl MeshObjectData {
     #[new]
-    fn new(py: Python, name: &str, sub_index: u64) -> PyResult<Self> {
+    fn new(py: Python, name: String, sub_index: u64) -> PyResult<Self> {
         Ok(MeshObjectData {
-            name: name.to_string(),
+            name,
             sub_index,
             parent_bone_name: "".to_string(),
             vertex_indices: PyList::empty(py).into(),
@@ -130,9 +130,9 @@ pub struct BoneInfluence {
 #[pymethods]
 impl BoneInfluence {
     #[new]
-    fn new(py: Python, bone_name: &str, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
+    fn new(py: Python, bone_name: String, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
         Ok(BoneInfluence {
-            bone_name: bone_name.to_string(),
+            bone_name,
             vertex_weights: PyList::new(
                 py,
                 vertex_weights
@@ -251,9 +251,9 @@ pub struct AttributeData {
 #[pymethods]
 impl AttributeData {
     #[new]
-    fn new(py: Python, name: &str) -> PyResult<Self> {
+    fn new(py: Python, name: String) -> PyResult<Self> {
         Ok(AttributeData {
-            name: name.to_string(),
+            name,
             data: PyList::empty(py).into(),
         })
     }

@@ -79,11 +79,11 @@ pub struct ModlEntryData {
 impl ModlEntryData {
     #[new]
     #[args(major_version = 1, minor_version = 7)]
-    fn new(_py: Python, mesh_object_name: &str, mesh_object_sub_index: i64, material_label: &str) -> PyResult<Self> {
+    fn new(_py: Python, mesh_object_name: String, mesh_object_sub_index: i64, material_label: String) -> PyResult<Self> {
         Ok(ModlEntryData {
-            mesh_object_name: mesh_object_name.into(),
+            mesh_object_name,
             mesh_object_sub_index,
-            material_label: material_label.into(),
+            material_label,
         })
     }
 
