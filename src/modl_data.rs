@@ -41,7 +41,6 @@ struct ModlData {
     pub entries: Py<PyList>,
 }
 
-// TODO: Should this be called Modl or ModlData?
 #[pymethods]
 impl ModlData {
     #[new]
@@ -86,8 +85,7 @@ impl ModlEntryData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        // TODO: Convert to Modl and then save?
-        // TODO: Handle this via ssbh_data?
+        // TODO: Convert to ssbh_data and then save.
         Ok(())
     }
 }
