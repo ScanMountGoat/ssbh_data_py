@@ -5,7 +5,7 @@ use crate::{create_py_list, create_py_list_from_slice, create_vec};
 
 pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     let mesh_data = PyModule::new(py, "mesh_data")?;
-    mesh_data.add_class::<Mesh>()?;
+    mesh_data.add_class::<MeshData>()?;
     mesh_data.add_class::<MeshObjectData>()?;
     mesh_data.add_class::<AttributeData>()?;
     mesh_data.add_class::<BoneInfluence>()?;
@@ -19,7 +19,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 
 #[pyclass]
 #[derive(Debug, Clone)]
-struct Mesh {
+struct MeshData {
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -31,29 +31,27 @@ struct Mesh {
 }
 
 #[pymethods]
-impl Mesh {
+impl MeshData {
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         let objects: Vec<_> = create_vec(py, &self.objects, create_mesh_object_rs)?;
+        let mesh_data = ssbh_data::mesh_data::MeshData {
+            major_version: self.major_version,
+            minor_version: self.minor_version,
+            objects,
+        };
 
         // TODO: Convert these errors to python exceptions instead of relying on panic handler?
-        let ssbh_mesh = ssbh_data::mesh_data::create_mesh(
-            self.major_version,
-            self.minor_version,
-            objects.as_slice(),
-        )
-        .unwrap();
-
-        ssbh_mesh.write_to_file(path).unwrap();
+        mesh_data.write_to_file(path).unwrap();
         Ok(())
     }
 }
 
 #[pymethods]
-impl Mesh {
+impl MeshData {
     #[new]
     #[args(major_version = 1, minor_version = 10)]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
-        Ok(Mesh {
+        Ok(MeshData {
             major_version,
             minor_version,
             objects: PyList::empty(py).into(),
@@ -301,21 +299,19 @@ fn create_bone_influence_rs(
     })
 }
 
-// TODO: In the future, this should be handled entirely by ssbh_data.
-// It should be possible to do this without an ssbh_lib dependency.
 #[pyfunction]
-fn read_mesh(py: Python, path: &str) -> PyResult<Mesh> {
-    match ssbh_lib::formats::mesh::Mesh::from_file(path) {
-        Ok(mesh) => {
-            let objects: Result<Vec<_>, _> = ssbh_data::mesh_data::read_mesh_objects(&mesh)
-                .unwrap()
+fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
+    match ssbh_data::mesh_data::MeshData::from_file(path) {
+        Ok(mesh_data) => {
+            let objects: Result<Vec<_>, _> = mesh_data
+                .objects
                 .iter()
                 .map(|o| Py::new(py, create_mesh_object_py(py, o)?))
                 .collect();
 
-            Ok(Mesh {
-                major_version: mesh.major_version,
-                minor_version: mesh.minor_version,
+            Ok(MeshData {
+                major_version: mesh_data.major_version,
+                minor_version: mesh_data.minor_version,
                 objects: PyList::new(py, objects?).into(),
             })
         }
@@ -343,15 +339,15 @@ mod tests {
         let ctx = [("ssbh_data_py", module)].into_py_dict(py);
         py.run(
             indoc! {r#"
-                m = ssbh_data_py.mesh_data.Mesh(3, 4)
+                m = ssbh_data_py.mesh_data.MeshData(3, 4)
                 assert m.major_version == 3
                 assert m.minor_version == 4
 
-                m = ssbh_data_py.mesh_data.Mesh(3)
+                m = ssbh_data_py.mesh_data.MeshData(3)
                 assert m.major_version == 3
                 assert m.minor_version == 10
 
-                m = ssbh_data_py.mesh_data.Mesh()
+                m = ssbh_data_py.mesh_data.MeshData()
                 assert m.major_version == 1
                 assert m.minor_version == 10
             "#},

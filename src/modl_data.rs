@@ -1,6 +1,5 @@
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
-use ssbh_lib::formats::modl::Modl;
 
 use crate::create_py_list;
 
@@ -67,9 +66,8 @@ pub struct ModlEntryData {
     #[pyo3(get, set)]
     pub mesh_object_name: String,
 
-    // TODO: This can't actually be negative.
     #[pyo3(get, set)]
-    pub mesh_object_sub_index: i64,
+    pub mesh_object_sub_index: u64,
 
     #[pyo3(get, set)]
     pub material_label: String,
@@ -79,7 +77,7 @@ pub struct ModlEntryData {
 impl ModlEntryData {
     #[new]
     #[args(major_version = 1, minor_version = 7)]
-    fn new(_py: Python, mesh_object_name: String, mesh_object_sub_index: i64, material_label: String) -> PyResult<Self> {
+    fn new(_py: Python, mesh_object_name: String, mesh_object_sub_index: u64, material_label: String) -> PyResult<Self> {
         Ok(ModlEntryData {
             mesh_object_name,
             mesh_object_sub_index,
@@ -123,13 +121,11 @@ fn create_modl_entry_data_py(
     })
 }
 
-// TODO: In the future, this should be handled entirely by ssbh_data.
-// It should be possible to do this without an ssbh_lib dependency.
 #[pyfunction]
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
-    match Modl::from_file(path) {
+    match ssbh_data::modl_data::ModlData::from_file(path) {
         Ok(modl) => {
-            let data = create_modl_data_py(py, &modl.into())?;
+            let data = create_modl_data_py(py, &modl)?;
             Ok(data)
         }
         // TODO: How to handle errors or return None?
