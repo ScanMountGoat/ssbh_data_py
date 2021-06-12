@@ -18,6 +18,12 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone)]
 struct SkelData {
     #[pyo3(get, set)]
+    pub major_version: u16,
+
+    #[pyo3(get, set)]
+    pub minor_version: u16,
+
+    #[pyo3(get, set)]
     pub bones: Py<PyList>,
 }
 
@@ -54,9 +60,11 @@ impl BoneData {
 #[pymethods]
 impl SkelData {
     #[new]
-    #[args(major_version = 1, minor_version = 7)]
-    fn new(py: Python) -> PyResult<Self> {
+    #[args(major_version = 1, minor_version = 0)]
+    fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(SkelData {
+            major_version,
+            minor_version,
             bones: PyList::empty(py).into(),
         })
     }
@@ -110,12 +118,16 @@ fn calculate_relative_transform(
 
 fn create_skel_data_py(py: Python, data: &ssbh_data::skel_data::SkelData) -> PyResult<SkelData> {
     Ok(SkelData {
+        major_version: data.major_version,
+        minor_version: data.minor_version,
         bones: create_py_list(py, &data.bones, create_bone_data_py)?,
     })
 }
 
 fn create_skel_data_rs(py: Python, data: &SkelData) -> PyResult<ssbh_data::skel_data::SkelData> {
     Ok(ssbh_data::skel_data::SkelData {
+        major_version: data.major_version,
+        minor_version: data.minor_version,
         bones: create_vec(py, &data.bones, create_bone_data_rs)?,
     })
 }
@@ -156,6 +168,8 @@ mod tests {
         py.run(
             indoc! {r#"
                 s = ssbh_data_py.skel_data.SkelData()
+                assert s.major_version == 1
+                assert s.minor_version == 0
                 assert s.bones == []
             "#},
             None,
