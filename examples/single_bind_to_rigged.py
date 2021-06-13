@@ -33,12 +33,16 @@ mesh = ssbh_data_py.mesh_data.read_mesh(mesh_path)
 skel = ssbh_data_py.skel_data.read_skel(skel_path)
 
 for mesh_object in mesh.objects:
+    # There are no influences, so the object is bound to a parent bone.
     if len(mesh_object.bone_influences) == 0:
-        # There are no influences, so the object is bound to a parent bone.
         # Use the parent bone bone to create vertex weights.
         vertex_count = len(mesh_object.positions[0].data)
         vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(i, 1.0) for i in range(vertex_count)]
         influence = ssbh_data_py.mesh_data.BoneInfluence(mesh_object.parent_bone_name, vertex_weights)
+
+        # Adding an influence means the mesh object is no longer single bound to the parent.
+        # This means that the mesh object will no longer appear at the same location as the parent bone.
+        mesh_object.bone_influences.append(influence)
 
         # Find the bone in the skeleton associated with this mesh object.
         parent_bone = None
@@ -46,10 +50,6 @@ for mesh_object in mesh.objects:
             if bone.name == mesh_object.parent_bone_name:
                 parent_bone = bone
                 break
-
-        # Adding an influence means the mesh object is no longer single bound to the parent.
-        # This means that the mesh object will no longer appear at the same location as the parent bone.
-        mesh_object.bone_influences.append(influence)
 
         if parent_bone is not None:
             transform = np.array(skel.calculate_world_transform(parent_bone))
