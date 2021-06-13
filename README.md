@@ -1,6 +1,7 @@
 # ssbh_data_py
 Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library. ssbh_data_py provides a higher level abstraction over 
-the binary data stored in SSBH files such as a "model.numshb". Currently, the library only supports edits to existing files. Creating meshes from scratch or adding new mesh objects is not currently supported.
+the binary data stored in SSBH files such as a "model.numshb". SSBH files can be created from scratch or modified from existing files entirely in Python. 
+Currently supported formats are mesh, skel, and modl. 
 
 Report bugs and request new features in [issues](https://github.com/ScanMountGoat/ssbh_data_py/issues). Check the requirements before reporting on any installation issues.
 
