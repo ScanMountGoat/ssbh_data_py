@@ -37,10 +37,8 @@ for mesh_object in mesh.objects:
         # There are no influences, so the object is bound to a parent bone.
         # Use the parent bone bone to create vertex weights.
         vertex_count = len(mesh_object.positions[0].data)
-        vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(
-            i, 1.0) for i in range(vertex_count)]
-        influence = ssbh_data_py.mesh_data.BoneInfluence(
-            mesh_object.parent_bone_name, vertex_weights)
+        vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(i, 1.0) for i in range(vertex_count)]
+        influence = ssbh_data_py.mesh_data.BoneInfluence(mesh_object.parent_bone_name, vertex_weights)
 
         # Find the bone in the skeleton associated with this mesh object.
         parent_bone = None
