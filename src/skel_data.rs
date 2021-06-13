@@ -75,6 +75,16 @@ impl SkelData {
         Ok(())
     }
 
+    // TODO: This is really the world transform for the parent of bone.
+    fn calculate_single_bind_transform(&self, py: Python, bone: &BoneData) -> PyResult<Option<Py<PyList>>> {
+        let data = create_skel_data_rs(py, &self)?;
+        let bone_data = create_bone_data_rs(py, &bone)?;
+        match data.calculate_single_bind_transform(&bone_data) {
+            Some(transform) => Ok(Some(create_py_list_from_slice(py, &transform))),
+            None => Ok(None),
+        }
+    }
+
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
         let data = create_skel_data_rs(py, &self)?;
         let bone_data = create_bone_data_rs(py, &bone)?;
@@ -91,7 +101,7 @@ fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
             Ok(data)
         }
         // TODO: How to handle errors or return None?
-        _ => panic!("Failed to read modl."),
+        _ => panic!("Failed to read skel."),
     }
 }
 
