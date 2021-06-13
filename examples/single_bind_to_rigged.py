@@ -1,5 +1,5 @@
 # This script creates a new mesh with all single bound mesh objects converted to use regular vertex weights.
-# Usage: python skeleton_mesh.py input.numshb output.numshb
+# Usage: python single_bind_to_rigged.py input.numshb input.nusktb output.numshb
 
 import sys
 import ssbh_data_py
