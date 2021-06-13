@@ -4,26 +4,6 @@
 import sys
 import ssbh_data_py
 
-# This example requires numpy, which can be installed with pip.
-import numpy as np
-
-# Transform vectors or positions by converting to homogeneous coordinates.
-# TODO: This could be handled by ssbh_data directly in the future.
-def transform_vectors(vectors, transform, w):
-    values = np.array(vectors)
-
-    # The transform matrices are 4x4, so the values need 4 components.
-    values_vec4 = np.zeros((values.shape[0], 4))
-    values_vec4[:, :values.shape[1]] = values[:, :]
-
-    # Set the 4th value to 1.0 or 0.0 for points or vectors.
-    values_vec4[:, 3] = w
-
-    transformed_values = values_vec4 @ transform
-
-    return transformed_values[:, :values.shape[1]].tolist()
-
-
 mesh_path = sys.argv[1]
 skel_path = sys.argv[2]
 output_mesh_path = sys.argv[3]
@@ -52,22 +32,25 @@ for mesh_object in mesh.objects:
                 break
 
         if parent_bone is not None:
-            transform = np.array(skel.calculate_world_transform(parent_bone))
-
             # Manually apply the parent bone's transformation to the vertices.
+            # This simulates the effect of parenting the mesh object to the bone.
+            transform = skel.calculate_world_transform(parent_bone)
+
+            # Transform the vertex positions.
+            # Use the appropriate transform function to take into account translation.
             for position in mesh_object.positions:
-                position.data = transform_vectors(position.data, transform, 1.0)
+                position.data = ssbh_data_py.mesh_data.transform_points(position.data, transform)
 
             # The mesh object may rotate, so transform the vectors as well.
             # This ensures the normals point in the correct direction and normal mapping works as expected.
             for normal in mesh_object.normals:
-                normal.data = transform_vectors(normal.data, transform, 0.0)
+                normal.data = ssbh_data_py.mesh_data.transform_vectors(normal.data, transform)
 
             for tangent in mesh_object.tangents:
-                tangent.data = transform_vectors(tangent.data, transform, 0.0)
+                tangent.data = ssbh_data_py.mesh_data.transform_vectors(tangent.data, transform)
 
             for binormal in mesh_object.binormals:
-                binormal.data = transform_vectors(binormal.data, transform, 0.0)
+                binormal.data = ssbh_data_py.mesh_data.transform_vectors(binormal.data, transform)
 
         # The parent bone no longer needs to be set.
         mesh_object.parent_bone_name = ''

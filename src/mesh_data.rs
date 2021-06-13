@@ -12,6 +12,8 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_class::<VertexWeight>()?;
 
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
 
     module.add_submodule(mesh_data)?;
     Ok(())
@@ -225,14 +227,20 @@ fn create_attribute_data_py(
     py: Python,
     attribute_data: &ssbh_data::mesh_data::AttributeData,
 ) -> PyResult<AttributeData> {
-    let data = match &attribute_data.data {
+    Ok(AttributeData {
+        name: attribute_data.name.clone(),
+        data: vector_data_to_py_list(py, &attribute_data.data)?,
+    })
+}
+
+fn vector_data_to_py_list(
+    py: Python,
+    data: &ssbh_data::mesh_data::VectorData,
+) -> PyResult<Py<PyList>> {
+    Ok(match &data {
         ssbh_data::mesh_data::VectorData::Vector2(v) => create_py_list_from_slice(py, v),
         ssbh_data::mesh_data::VectorData::Vector3(v) => create_py_list_from_slice(py, v),
         ssbh_data::mesh_data::VectorData::Vector4(v) => create_py_list_from_slice(py, v),
-    };
-    Ok(AttributeData {
-        name: attribute_data.name.clone(),
-        data,
     })
 }
 
@@ -261,24 +269,25 @@ fn create_attribute_rs(
     py: Python,
     attribute: &AttributeData,
 ) -> PyResult<ssbh_data::mesh_data::AttributeData> {
+    Ok(ssbh_data::mesh_data::AttributeData {
+        name: attribute.name.clone(),
+        data: create_vector_data_rs(py, &attribute.data)?,
+    })
+}
+
+fn create_vector_data_rs(
+    py: Python,
+    data: &Py<PyList>,
+) -> PyResult<ssbh_data::mesh_data::VectorData> {
     // We don't know the type from Python at this point.
     // Try all the supported types and fail if all conversions fail.
-    if let Ok(v) = attribute.data.extract::<Vec<[f32; 2]>>(py) {
-        Ok(ssbh_data::mesh_data::AttributeData {
-            name: attribute.name.clone(),
-            data: ssbh_data::mesh_data::VectorData::Vector2(v),
-        })
-    } else if let Ok(v) = attribute.data.extract::<Vec<[f32; 3]>>(py) {
-        Ok(ssbh_data::mesh_data::AttributeData {
-            name: attribute.name.clone(),
-            data: ssbh_data::mesh_data::VectorData::Vector3(v),
-        })
+    if let Ok(v) = data.extract::<Vec<[f32; 2]>>(py) {
+        Ok(ssbh_data::mesh_data::VectorData::Vector2(v))
+    } else if let Ok(v) = data.extract::<Vec<[f32; 3]>>(py) {
+        Ok(ssbh_data::mesh_data::VectorData::Vector3(v))
     } else {
-        match attribute.data.extract::<Vec<[f32; 4]>>(py) {
-            Ok(v) => Ok(ssbh_data::mesh_data::AttributeData {
-                name: attribute.name.clone(),
-                data: ssbh_data::mesh_data::VectorData::Vector4(v),
-            }),
+        match data.extract::<Vec<[f32; 4]>>(py) {
+            Ok(v) => Ok(ssbh_data::mesh_data::VectorData::Vector4(v)),
             Err(e) => Err(e),
         }
     }
@@ -318,6 +327,22 @@ fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
         // TODO: How to handle errors or return None?
         _ => panic!("Failed to read mesh."),
     }
+}
+
+#[pyfunction]
+fn transform_points(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
+    let points = create_vector_data_rs(py, &points)?;
+    let transform = transform.extract::<[[f32; 4]; 4]>()?;
+    let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
+    Ok(vector_data_to_py_list(py, &transformed_points)?)
+}
+
+#[pyfunction]
+fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
+    let points = create_vector_data_rs(py, &points)?;
+    let transform = transform.extract::<[[f32; 4]; 4]>()?;
+    let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
+    Ok(vector_data_to_py_list(py, &transformed_points)?)
 }
 
 #[cfg(test)]
