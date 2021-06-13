@@ -36,7 +36,7 @@ for mesh_object in mesh.objects:
     if len(mesh_object.bone_influences) == 0:
         # There are no influences, so the object is bound to a parent bone.
         # Use the parent bone bone to create vertex weights.
-        vertex_count = max(mesh_object.vertex_indices)
+        vertex_count = len(mesh_object.positions[0].data)
         vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(
             i, 1.0) for i in range(vertex_count)]
         influence = ssbh_data_py.mesh_data.BoneInfluence(
@@ -57,10 +57,19 @@ for mesh_object in mesh.objects:
             transform = np.array(skel.calculate_world_transform(parent_bone))
 
             # Manually apply the parent bone's transformation to the vertices.
-            mesh_object.positions[0].data = transform_vectors(mesh_object.positions[0].data, transform, 1.0)
+            for position in mesh_object.positions:
+                position.data = transform_vectors(position.data, transform, 1.0)
 
-            # The mesh object may rotate, so transform the normals as well.
-            mesh_object.normals[0].data = transform_vectors(mesh_object.normals[0].data, transform, 0.0)
+            # The mesh object may rotate, so transform the vectors as well.
+            # This ensures the normals point in the correct direction and normal mapping works as expected.
+            for normal in mesh_object.normals:
+                normal.data = transform_vectors(normal.data, transform, 0.0)
+
+            for tangent in mesh_object.tangents:
+                tangent.data = transform_vectors(tangent.data, transform, 0.0)
+
+            for binormal in mesh_object.binormals:
+                binormal.data = transform_vectors(binormal.data, transform, 0.0)
 
         # The parent bone no longer needs to be set.
         mesh_object.parent_bone_name = ''
