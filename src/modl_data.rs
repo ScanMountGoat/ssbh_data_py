@@ -162,65 +162,41 @@ fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
 
 #[cfg(test)]
 mod tests {
-    use pyo3::prelude::*;
-    use pyo3::types::IntoPyDict;
-
     use indoc::indoc;
-
-    use crate::ssbh_data_py;
+    use crate::run_python_code;
 
     #[test]
     fn create_modl() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            m = ssbh_data_py.modl_data.ModlData(3, 4)
+            assert m.major_version == 3
+            assert m.minor_version == 4
+            assert m.model_name == ""
+            assert m.skeleton_file_name == ""
+            assert m.material_file_names == []
+            assert m.animation_file_name == None
+            assert m.mesh_file_name == ""
+            assert m.entries == []
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                m = ssbh_data_py.modl_data.ModlData(3, 4)
-                assert m.major_version == 3
-                assert m.minor_version == 4
-                assert m.model_name == ""
-                assert m.skeleton_file_name == ""
-                assert m.material_file_names == []
-                assert m.animation_file_name == None
-                assert m.mesh_file_name == ""
-                assert m.entries == []
+            m = ssbh_data_py.modl_data.ModlData(3)
+            assert m.major_version == 3
+            assert m.minor_version == 7
 
-                m = ssbh_data_py.modl_data.ModlData(3)
-                assert m.major_version == 3
-                assert m.minor_version == 7
-
-                m = ssbh_data_py.modl_data.ModlData()
-                assert m.major_version == 1
-                assert m.minor_version == 7
-            "#},
-            None,
-            Some(&ctx),
-        )
+            m = ssbh_data_py.modl_data.ModlData()
+            assert m.major_version == 1
+            assert m.minor_version == 7
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_modl_entry() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                m = ssbh_data_py.modl_data.ModlEntryData("a", 7, "b")
-                assert m.mesh_object_name == "a"
-                assert m.mesh_object_sub_index == 7
-                assert m.material_label == "b"
-            "#},
-            None,
-            Some(&ctx),
-        )
+        run_python_code(indoc! {r#"
+            m = ssbh_data_py.modl_data.ModlEntryData("a", 7, "b")
+            assert m.mesh_object_name == "a"
+            assert m.mesh_object_sub_index == 7
+            assert m.material_label == "b"
+        "#})
         .unwrap();
     }
 }

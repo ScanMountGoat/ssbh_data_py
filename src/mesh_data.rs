@@ -347,154 +347,99 @@ fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyRe
 
 #[cfg(test)]
 mod tests {
-    use pyo3::prelude::*;
-    use pyo3::types::IntoPyDict;
-
     use indoc::indoc;
-
-    use crate::ssbh_data_py;
+    use crate::run_python_code;
 
     #[test]
     fn create_mesh() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            m = ssbh_data_py.mesh_data.MeshData(3, 4)
+            assert m.major_version == 3
+            assert m.minor_version == 4
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                m = ssbh_data_py.mesh_data.MeshData(3, 4)
-                assert m.major_version == 3
-                assert m.minor_version == 4
+            m = ssbh_data_py.mesh_data.MeshData(3)
+            assert m.major_version == 3
+            assert m.minor_version == 10
 
-                m = ssbh_data_py.mesh_data.MeshData(3)
-                assert m.major_version == 3
-                assert m.minor_version == 10
-
-                m = ssbh_data_py.mesh_data.MeshData()
-                assert m.major_version == 1
-                assert m.minor_version == 10
-            "#},
-            None,
-            Some(&ctx),
-        )
+            m = ssbh_data_py.mesh_data.MeshData()
+            assert m.major_version == 1
+            assert m.minor_version == 10
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_mesh_object() {
-        // TODO: Wrap initialization in a function?
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
-                assert m.name == "abc"
-                assert m.sub_index == 1
-                assert m.parent_bone_name == ""
-                assert m.vertex_indices == []
-                assert m.positions == []
-                assert m.normals == []
-                assert m.binormals == []
-                assert m.tangents == []
-                assert m.texture_coordinates == []
-                assert m.color_sets == []
-                assert m.bone_influences == []
-            "#},
-            None,
-            Some(&ctx),
-        )
+        run_python_code(indoc! {r#"
+            m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
+            assert m.name == "abc"
+            assert m.sub_index == 1
+            assert m.parent_bone_name == ""
+            assert m.vertex_indices == []
+            assert m.positions == []
+            assert m.normals == []
+            assert m.binormals == []
+            assert m.tangents == []
+            assert m.texture_coordinates == []
+            assert m.color_sets == []
+            assert m.bone_influences == []
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_modify_attribute_data() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            a = ssbh_data_py.mesh_data.AttributeData("abc")
+            assert a.name == "abc"
+            assert a.data == []
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                a = ssbh_data_py.mesh_data.AttributeData("abc")
-                assert a.name == "abc"
-                assert a.data == []
+            a.name = "def"
+            a.data = [[1.0, 2.0]]
+            assert a.name == "def"
+            assert a.data == [[1.0, 2.0]]
 
-                a.name = "def"
-                a.data = [[1.0, 2.0]]
-                assert a.name == "def"
-                assert a.data == [[1.0, 2.0]]
-
-                # Test mutability for nested types.
-                a.data[0][1] = 0.3
-                assert a.data == [[1.0, 0.3]]
-                a.data[0] = [2.5, 3.5]
-                assert a.data == [[2.5, 3.5]]
-            "#},
-            None,
-            Some(&ctx),
-        )
+            # Test mutability for nested types.
+            a.data[0][1] = 0.3
+            assert a.data == [[1.0, 0.3]]
+            a.data[0] = [2.5, 3.5]
+            assert a.data == [[2.5, 3.5]]
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_modify_vertex_weight() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            v = ssbh_data_py.mesh_data.VertexWeight(1, 0.5)
+            assert v.vertex_index == 1
+            assert v.vertex_weight == 0.5
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                v = ssbh_data_py.mesh_data.VertexWeight(1, 0.5)
-                assert v.vertex_index == 1
-                assert v.vertex_weight == 0.5
-
-                v.vertex_index = 0
-                v.vertex_weight = 0.0
-                assert v.vertex_index == 0
-                assert v.vertex_weight == 0.0
-            "#},
-            None,
-            Some(&ctx),
-        )
+            v.vertex_index = 0
+            v.vertex_weight = 0.0
+            assert v.vertex_index == 0
+            assert v.vertex_weight == 0.0
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_modify_bone_influence() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            b = ssbh_data_py.mesh_data.BoneInfluence("abc", [])
+            assert b.bone_name == "abc"
+            assert b.vertex_weights == []
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                b = ssbh_data_py.mesh_data.BoneInfluence("abc", [])
-                assert b.bone_name == "abc"
-                assert b.vertex_weights == []
+            b.bone_name = "def"
+            b.vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(1, 0.5)]
+            assert b.bone_name == "def"
+            assert len(b.vertex_weights) == 1
+            assert b.vertex_weights[0].vertex_weight == 0.5
 
-                b.bone_name = "def"
-                b.vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(1, 0.5)]
-                assert b.bone_name == "def"
-                assert len(b.vertex_weights) == 1
-                assert b.vertex_weights[0].vertex_weight == 0.5
-
-                # Test mutability for nested types.
-                b.vertex_weights[0].vertex_index = 2
-                assert b.vertex_weights[0].vertex_index == 2
-            "#},
-            None,
-            Some(&ctx),
-        )
+            # Test mutability for nested types.
+            b.vertex_weights[0].vertex_index = 2
+            assert b.vertex_weights[0].vertex_index == 2
+        "#})
         .unwrap();
     }
 }

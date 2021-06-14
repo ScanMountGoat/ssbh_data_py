@@ -150,120 +150,75 @@ fn create_bone_data_py(py: Python, data: &ssbh_data::skel_data::BoneData) -> PyR
 
 #[cfg(test)]
 mod tests {
-    use pyo3::prelude::*;
-    use pyo3::types::IntoPyDict;
-
+    use crate::run_python_code;
     use indoc::indoc;
-
-    use crate::ssbh_data_py;
 
     #[test]
     fn create_skel() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                s = ssbh_data_py.skel_data.SkelData()
-                assert s.major_version == 1
-                assert s.minor_version == 0
-                assert s.bones == []
-            "#},
-            None,
-            Some(&ctx),
-        )
+        run_python_code(indoc! {r#"
+            s = ssbh_data_py.skel_data.SkelData()
+            assert s.major_version == 1
+            assert s.minor_version == 0
+            assert s.bones == []
+        "#})
         .unwrap();
     }
 
     #[test]
     fn create_bone_data() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
+        run_python_code(indoc! {r#"
+            b = ssbh_data_py.skel_data.BoneData("abc", [[0,0,0,0]]*4, 5)
+            assert b.name == "abc"
+            assert b.transform == [[0,0,0,0]]*4
+            assert b.parent_index == 5
 
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                b = ssbh_data_py.skel_data.BoneData("abc", [[0,0,0,0]]*4, 5)
-                assert b.name == "abc"
-                assert b.transform == [[0,0,0,0]]*4
-                assert b.parent_index == 5
-
-                b = ssbh_data_py.skel_data.BoneData("abc", [[1,1,1,1]]*4, None)
-                assert b.name == "abc"
-                assert b.transform == [[1,1,1,1]]*4
-                assert b.parent_index == None
-                b.transform[1][2] = 3
-                assert b.transform[1] == [1,1,3,1]
-            "#},
-            None,
-            Some(&ctx),
-        )
+            b = ssbh_data_py.skel_data.BoneData("abc", [[1,1,1,1]]*4, None)
+            assert b.name == "abc"
+            assert b.transform == [[1,1,1,1]]*4
+            assert b.parent_index == None
+            b.transform[1][2] = 3
+            assert b.transform[1] == [1,1,3,1]
+        "#})
         .unwrap();
     }
 
     #[test]
     fn calculate_relative_transform_with_parent() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                world_transform = [
-                    [2, 0, 0, 0],
-                    [0, 4, 0, 0],
-                    [0, 0, 8, 0],
-                    [0, 0, 0, 1],
-                ]
-                parent_world_transform = [
-                    [1, 0, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 0, 1, 0],
-                    [1, 2, 3, 1],
-                ]
-                relative_transform = [
-                    [2.0, 0, 0, 0],
-                    [0, 4, 0, 0],
-                    [0, 0, 8, 0],
-                    [-2, -8, -24, 1],
-                ]
-                assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, parent_world_transform) == relative_transform
-            "#},
-            None,
-            Some(&ctx),
-        )
+        run_python_code(indoc! {r#"
+            world_transform = [
+                [2, 0, 0, 0],
+                [0, 4, 0, 0],
+                [0, 0, 8, 0],
+                [0, 0, 0, 1],
+            ]
+            parent_world_transform = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [1, 2, 3, 1],
+            ]
+            relative_transform = [
+                [2.0, 0, 0, 0],
+                [0, 4, 0, 0],
+                [0, 0, 8, 0],
+                [-2, -8, -24, 1],
+            ]
+            assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, parent_world_transform) == relative_transform
+        "#})
         .unwrap();
     }
 
-    
     #[test]
     fn calculate_relative_transform_no_parent() {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-        py.run(
-            indoc! {r#"
-                world_transform = [
-                    [0, 1, 2, 3],
-                    [4, 5, 6, 7],
-                    [8, 9, 10, 11],
-                    [12, 13, 14, 15],
-                ]
-                assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == world_transform
-            "#},
-            None,
-            Some(&ctx),
-        )
+        run_python_code(indoc! {r#"
+            world_transform = [
+                [0, 1, 2, 3],
+                [4, 5, 6, 7],
+                [8, 9, 10, 11],
+                [12, 13, 14, 15],
+            ]
+            assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == world_transform
+        "#})
         .unwrap();
     }
 }

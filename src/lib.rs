@@ -53,3 +53,16 @@ fn create_vec<T, P: PyClass + Clone, F: Fn(Python, &P) -> PyResult<T>>(
 
     rust_elements
 }
+
+#[cfg(test)]
+fn run_python_code(code: &str) -> PyResult<()> {
+    use pyo3::types::IntoPyDict;
+
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+    let module = PyModule::new(py, "ssbh_data_py").unwrap();
+    ssbh_data_py(py, &module).unwrap();
+    let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+    py.run(code, None, Some(&ctx))
+}
