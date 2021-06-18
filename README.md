@@ -30,6 +30,25 @@ modl = ssbh_data_py.modl_data.ModlData()
 skel = ssbh_data_py.skel_data.SkelData()
 ```
 
+ssbh_data_py uses standard Python types whenever possible. Conversion to the appropriate binary format is handled automatically on saving. For example, the 4x4 transformation matrix for bone data is simply a list of lists of floats. 
+```python
+for bone in skel.bones:
+    bone.transform[2][1] = 0.5
+```
+Standard Python operations will work, but lists should always have the same type for each element.  
+```python
+for bone in skel.bones:
+    # Create a 4x4 matrix of all 0's.
+    bone.transform = [[0.0] * 4] * 4
+
+    # Python allows this, but this will cause an exception when saving.
+    bone.transform = [0, 'abc', []]
+
+# ssbh_data_py found an unexpected type, so this line will fail.
+skel.save("skel.nustkb")
+```
+
+
 After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms.
 ```python
 mesh.save("model_new.numshb")
