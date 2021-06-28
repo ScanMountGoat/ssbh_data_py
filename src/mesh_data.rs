@@ -1,5 +1,6 @@
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
+use ssbh_data::mesh_data::VectorData as VectorDataRs;
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
 
@@ -233,14 +234,11 @@ fn create_attribute_data_py(
     })
 }
 
-fn vector_data_to_py_list(
-    py: Python,
-    data: &ssbh_data::mesh_data::VectorData,
-) -> PyResult<Py<PyList>> {
+fn vector_data_to_py_list(py: Python, data: &VectorDataRs) -> PyResult<Py<PyList>> {
     Ok(match &data {
-        ssbh_data::mesh_data::VectorData::Vector2(v) => create_py_list_from_slice(py, v),
-        ssbh_data::mesh_data::VectorData::Vector3(v) => create_py_list_from_slice(py, v),
-        ssbh_data::mesh_data::VectorData::Vector4(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v),
     })
 }
 
@@ -275,22 +273,17 @@ fn create_attribute_rs(
     })
 }
 
-fn create_vector_data_rs(
-    py: Python,
-    data: &Py<PyList>,
-) -> PyResult<ssbh_data::mesh_data::VectorData> {
+fn create_vector_data_rs(py: Python, data: &Py<PyList>) -> PyResult<VectorDataRs> {
     // We don't know the type from Python at this point.
     // Try all the supported types and fail if all conversions fail.
-    if let Ok(v) = data.extract::<Vec<[f32; 2]>>(py) {
-        Ok(ssbh_data::mesh_data::VectorData::Vector2(v))
-    } else if let Ok(v) = data.extract::<Vec<[f32; 3]>>(py) {
-        Ok(ssbh_data::mesh_data::VectorData::Vector3(v))
-    } else {
-        match data.extract::<Vec<[f32; 4]>>(py) {
-            Ok(v) => Ok(ssbh_data::mesh_data::VectorData::Vector4(v)),
-            Err(e) => Err(e),
-        }
-    }
+    data.extract::<Vec<[f32; 2]>>(py)
+        .map(|v| VectorDataRs::Vector2(v))
+        .or(data
+            .extract::<Vec<[f32; 3]>>(py)
+            .map(|v| VectorDataRs::Vector3(v)))
+        .or(data
+            .extract::<Vec<[f32; 4]>>(py)
+            .map(|v| VectorDataRs::Vector4(v)))
 }
 
 fn create_bone_influence_rs(
@@ -347,8 +340,8 @@ fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyRe
 
 #[cfg(test)]
 mod tests {
-    use indoc::indoc;
     use crate::run_python_code;
+    use indoc::indoc;
 
     #[test]
     fn create_mesh() {
