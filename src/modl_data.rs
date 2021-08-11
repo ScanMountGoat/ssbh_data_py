@@ -59,7 +59,7 @@ impl ModlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = create_modl_data_rs(py, &self)?;
+        let data = create_modl_data_rs(py, self)?;
         data.write_to_file(path)?;
         Ok(())
     }
@@ -119,7 +119,7 @@ fn create_modl_data_rs(py: Python, data: &ModlData) -> PyResult<ssbh_data::modl_
         minor_version: data.minor_version,
         model_name: data.model_name.clone(),
         skeleton_file_name: data.skeleton_file_name.clone(),
-        material_file_names: data.material_file_names.extract::<Vec<String>>(py)?.into(),
+        material_file_names: data.material_file_names.extract::<Vec<String>>(py)?,
         animation_file_name: data.animation_file_name.clone(),
         mesh_file_name: data.mesh_file_name.clone(),
         entries: create_vec(py, &data.entries, create_modl_entry_data_rs)?,
@@ -162,8 +162,8 @@ fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
 
 #[cfg(test)]
 mod tests {
-    use indoc::indoc;
     use crate::run_python_code;
+    use indoc::indoc;
 
     #[test]
     fn create_modl() {

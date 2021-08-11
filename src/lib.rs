@@ -49,7 +49,7 @@ fn create_vec<T, P: PyClass + Clone, F: Fn(Python, &P) -> PyResult<T>>(
         .collect();
 
     let rust_elements: Result<Vec<T>, _> =
-        python_elements?.iter().map(|i| create_t(py, &i)).collect();
+        python_elements?.iter().map(|i| create_t(py, i)).collect();
 
     rust_elements
 }
@@ -62,9 +62,9 @@ fn run_python_code(code: &str) -> PyResult<()> {
     let py = gil.python();
 
     let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, &module).unwrap();
+    ssbh_data_py(py, module).unwrap();
     let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-    py.run(code, None, Some(&ctx))
+    py.run(code, None, Some(ctx))
 }
 
 #[cfg(test)]
@@ -75,9 +75,9 @@ fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     let py = gil.python();
 
     let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, &module).unwrap();
+    ssbh_data_py(py, module).unwrap();
     let ctx = [("ssbh_data_py", module)].into_py_dict(py);
 
-    let result = py.eval(code, None, Some(&ctx)).unwrap();
+    let result = py.eval(code, None, Some(ctx)).unwrap();
     f(py, result);
 }

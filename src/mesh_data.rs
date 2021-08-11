@@ -277,13 +277,9 @@ fn create_vector_data_rs(data: &PyList) -> PyResult<VectorDataRs> {
     // We don't know the type from Python at this point.
     // Try all the supported types and fail if all conversions fail.
     data.extract::<Vec<[f32; 2]>>()
-        .map(|v| VectorDataRs::Vector2(v))
-        .or(data
-            .extract::<Vec<[f32; 3]>>()
-            .map(|v| VectorDataRs::Vector3(v)))
-        .or(data
-            .extract::<Vec<[f32; 4]>>()
-            .map(|v| VectorDataRs::Vector4(v)))
+        .map(VectorDataRs::Vector2)
+        .or(data.extract::<Vec<[f32; 3]>>().map(VectorDataRs::Vector3))
+        .or(data.extract::<Vec<[f32; 4]>>().map(VectorDataRs::Vector4))
 }
 
 fn create_bone_influence_rs(
@@ -327,7 +323,7 @@ fn transform_points(py: Python, points: Py<PyList>, transform: &PyList) -> PyRes
     let points = create_vector_data_rs(points.as_ref(py))?;
     let transform = transform.extract::<[[f32; 4]; 4]>()?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
-    Ok(vector_data_to_py_list(py, &transformed_points)?)
+    vector_data_to_py_list(py, &transformed_points)
 }
 
 #[pyfunction]
@@ -335,7 +331,7 @@ fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyRe
     let points = create_vector_data_rs(points.as_ref(py))?;
     let transform = transform.extract::<[[f32; 4]; 4]>()?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
-    Ok(vector_data_to_py_list(py, &transformed_points)?)
+    vector_data_to_py_list(py, &transformed_points)
 }
 
 #[cfg(test)]
@@ -441,7 +437,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn vector2_from_pylist_invalid_type() {
-        eval_python_code("[[0, 1], [2, 'a']]", |py, x| {
+        eval_python_code("[[0, 1], [2, 'a']]", |_, x| {
             let data: &PyList = x.downcast().unwrap();
             create_vector_data_rs(data).unwrap();
         });
@@ -450,7 +446,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn vector2_from_pylist_invalid_component_count() {
-        eval_python_code("[[0.0, 1.0], [2.0]]", |py, x| {
+        eval_python_code("[[0.0, 1.0], [2.0]]", |_, x| {
             let data: &PyList = x.downcast().unwrap();
             create_vector_data_rs(data).unwrap();
         });

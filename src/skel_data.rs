@@ -50,7 +50,7 @@ impl BoneData {
         parent_index: Option<usize>,
     ) -> PyResult<Self> {
         Ok(BoneData {
-            name: name.clone(),
+            name,
             transform: create_py_list_from_slice(py, &transform),
             parent_index,
         })
@@ -70,14 +70,14 @@ impl SkelData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = create_skel_data_rs(py, &self)?;
+        let data = create_skel_data_rs(py, self)?;
         data.write_to_file(path)?;
         Ok(())
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
-        let data = create_skel_data_rs(py, &self)?;
-        let bone_data = create_bone_data_rs(py, &bone)?;
+        let data = create_skel_data_rs(py, self)?;
+        let bone_data = create_bone_data_rs(py, bone)?;
         let transform = data.calculate_world_transform(&bone_data);
         Ok(create_py_list_from_slice(py, &transform))
     }
