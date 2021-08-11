@@ -66,3 +66,18 @@ fn run_python_code(code: &str) -> PyResult<()> {
     let ctx = [("ssbh_data_py", module)].into_py_dict(py);
     py.run(code, None, Some(&ctx))
 }
+
+#[cfg(test)]
+fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
+    use pyo3::types::IntoPyDict;
+
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+    let module = PyModule::new(py, "ssbh_data_py").unwrap();
+    ssbh_data_py(py, &module).unwrap();
+    let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+
+    let result = py.eval(code, None, Some(&ctx)).unwrap();
+    f(py, result);
+}

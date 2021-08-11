@@ -269,20 +269,20 @@ fn create_attribute_rs(
 ) -> PyResult<ssbh_data::mesh_data::AttributeData> {
     Ok(ssbh_data::mesh_data::AttributeData {
         name: attribute.name.clone(),
-        data: create_vector_data_rs(py, &attribute.data)?,
+        data: create_vector_data_rs(attribute.data.as_ref(py))?,
     })
 }
 
-fn create_vector_data_rs(py: Python, data: &Py<PyList>) -> PyResult<VectorDataRs> {
+fn create_vector_data_rs(data: &PyList) -> PyResult<VectorDataRs> {
     // We don't know the type from Python at this point.
     // Try all the supported types and fail if all conversions fail.
-    data.extract::<Vec<[f32; 2]>>(py)
+    data.extract::<Vec<[f32; 2]>>()
         .map(|v| VectorDataRs::Vector2(v))
         .or(data
-            .extract::<Vec<[f32; 3]>>(py)
+            .extract::<Vec<[f32; 3]>>()
             .map(|v| VectorDataRs::Vector3(v)))
         .or(data
-            .extract::<Vec<[f32; 4]>>(py)
+            .extract::<Vec<[f32; 4]>>()
             .map(|v| VectorDataRs::Vector4(v)))
 }
 
@@ -324,7 +324,7 @@ fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
 
 #[pyfunction]
 fn transform_points(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
-    let points = create_vector_data_rs(py, &points)?;
+    let points = create_vector_data_rs(points.as_ref(py))?;
     let transform = transform.extract::<[[f32; 4]; 4]>()?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
     Ok(vector_data_to_py_list(py, &transformed_points)?)
@@ -332,7 +332,7 @@ fn transform_points(py: Python, points: Py<PyList>, transform: &PyList) -> PyRes
 
 #[pyfunction]
 fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
-    let points = create_vector_data_rs(py, &points)?;
+    let points = create_vector_data_rs(points.as_ref(py))?;
     let transform = transform.extract::<[[f32; 4]; 4]>()?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
     Ok(vector_data_to_py_list(py, &transformed_points)?)
@@ -340,8 +340,10 @@ fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyRe
 
 #[cfg(test)]
 mod tests {
-    use crate::run_python_code;
+    use crate::{eval_python_code, mesh_data::create_vector_data_rs, run_python_code};
     use indoc::indoc;
+    use pyo3::types::PyList;
+    use ssbh_data::mesh_data::VectorData;
 
     #[test]
     fn create_mesh() {
@@ -434,5 +436,65 @@ mod tests {
             assert b.vertex_weights[0].vertex_index == 2
         "#})
         .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn vector2_from_pylist_invalid_type() {
+        eval_python_code("[[0, 1], [2, 'a']]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            create_vector_data_rs(data).unwrap();
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn vector2_from_pylist_invalid_component_count() {
+        eval_python_code("[[0.0, 1.0], [2.0]]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            create_vector_data_rs(data).unwrap();
+        });
+    }
+
+    #[test]
+    fn vector2_from_pylist_ints() {
+        eval_python_code("[[0, 1], [2, 3]]", |_, x| {
+            let data: &PyList = x.downcast().unwrap();
+            let value = create_vector_data_rs(data).unwrap();
+            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
+        });
+    }
+
+    #[test]
+    fn vector2_from_pylist() {
+        eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |_, x| {
+            let data: &PyList = x.downcast().unwrap();
+            let value = create_vector_data_rs(data).unwrap();
+            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
+        });
+    }
+
+    #[test]
+    fn vector3_from_pylist() {
+        eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |_, x| {
+            let data: &PyList = x.downcast().unwrap();
+            let value = create_vector_data_rs(data).unwrap();
+            assert_eq!(
+                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
+                value
+            );
+        });
+    }
+
+    #[test]
+    fn vector4_from_pylist() {
+        eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |_, x| {
+            let data: &PyList = x.downcast().unwrap();
+            let value = create_vector_data_rs(data).unwrap();
+            assert_eq!(
+                VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
+                value
+            );
+        });
     }
 }
