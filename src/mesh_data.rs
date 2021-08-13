@@ -35,6 +35,16 @@ struct MeshData {
 
 #[pymethods]
 impl MeshData {
+    #[new]
+    #[args(major_version = 1, minor_version = 10)]
+    fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
+        Ok(MeshData {
+            major_version,
+            minor_version,
+            objects: PyList::empty(py).into(),
+        })
+    }
+
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         let objects: Vec<_> = create_vec(py, &self.objects, create_mesh_object_rs)?;
         let mesh_data = ssbh_data::mesh_data::MeshData {
@@ -46,19 +56,6 @@ impl MeshData {
         // TODO: Convert these errors to python exceptions instead of relying on panic handler?
         mesh_data.write_to_file(path).unwrap();
         Ok(())
-    }
-}
-
-#[pymethods]
-impl MeshData {
-    #[new]
-    #[args(major_version = 1, minor_version = 10)]
-    fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
-        Ok(MeshData {
-            major_version,
-            minor_version,
-            objects: PyList::empty(py).into(),
-        })
     }
 }
 

@@ -5,12 +5,14 @@ use pyo3::{prelude::*, types::PyList};
 mod mesh_data;
 mod modl_data;
 mod skel_data;
+mod anim_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::mesh_data::mesh_data(py, module)?;
     crate::modl_data::modl_data(py, module)?;
     crate::skel_data::skel_data(py, module)?;
+    crate::anim_data::anim_data(py, module)?;
     Ok(())
 }
 
