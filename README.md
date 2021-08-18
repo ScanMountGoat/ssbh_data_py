@@ -10,7 +10,7 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Modl (`.numdlb`, `.nusrcmdlb`) | 1.7 | :heavy_check_mark: | :heavy_check_mark: |
 | Mesh (`.numshb`) | 1.10 | :heavy_check_mark: | :heavy_check_mark: |
 | Skel (`.nusktb`) | 1.0 | :heavy_check_mark: | :heavy_check_mark: |
-| Anim (`.nuanmb`) | 2.0 | :heavy_check_mark: | :x: |
+| Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :x: |
 
 ## Installing
 Installing: `pip install ssbh_data_py`  
@@ -71,3 +71,6 @@ The Python API matches the underlying Rust types and functions as closely as pos
 The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin). Aftering succesfully installing Maturin, running `maturin develop` or `maturin develop --release` will build and install the module into the current virtual environment. 
 
 `cargo build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Depending on the platform, it may be necessary to rename the file. See the [PyO3 builds page](https://pyo3.rs/v0.14.2/building_and_distribution.html#manual-builds) for details.
+
+If the import fails, check that the `.pyd` or `.so` file exists in the appropriate location. Importing may also fail if `ssbh_data_py` was built from source for an operating system or 
+Python interpreter version that isn't compatible with the current Python environment.
