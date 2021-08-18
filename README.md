@@ -4,6 +4,14 @@ the binary data stored in SSBH files such as a "model.numshb". SSBH files can be
 
 Report bugs and request new features in [issues](https://github.com/ScanMountGoat/ssbh_data_py/issues). Check the requirements before reporting on any installation issues.
 
+## Supported Formats
+| Format | Supported Versions (major.minor) | Read | Save |
+| --- | --- | --- | --- |
+| Modl (`.numdlb`, `.nusrcmdlb`) | 1.7 | :heavy_check_mark: | :heavy_check_mark: |
+| Mesh (`.numshb`) | 1.10 | :heavy_check_mark: | :heavy_check_mark: |
+| Skel (`.nusktb`) | 1.0 | :heavy_check_mark: | :heavy_check_mark: |
+| Anim (`.nuanmb`) | 2.0 | :heavy_check_mark: | :x: |
+
 ## Installing
 Installing: `pip install ssbh_data_py`  
 Updating: `pip install ssbh_data_py --upgrade`.  
