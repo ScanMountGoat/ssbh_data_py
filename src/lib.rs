@@ -2,10 +2,10 @@ use pyo3::type_object::PyBorrowFlagLayout;
 use pyo3::PyClass;
 use pyo3::{prelude::*, types::PyList};
 
+mod anim_data;
 mod mesh_data;
 mod modl_data;
 mod skel_data;
-mod anim_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {

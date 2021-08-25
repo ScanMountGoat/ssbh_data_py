@@ -275,8 +275,8 @@ fn create_vector_data_rs(data: &PyList) -> PyResult<VectorDataRs> {
     // Try all the supported types and fail if all conversions fail.
     data.extract::<Vec<[f32; 2]>>()
         .map(VectorDataRs::Vector2)
-        .or(data.extract::<Vec<[f32; 3]>>().map(VectorDataRs::Vector3))
-        .or(data.extract::<Vec<[f32; 4]>>().map(VectorDataRs::Vector4))
+        .or_else(|_| data.extract::<Vec<[f32; 3]>>().map(VectorDataRs::Vector3))
+        .or_else(|_| data.extract::<Vec<[f32; 4]>>().map(VectorDataRs::Vector4))
 }
 
 fn create_bone_influence_rs(
