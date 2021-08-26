@@ -6,8 +6,8 @@ for b in skel.bones:
     # Each bone is identified by it's name.
     print(f'Bone: {b.name}')
 
-    # The bone's transform is a matrix in row-major order representing 
-    # the transform of the bone relative to its parent.
+    # Matrices are in row-major order.
+    # The transform is relative to the parent bone's world transform.
     print(f'Transform: {b.transform}')
 
     # The world transform is the global transform of the bone.
@@ -16,7 +16,7 @@ for b in skel.bones:
     print(f'World Transform: {skel.calculate_world_transform(b)}')
 
     # Each bone may optionally have a parent.
-    # Root bones like 'TransN' have no parent.
+    # Root bones like 'Trans' have no parent.
     if b.parent_index is not None:
         print(f'Parent: {skel.bones[b.parent_index].name}')
     else:
