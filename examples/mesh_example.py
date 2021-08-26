@@ -1,4 +1,4 @@
-import ssbh_data_py.mesh_data
+import ssbh_data_py
 
 # Open the mesh from a .numshb file.
 mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")

@@ -183,6 +183,32 @@ mod tests {
     }
 
     #[test]
+    fn calculate_world_transform_no_parent() {
+        run_python_code(indoc! {r#"
+            s = ssbh_data_py.skel_data.SkelData()
+            b0 = ssbh_data_py.skel_data.BoneData("b0", [[0,0,0,0]]*4, None)
+            b1 = ssbh_data_py.skel_data.BoneData("b1", [[1,1,1,1]]*4, None)
+            s.bones = [b0, b1]
+
+            assert s.calculate_world_transform(b1) == b1.transform
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_world_transform_with_parent() {
+        run_python_code(indoc! {r#"
+            s = ssbh_data_py.skel_data.SkelData()
+            b0 = ssbh_data_py.skel_data.BoneData("b0", [[1,1,1,1]]*4, None)
+            b1 = ssbh_data_py.skel_data.BoneData("b0", [[2,2,2,2]]*4, 0)
+            s.bones = [b0, b1]
+
+            assert s.calculate_world_transform(b1) == [[8,8,8,8]]*4
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn calculate_relative_transform_with_parent() {
         run_python_code(indoc! {r#"
             world_transform = [
