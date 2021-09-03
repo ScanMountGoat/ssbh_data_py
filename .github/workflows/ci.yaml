@@ -1,8 +1,7 @@
 # Build script taken from https://github.com/BenHall-7/ssbh_data_py
 # credit for much of this build system goes to hyperjson https://github.com/mre/hyperjson/
-on: 
 name: Package and Publish
-  - workflow_dispatch
+on: workflow_dispatch
 
 jobs:
   build:
