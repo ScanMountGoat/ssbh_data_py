@@ -53,10 +53,15 @@ for o in mesh.objects:
         color_set.data = [[0.5, 0.5, 0.5, a] for [r, g, b, a] in color_set.data]
 
     # Add a new color set attribute with the appropriate number of data elements.
-    # This works for positions, normals, etc. 
+    # The process is similar for for adding positions, normals, etc. 
     new_color_set = ssbh_data_py.mesh_data.AttributeData('colorSet3')
     new_color_set.data = [[0.5, 0.5, 0.5, 0.5]] * len(o.positions[0].data)
     o.color_sets.append(new_color_set)
+
+    # The vertex data is indexed, so use the vertex indices to get the actual rendered vertices.
+    # The same vertex index can be used for all the attributes.
+    for index in o.vertex_indices:
+        print(o.positions[0].data[index], o.normals[0].data[index])
 
     for influence in o.bone_influences:
         # Vertex skinning information is stored separately for each bone.
