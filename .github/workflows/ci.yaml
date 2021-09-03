@@ -1,8 +1,10 @@
 # Build script taken from https://github.com/BenHall-7/ssbh_data_py
 name: Package and Publish
 on: # credit for much of this build system goes to hyperjson https://github.com/mre/hyperjson/
+  workflow_dispatch
   release:
     types: [created]
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
