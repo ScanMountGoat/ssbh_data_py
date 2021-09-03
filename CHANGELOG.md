@@ -1,3 +1,7 @@
+### 0.3.1
+Changes:
+- Added read only anim support in `ssbh_data_py.anim_data`. Exporting is planned for a future release.  
+
 ### 0.3.0
 Breaking Changes:
 - Renamed `ssbh_data_py.mesh_data.Mesh` to `ssbh_data_py.mesh_data.MeshData` 
