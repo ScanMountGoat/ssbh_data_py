@@ -1,4 +1,4 @@
-### 0.3.1
+### 0.3.2
 Changes:
 - Added read only anim support in `ssbh_data_py.anim_data`. Exporting is planned for a future release.  
 
