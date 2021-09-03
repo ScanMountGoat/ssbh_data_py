@@ -1,6 +1,7 @@
 ### 0.3.2
 Changes:
 - Added read only anim support in `ssbh_data_py.anim_data`. Exporting is planned for a future release.  
+- Fixed import and export of version 1.8 and 1.9 mesh files. This mostly applies to games other than Smash Ultimate.  
 
 ### 0.3.0
 Breaking Changes:
