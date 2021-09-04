@@ -19,6 +19,8 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+// TODO: Add constructors.
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct AnimData {

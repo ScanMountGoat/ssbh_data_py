@@ -101,7 +101,7 @@ mesh.save(output_mesh_path)
 # The modl.animation_file_name can use the default value of None in most cases.
 modl = ssbh_data_py.modl_data.ModlData()
 modl.skeleton_file_name = "model.nusktb"
-modl.material_file_names = [ "model.numatb" ]
+modl.material_file_names = ["model.numatb"]
 modl.mesh_file_name = "model.numshb"
 modl.entries = []
 for i, bone_name in enumerate(bone_names):
