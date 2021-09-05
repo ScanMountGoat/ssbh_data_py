@@ -1,3 +1,7 @@
+### 0.3.4
+Changes:
+- Added type stub files (.pyi). This enables type hints and autocompletion in supported IDEs.
+
 ### 0.3.2
 Changes:
 - Added read only anim support in `ssbh_data_py.anim_data`. Exporting is planned for a future release.  
