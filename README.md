@@ -30,7 +30,7 @@ modl = ssbh_data_py.modl_data.read_modl("model.numdlb")
 skel = ssbh_data_py.skel_data.read_skel("model.nusktb")
 ```
 
-It's also possible to create the objects from scratch. It's possible to specify the version in the constructor or change it later. Leave the versions at their default values to avoid errors when saving.
+It's also possible to construct new objects. Specify the major and minor version to use a particular file format revision. Note that this only impacts the binary output when calling the save method. Not all versions are supported, so it's recommended to use the default values.  
 ```python
 
 mesh = ssbh_data_py.mesh_data.MeshData(major_version=1, minor_version=8)
@@ -55,7 +55,6 @@ for bone in skel.bones:
 # ssbh_data_py found an unexpected type, so this line will fail.
 skel.save("skel.nustkb")
 ```
-
 
 After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms.
 ```python
