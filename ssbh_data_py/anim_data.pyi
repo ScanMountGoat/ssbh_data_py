@@ -9,6 +9,14 @@ class AnimData:
     minor_version: int
     groups: list[GroupData]
 
+    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
+
+    def save(self, path: str) -> None: ...
+
 
 class GroupData:
     group_type: GroupType
@@ -29,7 +37,8 @@ class NodeData:
 
 class TrackData:
     name: str
-    values: Union[list[UvTransform], list[Transform], list[float], list[bool], list[int], list[list[float]]]
+    values: Union[list[UvTransform], list[Transform],
+                  list[float], list[bool], list[int], list[list[float]]]
 
 
 class Transform:

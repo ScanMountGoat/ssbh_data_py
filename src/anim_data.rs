@@ -1,7 +1,10 @@
-use pyo3::wrap_pyfunction;
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 
-use crate::{create_py_list, create_py_list_from_slice};
+use crate::{create_py_list, create_py_list_from_slice, create_vec};
+use ssbh_data::anim_data::TrackValues as TrackValuesRs;
+
+create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 
 pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     let anim_data = PyModule::new(py, "anim_data")?;
@@ -77,19 +80,27 @@ impl AnimData {
         })
     }
 
-    // TODO: Support saving.
+    fn save(&self, py: Python, path: &str) -> PyResult<()> {
+        let groups: Vec<_> = create_vec(py, &self.groups, create_group_data_rs)?;
+        let anim_data = ssbh_data::anim_data::AnimData {
+            major_version: self.major_version,
+            minor_version: self.minor_version,
+            groups,
+        };
+
+        anim_data
+            .write_to_file(path)
+            .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
+        Ok(())
+    }
 }
 
 #[pyfunction]
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
-    match ssbh_data::anim_data::AnimData::from_file(path) {
-        Ok(anim) => {
-            let data = create_anim_data_py(py, &anim)?;
-            Ok(data)
-        }
-        // TODO: How to handle errors or return None?
-        _ => panic!("Failed to read anim."),
-    }
+    let anim = ssbh_data::anim_data::AnimData::from_file(path)
+        .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
+    let data = create_anim_data_py(py, &anim)?;
+    Ok(data)
 }
 
 fn create_anim_data_py(py: Python, data: &ssbh_data::anim_data::AnimData) -> PyResult<AnimData> {
@@ -223,11 +234,33 @@ fn create_group_data_py(
     })
 }
 
+// TODO: Conversion tests.
+fn create_group_data_rs(py: Python, data: &GroupData) -> PyResult<ssbh_data::anim_data::GroupData> {
+    Ok(ssbh_data::anim_data::GroupData {
+        // TODO: Find a more maintainable way to do enum conversions.
+        group_type: match data.group_type.name.as_str() {
+            "Transform" => ssbh_data::anim_data::GroupType::Transform,
+            "Visibility" => ssbh_data::anim_data::GroupType::Visibility,
+            "Material" => ssbh_data::anim_data::GroupType::Material,
+            "Camera" => ssbh_data::anim_data::GroupType::Camera,
+            _ => panic!("Unsupported group type"), // TODO: Nicer error handling.
+        },
+        nodes: create_vec(py, &data.nodes, create_node_data_rs)?,
+    })
+}
+
 // TODO: IntoIter and avoid clone?
 fn create_node_data_py(py: Python, node: &ssbh_data::anim_data::NodeData) -> PyResult<NodeData> {
     Ok(NodeData {
         name: node.name.to_string(),
         tracks: create_py_list(py, &node.tracks, create_track_data_py)?,
+    })
+}
+
+fn create_node_data_rs(py: Python, data: &NodeData) -> PyResult<ssbh_data::anim_data::NodeData> {
+    Ok(ssbh_data::anim_data::NodeData {
+        name: data.name.clone(),
+        tracks: create_vec(py, &data.tracks, create_track_data_rs)?,
     })
 }
 
@@ -240,6 +273,14 @@ fn create_track_data_py(
         values: create_track_values_py(py, &track.values)?,
     })
 }
+
+fn create_track_data_rs(py: Python, data: &TrackData) -> PyResult<ssbh_data::anim_data::TrackData> {
+    Ok(ssbh_data::anim_data::TrackData {
+        name: data.name.clone(),
+        values: create_track_values_rs(py, data.values.as_ref(py))?,
+    })
+}
+
 // TODO: Find a way to test the Rust -> Python conversion.
 fn create_transform_py(
     py: Python,
@@ -306,6 +347,75 @@ fn create_track_values_py(
             Ok(vector4_values_to_py_list(py, values))
         }
     }
+}
+
+fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs> {
+    // We don't know the type, so just try one until it works.
+    // TODO: Clean up and test this code.
+    values
+        .extract::<Vec<bool>>()
+        .map(TrackValuesRs::Boolean)
+        .or_else(|_| values.extract::<Vec<f32>>().map(TrackValuesRs::Float))
+        .or_else(|_| {
+            values
+                .extract::<Vec<u32>>()
+                .map(TrackValuesRs::PatternIndex)
+        })
+        .or_else(|_| {
+            values.extract::<Vec<[f32; 4]>>().map(|v| {
+                TrackValuesRs::Vector4(
+                    v.into_iter()
+                        .map(|[x, y, z, w]| ssbh_data::anim_data::Vector4::new(x, y, z, w))
+                        .collect(),
+                )
+            })
+        })
+        .or_else(|_| {
+            values.extract::<Vec<UvTransform>>().map(|v| {
+                TrackValuesRs::UvTransform(
+                    v.into_iter()
+                        .map(|t| ssbh_data::anim_data::UvTransform {
+                            unk1: t.unk1,
+                            unk2: t.unk2,
+                            unk3: t.unk3,
+                            unk4: t.unk4,
+                            unk5: t.unk5,
+                        })
+                        .collect(),
+                )
+            })
+        })
+        .or_else(|_| {
+            values.extract::<Vec<Transform>>().map(|v| {
+                TrackValuesRs::Transform(
+                    v.into_iter()
+                        .map(|t| {
+                            // TODO: Handle errors.
+                            let translation: [f32; 3] = t.translation.extract(py).unwrap();
+                            let scale: [f32; 3] = t.scale.extract(py).unwrap();
+                            let rotation: [f32; 4] = t.rotation.extract(py).unwrap();
+                            ssbh_data::anim_data::Transform {
+                                scale: ssbh_data::anim_data::Vector3::new(
+                                    scale[0], scale[1], scale[2],
+                                ),
+                                rotation: ssbh_data::anim_data::Vector4::new(
+                                    rotation[0],
+                                    rotation[1],
+                                    rotation[2],
+                                    rotation[3],
+                                ),
+                                translation: ssbh_data::anim_data::Vector3::new(
+                                    translation[0],
+                                    translation[1],
+                                    translation[2],
+                                ),
+                                compensate_scale: t.compensate_scale,
+                            }
+                        })
+                        .collect(),
+                )
+            })
+        })
 }
 
 #[cfg(test)]

@@ -71,14 +71,14 @@ impl SkelData {
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         let data = create_skel_data_rs(py, self)?;
-        data.write_to_file(path)?;
+        data.write_to_file(path).unwrap();
         Ok(())
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
         let data = create_skel_data_rs(py, self)?;
         let bone_data = create_bone_data_rs(py, bone)?;
-        let transform = data.calculate_world_transform(&bone_data);
+        let transform = data.calculate_world_transform(&bone_data).unwrap();
         Ok(create_py_list_from_slice(py, &transform))
     }
 }
