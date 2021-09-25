@@ -1,5 +1,6 @@
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
+use ssbh_data::SsbhData;
 
 use crate::{create_py_list, create_vec};
 

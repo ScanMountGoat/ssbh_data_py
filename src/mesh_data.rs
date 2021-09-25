@@ -1,6 +1,7 @@
 use pyo3::wrap_pyfunction;
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
+use ssbh_data::SsbhData;
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
 

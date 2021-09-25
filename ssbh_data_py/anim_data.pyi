@@ -22,23 +22,41 @@ class GroupData:
     group_type: GroupType
     nodes: list[NodeData]
 
+    def __init__(
+        self,
+        group_type: GroupType,
+    ) -> None: ...
+
 
 class GroupType:
     name: str
     value: int
 
-    # TODO: Class attributes?
+    Transform: GroupType = ...
+    Visibility: GroupType = ...
+    Material: GroupType = ...
+    Camera: GroupType = ...
 
 
 class NodeData:
     name: str
     tracks: list[TrackData]
 
+    def __init__(
+        self,
+        name: str,
+    ) -> None: ...
+
 
 class TrackData:
     name: str
     values: Union[list[UvTransform], list[Transform],
                   list[float], list[bool], list[int], list[list[float]]]
+
+    def __init__(
+        self,
+        name: str,
+    ) -> None: ...
 
 
 class Transform:

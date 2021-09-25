@@ -3,6 +3,7 @@ use pyo3::{prelude::*, types::PyList};
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
+use ssbh_data::SsbhData;
 
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 
@@ -22,12 +23,9 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-// TODO: Add constructors.
-
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct AnimData {
-    // TODO: Support versions other than 2.0?
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -48,6 +46,17 @@ pub struct GroupData {
     pub nodes: Py<PyList>,
 }
 
+#[pymethods]
+impl GroupData {
+    #[new]
+    fn new(py: Python, group_type: GroupType) -> PyResult<Self> {
+        Ok(GroupData {
+            group_type,
+            nodes: PyList::empty(py).into(),
+        })
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct NodeData {
@@ -58,6 +67,17 @@ pub struct NodeData {
     pub tracks: Py<PyList>,
 }
 
+#[pymethods]
+impl NodeData {
+    #[new]
+    fn new(py: Python, name: String) -> PyResult<Self> {
+        Ok(NodeData {
+            name,
+            tracks: PyList::empty(py).into(),
+        })
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct TrackData {
@@ -66,6 +86,17 @@ pub struct TrackData {
 
     #[pyo3(get, set)]
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
+}
+
+#[pymethods]
+impl TrackData {
+    #[new]
+    fn new(py: Python, name: String) -> PyResult<Self> {
+        Ok(TrackData {
+            name,
+            values: PyList::empty(py).into(),
+        })
+    }
 }
 
 #[pymethods]
@@ -192,6 +223,24 @@ pub struct Transform {
     pub compensate_scale: f32,
 }
 
+#[pymethods]
+impl Transform {
+    #[new]
+    fn new(
+        scale: Py<PyList>,
+        rotation: Py<PyList>,
+        translation: Py<PyList>,
+        compensate_scale: f32,
+    ) -> PyResult<Self> {
+        Ok(Transform {
+            scale,
+            rotation,
+            translation,
+            compensate_scale,
+        })
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct UvTransform {
@@ -209,6 +258,20 @@ pub struct UvTransform {
 
     #[pyo3(get, set)]
     pub unk5: f32,
+}
+
+#[pymethods]
+impl UvTransform {
+    #[new]
+    fn new(unk1: f32, unk2: f32, unk3: f32, unk4: f32, unk5: f32) -> PyResult<Self> {
+        Ok(UvTransform {
+            unk1,
+            unk2,
+            unk3,
+            unk4,
+            unk5,
+        })
+    }
 }
 
 fn create_uv_transform_py(
@@ -281,7 +344,6 @@ fn create_track_data_rs(py: Python, data: &TrackData) -> PyResult<ssbh_data::ani
     })
 }
 
-// TODO: Find a way to test the Rust -> Python conversion.
 fn create_transform_py(
     py: Python,
     transform: &ssbh_data::anim_data::Transform,
@@ -315,7 +377,6 @@ fn create_transform_py(
     })
 }
 
-// TODO: Don't expose Vectors from ssbh_data?
 fn vector4_values_to_py_list(py: Python, values: &[ssbh_data::anim_data::Vector4]) -> Py<PyList> {
     let lists = values
         .iter()
@@ -351,16 +412,18 @@ fn create_track_values_py(
 
 fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs> {
     // We don't know the type, so just try one until it works.
-    // TODO: Clean up and test this code.
+    // TODO: Clean up this code.
     values
         .extract::<Vec<bool>>()
         .map(TrackValuesRs::Boolean)
-        .or_else(|_| values.extract::<Vec<f32>>().map(TrackValuesRs::Float))
         .or_else(|_| {
+            // Pattern index needs to come before float.
+            // This avoids conflicts with integer literals being interpreted as floats.
             values
                 .extract::<Vec<u32>>()
                 .map(TrackValuesRs::PatternIndex)
         })
+        .or_else(|_| values.extract::<Vec<f32>>().map(TrackValuesRs::Float))
         .or_else(|_| {
             values.extract::<Vec<[f32; 4]>>().map(|v| {
                 TrackValuesRs::Vector4(
@@ -420,18 +483,49 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
 
 #[cfg(test)]
 mod tests {
-    use crate::run_python_code;
+    use crate::{eval_python_code, run_python_code};
     use indoc::indoc;
+    use ssbh_data::anim_data::{Vector3, Vector4};
 
     use super::*;
 
     #[test]
-    fn create_anim() {
+    fn create_anim_data() {
         run_python_code(indoc! {r#"
             a = ssbh_data_py.anim_data.AnimData()
             assert a.major_version == 2
             assert a.minor_version == 0
             assert a.groups == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_group_data() {
+        run_python_code(indoc! {r#"
+            a = ssbh_data_py.anim_data.GroupData(ssbh_data_py.anim_data.GroupType.Transform)
+            assert a.group_type.name == 'Transform'
+            assert a.nodes == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_node_data() {
+        run_python_code(indoc! {r#"
+            a = ssbh_data_py.anim_data.NodeData('abc')
+            assert a.name == 'abc'
+            assert a.tracks == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_track_data() {
+        run_python_code(indoc! {r#"
+            a = ssbh_data_py.anim_data.TrackData('abc')
+            assert a.name == 'abc'
+            assert a.values == []
         "#})
         .unwrap();
     }
@@ -482,5 +576,82 @@ mod tests {
         let g: GroupType = ssbh_data::anim_data::GroupType::Material.into();
         assert_eq!("Material", g.name);
         assert_eq!(ssbh_data::anim_data::GroupType::Material as u64, g.value);
+    }
+
+    #[test]
+    fn create_track_values_rs_floats() {
+        eval_python_code("[0.5, 1, 3.4]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            assert_eq!(
+                TrackValuesRs::Float(vec![0.5, 1.0, 3.4]),
+                create_track_values_rs(py, data).unwrap()
+            );
+        });
+    }
+
+    #[test]
+    fn create_track_values_rs_pattern_index() {
+        eval_python_code("[0, 1, 2, 3]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            assert_eq!(
+                TrackValuesRs::PatternIndex(vec![0, 1, 2, 3]),
+                create_track_values_rs(py, data).unwrap()
+            );
+        });
+    }
+
+    #[test]
+    fn create_track_values_rs_bool() {
+        eval_python_code("[True, False, True]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            assert_eq!(
+                TrackValuesRs::Boolean(vec![true, false, true]),
+                create_track_values_rs(py, data).unwrap()
+            );
+        });
+    }
+
+    #[test]
+    fn create_track_values_rs_vector4() {
+        eval_python_code("[[1, 2, 3, 4], [0.5, 0.25, 0.3, 0.1]]", |py, x| {
+            let data: &PyList = x.downcast().unwrap();
+            assert_eq!(
+                TrackValuesRs::Vector4(vec![
+                    Vector4::new(1.0, 2.0, 3.0, 4.0),
+                    Vector4::new(0.5, 0.25, 0.3, 0.1)
+                ]),
+                create_track_values_rs(py, data).unwrap()
+            );
+        });
+    }
+
+    #[test]
+    fn create_track_values_rs_transform() {
+        eval_python_code(
+            indoc! {r#"
+                [ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [1, 2, 3], 7.4), 
+                 ssbh_data_py.anim_data.Transform([0, 1, 2], [1, 2, 3, 4], [9, 8, 0.4], 4.7)]
+            "#},
+            |py, x| {
+                let data: &PyList = x.downcast().unwrap();
+                assert_eq!(
+                    TrackValuesRs::Transform(vec![
+                        ssbh_data::anim_data::Transform {
+                            rotation: Vector4::new(4.0, 5.0, 6.0, 7.0),
+                            translation: Vector3::new(1.0, 2.0, 3.0),
+                            scale: Vector3::new(1.0, 2.0, 3.0),
+                            compensate_scale: 7.4
+                        },
+                        ssbh_data::anim_data::Transform {
+                            rotation: Vector4::new(1.0, 2.0, 3.0, 4.0),
+                            translation: Vector3::new(9.0, 8.0, 0.4),
+                            scale: Vector3::new(0.0, 1.0, 2.0),
+                            compensate_scale: 4.7
+                        }
+                    ]),
+                    create_track_values_rs(py, data).unwrap()
+                );
+            },
+        );
     }
 }
