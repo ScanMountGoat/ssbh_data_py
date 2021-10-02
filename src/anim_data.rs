@@ -219,8 +219,9 @@ pub struct Transform {
     #[pyo3(get, set)]
     pub translation: Py<PyList>,
 
+    // TODO: Rework this field.
     #[pyo3(get, set)]
-    pub compensate_scale: f32,
+    pub compensate_scale: u32,
 }
 
 #[pymethods]
@@ -230,7 +231,7 @@ impl Transform {
         scale: Py<PyList>,
         rotation: Py<PyList>,
         translation: Py<PyList>,
-        compensate_scale: f32,
+        compensate_scale: u32,
     ) -> PyResult<Self> {
         Ok(Transform {
             scale,
@@ -349,38 +350,15 @@ fn create_transform_py(
     transform: &ssbh_data::anim_data::Transform,
 ) -> PyResult<Transform> {
     Ok(Transform {
-        scale: PyList::new(
-            py,
-            &[transform.scale.x, transform.scale.y, transform.scale.z],
-        )
-        .into(),
-        rotation: PyList::new(
-            py,
-            &[
-                transform.rotation.x,
-                transform.rotation.y,
-                transform.rotation.z,
-                transform.rotation.w,
-            ],
-        )
-        .into(),
-        translation: PyList::new(
-            py,
-            &[
-                transform.translation.x,
-                transform.translation.y,
-                transform.translation.z,
-            ],
-        )
-        .into(),
+        scale: PyList::new(py, transform.scale.to_array()).into(),
+        rotation: PyList::new(py, transform.rotation.to_array()).into(),
+        translation: PyList::new(py, transform.translation.to_array()).into(),
         compensate_scale: transform.compensate_scale,
     })
 }
 
 fn vector4_values_to_py_list(py: Python, values: &[ssbh_data::anim_data::Vector4]) -> Py<PyList> {
-    let lists = values
-        .iter()
-        .map(|v| PyList::new(py, &[v.x, v.y, v.z, v.w]));
+    let lists = values.iter().map(|v| PyList::new(py, v.to_array()));
     PyList::new(py, lists).into()
 }
 
@@ -629,8 +607,12 @@ mod tests {
     fn create_track_values_rs_transform() {
         eval_python_code(
             indoc! {r#"
-                [ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [1, 2, 3], 7.4), 
-                 ssbh_data_py.anim_data.Transform([0, 1, 2], [1, 2, 3, 4], [9, 8, 0.4], 4.7)]
+                [ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [1, 2, 3], 1), 
+                 ssbh_data_py.anim_data.Transform(
+                    scale=[0, 1, 2],
+                    rotation=[1, 2, 3, 4],
+                    translation=[9, 8, 0.4],
+                    compensate_scale=0)]
             "#},
             |py, x| {
                 let data: &PyList = x.downcast().unwrap();
@@ -640,13 +622,13 @@ mod tests {
                             rotation: Vector4::new(4.0, 5.0, 6.0, 7.0),
                             translation: Vector3::new(1.0, 2.0, 3.0),
                             scale: Vector3::new(1.0, 2.0, 3.0),
-                            compensate_scale: 7.4
+                            compensate_scale: 1
                         },
                         ssbh_data::anim_data::Transform {
                             rotation: Vector4::new(1.0, 2.0, 3.0, 4.0),
                             translation: Vector3::new(9.0, 8.0, 0.4),
                             scale: Vector3::new(0.0, 1.0, 2.0),
-                            compensate_scale: 4.7
+                            compensate_scale: 0
                         }
                     ]),
                     create_track_values_rs(py, data).unwrap()
