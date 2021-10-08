@@ -65,6 +65,14 @@ class Transform:
     translation: list[float]
     compensate_scale: float
 
+    def __init__(
+        self,
+        scale: list[float],
+        rotation: list[float],
+        translation: list[float],
+        compensate_scale: float
+    ) -> None: ...
+
 
 class UvTransform:
     unk1: float
@@ -72,3 +80,12 @@ class UvTransform:
     unk3: float
     unk4: float
     unk5: float
+
+    def __init__(
+        self,
+        unk1: float,
+        unk2: float,
+        unk3: float,
+        unk4: float,
+        unk5: float
+    ) -> None: ...
