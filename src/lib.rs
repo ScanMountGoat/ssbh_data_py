@@ -70,6 +70,23 @@ fn run_python_code(code: &str) -> PyResult<()> {
 }
 
 #[cfg(test)]
+fn run_python_code_numpy(code: &str) -> PyResult<()> {
+    use pyo3::types::IntoPyDict;
+
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+    let module = PyModule::new(py, "ssbh_data_py").unwrap();
+    ssbh_data_py(py, module).unwrap();
+    
+    // TODO: This requires numpy to be in the current Python environment,
+    // which may require some configuration to run tests with github actions.
+    let ctx = [("ssbh_data_py", module), ("numpy", PyModule::import(py, "numpy").unwrap())].into_py_dict(py);
+    
+    py.run(code, None, Some(ctx))
+}
+
+#[cfg(test)]
 fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     use pyo3::types::IntoPyDict;
 
@@ -79,6 +96,25 @@ fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     let module = PyModule::new(py, "ssbh_data_py").unwrap();
     ssbh_data_py(py, module).unwrap();
     let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+
+    let result = py.eval(code, None, Some(ctx)).unwrap();
+    f(py, result);
+}
+
+#[cfg(test)]
+fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
+    use pyo3::types::IntoPyDict;
+
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+
+    let module = PyModule::new(py, "ssbh_data_py").unwrap();
+    ssbh_data_py(py, module).unwrap();
+
+    // TODO: This requires numpy to be in the current Python environment,
+    // which may require some configuration to run tests with github actions.
+    let ctx = [("ssbh_data_py", module), ("numpy", PyModule::import(py, "numpy").unwrap())].into_py_dict(py);
 
     let result = py.eval(code, None, Some(ctx)).unwrap();
     f(py, result);

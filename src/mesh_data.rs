@@ -73,7 +73,7 @@ pub struct MeshObjectData {
     pub parent_bone_name: String,
 
     #[pyo3(get, set)]
-    pub vertex_indices: Py<PyList>,
+    pub vertex_indices: PyObject,
 
     #[pyo3(get, set)]
     pub positions: Py<PyList>,
@@ -192,7 +192,7 @@ fn create_mesh_object_py(
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: create_py_list_from_slice(py, &data.vertex_indices),
+        vertex_indices: create_py_list_from_slice(py, &data.vertex_indices).into(),
         positions: create_py_list(py, &data.positions, create_attribute_data_py)?,
         normals: create_py_list(py, &data.normals, create_attribute_data_py)?,
         binormals: create_py_list(py, &data.binormals, create_attribute_data_py)?,
@@ -228,15 +228,18 @@ fn create_attribute_data_py(
 ) -> PyResult<AttributeData> {
     Ok(AttributeData {
         name: attribute_data.name.clone(),
-        data: vector_data_to_py_list(py, &attribute_data.data)?,
+        data: vector_data_to_py_list(py, &attribute_data.data)?.into(),
     })
 }
 
 fn vector_data_to_py_list(py: Python, data: &VectorDataRs) -> PyResult<Py<PyList>> {
+    // TODO: Investigate if it's worth converting to tuples.
+    // TODO: Numpy?
+    // This substantially improves performance.
     Ok(match &data {
-        VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v),
-        VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v),
-        VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector2(v) => PyList::new(py, v.iter().map(|[x,y]| (x,y))).into(),
+        VectorDataRs::Vector3(v) => PyList::new(py, v.iter().map(|[x,y,z]| (x,y,z))).into(),
+        VectorDataRs::Vector4(v) => PyList::new(py, v.iter().map(|[x,y,z,w]| (x,y,z,w))).into(),
     })
 }
 
@@ -247,7 +250,7 @@ pub struct AttributeData {
     pub name: String,
 
     #[pyo3(get, set)]
-    pub data: Py<PyList>,
+    pub data: PyObject,
 }
 
 #[pymethods]
@@ -267,13 +270,14 @@ fn create_attribute_rs(
 ) -> PyResult<ssbh_data::mesh_data::AttributeData> {
     Ok(ssbh_data::mesh_data::AttributeData {
         name: attribute.name.clone(),
-        data: create_vector_data_rs(attribute.data.as_ref(py))?,
+        data: create_vector_data_rs(&attribute.data.as_ref(py))?,
     })
 }
 
-fn create_vector_data_rs(data: &PyList) -> PyResult<VectorDataRs> {
+fn create_vector_data_rs(data: &PyAny) -> PyResult<VectorDataRs> {
     // We don't know the type from Python at this point.
     // Try all the supported types and fail if all conversions fail.
+    // TODO: This still works with numpy arrays but might not be the most efficient.
     data.extract::<Vec<[f32; 2]>>()
         .map(VectorDataRs::Vector2)
         .or_else(|_| data.extract::<Vec<[f32; 3]>>().map(VectorDataRs::Vector3))
@@ -334,9 +338,8 @@ fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyRe
 
 #[cfg(test)]
 mod tests {
-    use crate::{eval_python_code, mesh_data::create_vector_data_rs, run_python_code};
+    use crate::{eval_python_code, eval_python_code_numpy, mesh_data::create_vector_data_rs, run_python_code, run_python_code_numpy};
     use indoc::indoc;
-    use pyo3::types::PyList;
     use ssbh_data::mesh_data::VectorData;
 
     #[test]
@@ -358,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn create_mesh_object() {
+    fn create_modify_mesh_object() {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
             assert m.name == "abc"
@@ -372,6 +375,19 @@ mod tests {
             assert m.texture_coordinates == []
             assert m.color_sets == []
             assert m.bone_influences == []
+
+            m.vertex_indices = [1, 2, 3]
+            assert m.vertex_indices == [1,2,3]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn mesh_object_vertex_indices_ndarray() {
+        run_python_code_numpy(indoc! {r#"
+            m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
+            m.vertex_indices = numpy.array([1, 2, 3])
+            assert m.vertex_indices.tolist() == [1,2,3]
         "#})
         .unwrap();
     }
@@ -436,8 +452,7 @@ mod tests {
     #[should_panic]
     fn vector2_from_pylist_invalid_type() {
         eval_python_code("[[0, 1], [2, 'a']]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            create_vector_data_rs(data).unwrap();
+            create_vector_data_rs(x).unwrap();
         });
     }
 
@@ -445,16 +460,22 @@ mod tests {
     #[should_panic]
     fn vector2_from_pylist_invalid_component_count() {
         eval_python_code("[[0.0, 1.0], [2.0]]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            create_vector_data_rs(data).unwrap();
+            create_vector_data_rs(x).unwrap();
         });
     }
 
     #[test]
     fn vector2_from_pylist_ints() {
         eval_python_code("[[0, 1], [2, 3]]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            let value = create_vector_data_rs(data).unwrap();
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
+        });
+    }
+
+    #[test]
+    fn vector2_from_ndarray_ints() {
+        eval_python_code_numpy("numpy.array([[0, 1], [2, 3]],dtype=numpy.int8)", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -462,8 +483,15 @@ mod tests {
     #[test]
     fn vector2_from_pylist() {
         eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            let value = create_vector_data_rs(data).unwrap();
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
+        });
+    }
+
+    #[test]
+    fn vector2_from_ndarray() {
+        eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -471,8 +499,18 @@ mod tests {
     #[test]
     fn vector3_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            let value = create_vector_data_rs(data).unwrap();
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(
+                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
+                value
+            );
+        });
+    }
+
+    #[test]
+    fn vector3_from_ndarray() {
+        eval_python_code_numpy("numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                 value
@@ -483,12 +521,60 @@ mod tests {
     #[test]
     fn vector4_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |_, x| {
-            let data: &PyList = x.downcast().unwrap();
-            let value = create_vector_data_rs(data).unwrap();
+            let value = create_vector_data_rs(x).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
             );
+        });
+    }
+
+    #[test]
+    fn vector4_from_ndarray() {
+        eval_python_code_numpy("numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(
+                VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
+                value
+            );
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn vector_from_5x5_pylist() {
+        // Vector5 is not a valid variant.
+        eval_python_code("[[1.0,2.0,3.0,4.0,5.0]]", |_, x| {
+            create_vector_data_rs(x).unwrap();
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn vector_from_5x5_ndarray() {
+        // Vector5 is not a valid variant.
+        eval_python_code_numpy("numpy.zeros((5,5))", |_, x| {
+            create_vector_data_rs(x).unwrap();
+        });
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    fn vector_from_empty_pylist() {
+        // TODO: How to infer the type when there are no elements?
+        eval_python_code("[]", |_, x| {
+            create_vector_data_rs(x).unwrap();
+        });
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    fn vector_from_empty_ndarray() {
+        // TODO: How to infer the type when there are no elements?
+        eval_python_code_numpy("numpy.array()", |_, x| {
+            create_vector_data_rs(x).unwrap();
         });
     }
 }

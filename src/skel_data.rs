@@ -35,7 +35,7 @@ struct BoneData {
     pub name: String,
 
     #[pyo3(get, set)]
-    pub transform: Py<PyList>,
+    pub transform: PyObject,
 
     #[pyo3(get, set)]
     pub parent_index: Option<usize>,
@@ -52,7 +52,7 @@ impl BoneData {
     ) -> PyResult<Self> {
         Ok(BoneData {
             name,
-            transform: create_py_list_from_slice(py, &transform),
+            transform: create_py_list_from_slice(py, &transform).into(),
             parent_index,
         })
     }
@@ -99,8 +99,8 @@ fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
 #[pyfunction]
 fn calculate_relative_transform(
     py: Python,
-    world_transform: &PyList,
-    parent_world_transform: Option<&PyList>,
+    world_transform: &PyAny,
+    parent_world_transform: Option<&PyAny>,
 ) -> PyResult<Py<PyList>> {
     // TODO: There might be a cleaner way to write this.
     let world_transform = world_transform.extract::<[[f32; 4]; 4]>()?;
@@ -144,14 +144,14 @@ fn create_bone_data_rs(py: Python, data: &BoneData) -> PyResult<ssbh_data::skel_
 fn create_bone_data_py(py: Python, data: &ssbh_data::skel_data::BoneData) -> PyResult<BoneData> {
     Ok(BoneData {
         name: data.name.clone(),
-        transform: create_py_list_from_slice(py, &data.transform),
+        transform: create_py_list_from_slice(py, &data.transform).into(),
         parent_index: data.parent_index,
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::run_python_code;
+    use crate::{run_python_code, run_python_code_numpy};
     use indoc::indoc;
 
     #[test]
@@ -184,6 +184,24 @@ mod tests {
     }
 
     #[test]
+    fn create_bone_data_numpy() {
+        run_python_code_numpy(indoc! {r#"
+            b = ssbh_data_py.skel_data.BoneData("abc", numpy.zeros((4,4)), 5)
+            assert b.name == "abc"
+            assert b.transform == [[0,0,0,0]]*4
+            assert b.parent_index == 5
+
+            b = ssbh_data_py.skel_data.BoneData("abc", numpy.ones((4,4)), None)
+            assert b.name == "abc"
+            assert b.transform == [[1,1,1,1]]*4
+            assert b.parent_index == None
+            b.transform[1][2] = 3
+            assert b.transform[1] == [1,1,3,1]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn calculate_world_transform_no_parent() {
         run_python_code(indoc! {r#"
             s = ssbh_data_py.skel_data.SkelData()
@@ -202,6 +220,20 @@ mod tests {
             s = ssbh_data_py.skel_data.SkelData()
             b0 = ssbh_data_py.skel_data.BoneData("b0", [[1,1,1,1]]*4, None)
             b1 = ssbh_data_py.skel_data.BoneData("b0", [[2,2,2,2]]*4, 0)
+            s.bones = [b0, b1]
+
+            assert s.calculate_world_transform(b1) == [[8,8,8,8]]*4
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_world_transform_with_parent_ndarray() {
+        // TODO: This can also return a numpy array in the future.
+        run_python_code_numpy(indoc! {r#"
+            s = ssbh_data_py.skel_data.SkelData()
+            b0 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4)), None)
+            b1 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4))*2, 0)
             s.bones = [b0, b1]
 
             assert s.calculate_world_transform(b1) == [[8,8,8,8]]*4
@@ -245,6 +277,21 @@ mod tests {
                 [12, 13, 14, 15],
             ]
             assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == world_transform
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_relative_transform_no_parent_ndarray() {
+        // TODO: This can also return a numpy array in the future.
+        run_python_code_numpy(indoc! {r#"
+            world_transform = numpy.array([
+                [0, 1, 2, 3],
+                [4, 5, 6, 7],
+                [8, 9, 10, 11],
+                [12, 13, 14, 15],
+            ])
+            assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == world_transform.tolist()
         "#})
         .unwrap();
     }
