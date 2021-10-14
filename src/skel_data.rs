@@ -184,6 +184,24 @@ mod tests {
     }
 
     #[test]
+    fn create_bone_data_tuples() {
+        run_python_code(indoc! {r#"
+            b = ssbh_data_py.skel_data.BoneData("abc", [(0,0,0,0)]*4, 5)
+            assert b.name == "abc"
+            assert b.transform == [[0,0,0,0]]*4
+            assert b.parent_index == 5
+
+            b = ssbh_data_py.skel_data.BoneData("abc", [(1,1,1,1)]*4, None)
+            assert b.name == "abc"
+            assert b.transform == [[1,1,1,1]]*4
+            assert b.parent_index == None
+            b.transform[1][2] = 3
+            assert b.transform[1] == [1,1,3,1]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_bone_data_numpy() {
         run_python_code_numpy(indoc! {r#"
             b = ssbh_data_py.skel_data.BoneData("abc", numpy.zeros((4,4)), 5)
@@ -292,6 +310,27 @@ mod tests {
                 [12, 13, 14, 15],
             ])
             assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == world_transform.tolist()
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_relative_transform_no_parent_tuple() {
+        // Tuples should be treated like sequences.
+        run_python_code(indoc! {r#"
+            world_transform = [
+                (0, 1, 2, 3),
+                (4, 5, 6, 7),
+                (8, 9, 10, 11),
+                (12, 13, 14, 15),
+            ]
+            expected = [
+                [0, 1, 2, 3],
+                [4, 5, 6, 7],
+                [8, 9, 10, 11],
+                [12, 13, 14, 15],
+            ]
+            assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None) == expected
         "#})
         .unwrap();
     }

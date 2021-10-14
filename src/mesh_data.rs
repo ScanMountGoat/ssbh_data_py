@@ -489,6 +489,14 @@ mod tests {
     }
 
     #[test]
+    fn vector2_from_tuples() {
+        eval_python_code("[(0.0, 1.0), (2.0, 3.0)]", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
+        });
+    }
+
+    #[test]
     fn vector2_from_ndarray() {
         eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |_, x| {
             let value = create_vector_data_rs(x).unwrap();
@@ -499,6 +507,17 @@ mod tests {
     #[test]
     fn vector3_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(
+                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
+                value
+            );
+        });
+    }
+
+    #[test]
+    fn vector3_from_tuples() {
+        eval_python_code("[(0.0, 1.0, 2.0), (3.0, 4.0, 5.0)]", |_, x| {
             let value = create_vector_data_rs(x).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
@@ -521,6 +540,18 @@ mod tests {
     #[test]
     fn vector4_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |_, x| {
+            let value = create_vector_data_rs(x).unwrap();
+            assert_eq!(
+                VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
+                value
+            );
+        });
+    }
+
+    
+    #[test]
+    fn vector4_from_tuples() {
+        eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |_, x| {
             let value = create_vector_data_rs(x).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
