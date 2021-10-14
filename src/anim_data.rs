@@ -34,6 +34,9 @@ pub struct AnimData {
 
     #[pyo3(get, set)]
     pub groups: Py<PyList>,
+
+    #[pyo3(get, set)]
+    pub final_frame_index: f32,
 }
 
 #[pyclass]
@@ -108,6 +111,7 @@ impl AnimData {
             major_version,
             minor_version,
             groups: PyList::empty(py).into(),
+            final_frame_index: 0.0
         })
     }
 
@@ -117,6 +121,7 @@ impl AnimData {
             major_version: self.major_version,
             minor_version: self.minor_version,
             groups,
+            final_frame_index: self.final_frame_index
         };
 
         anim_data
@@ -139,6 +144,7 @@ fn create_anim_data_py(py: Python, data: &ssbh_data::anim_data::AnimData) -> PyR
         major_version: data.major_version,
         minor_version: data.minor_version,
         groups: create_py_list(py, &data.groups, create_group_data_py)?,
+        final_frame_index: data.final_frame_index
     })
 }
 
@@ -246,31 +252,31 @@ impl Transform {
 #[derive(Debug, Clone)]
 pub struct UvTransform {
     #[pyo3(get, set)]
-    pub unk1: f32,
+    pub scale_u: f32,
 
     #[pyo3(get, set)]
-    pub unk2: f32,
+    pub scale_v: f32,
 
     #[pyo3(get, set)]
-    pub unk3: f32,
+    pub rotation: f32,
 
     #[pyo3(get, set)]
-    pub unk4: f32,
+    pub translate_u: f32,
 
     #[pyo3(get, set)]
-    pub unk5: f32,
+    pub translate_v: f32,
 }
 
 #[pymethods]
 impl UvTransform {
     #[new]
-    fn new(unk1: f32, unk2: f32, unk3: f32, unk4: f32, unk5: f32) -> PyResult<Self> {
+    fn new(scale_u: f32, scale_v: f32, rotation: f32, translate_u: f32, translate_v: f32) -> PyResult<Self> {
         Ok(UvTransform {
-            unk1,
-            unk2,
-            unk3,
-            unk4,
-            unk5,
+            scale_u,
+            scale_v,
+            rotation,
+            translate_u,
+            translate_v,
         })
     }
 }
@@ -280,11 +286,11 @@ fn create_uv_transform_py(
     transform: &ssbh_data::anim_data::UvTransform,
 ) -> PyResult<UvTransform> {
     Ok(UvTransform {
-        unk1: transform.unk1,
-        unk2: transform.unk2,
-        unk3: transform.unk3,
-        unk4: transform.unk4,
-        unk5: transform.unk5,
+        scale_u: transform.scale_u,
+        scale_v: transform.scale_u,
+        rotation: transform.scale_u,
+        translate_u: transform.scale_u,
+        translate_v: transform.scale_u,
     })
 }
 
@@ -416,11 +422,11 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
                 TrackValuesRs::UvTransform(
                     v.into_iter()
                         .map(|t| ssbh_data::anim_data::UvTransform {
-                            unk1: t.unk1,
-                            unk2: t.unk2,
-                            unk3: t.unk3,
-                            unk4: t.unk4,
-                            unk5: t.unk5,
+                            scale_u: t.scale_u,
+                            scale_v: t.scale_v,
+                            rotation: t.rotation,
+                            translate_u: t.translate_u,
+                            translate_v: t.translate_v,
                         })
                         .collect(),
                 )

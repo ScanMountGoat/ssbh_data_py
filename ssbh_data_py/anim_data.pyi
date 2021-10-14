@@ -8,6 +8,7 @@ class AnimData:
     major_version: int
     minor_version: int
     groups: list[GroupData]
+    final_frame_index: float
 
     def __init__(
         self,
@@ -63,29 +64,29 @@ class Transform:
     scale: list[float]
     rotation: list[float]
     translation: list[float]
-    compensate_scale: float
+    compensate_scale: int
 
     def __init__(
         self,
         scale: list[float],
         rotation: list[float],
         translation: list[float],
-        compensate_scale: float
+        compensate_scale: int
     ) -> None: ...
 
 
 class UvTransform:
-    unk1: float
-    unk2: float
-    unk3: float
-    unk4: float
-    unk5: float
+    scale_u: float
+    scale_v: float
+    rotation: float
+    translate_u: float
+    translate_v: float
 
     def __init__(
         self,
-        unk1: float,
-        unk2: float,
-        unk3: float,
-        unk4: float,
-        unk5: float
+        scale_u: float,
+        scale_v: float,
+        rotation: float,
+        translate_u: float,
+        translate_v: float
     ) -> None: ...
