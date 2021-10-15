@@ -338,7 +338,6 @@ fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyRes
     vector_data_to_py_list(py, &transformed_points)
 }
 
-// TODO: Add tests.
 #[pyfunction]
 fn calculate_smooth_normals(
     py: Python,
