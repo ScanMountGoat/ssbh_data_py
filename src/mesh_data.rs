@@ -16,6 +16,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
+    // TODO: Add normals and tangent calculation functions.
 
     module.add_submodule(mesh_data)?;
     Ok(())
@@ -235,11 +236,10 @@ fn create_attribute_data_py(
 fn vector_data_to_py_list(py: Python, data: &VectorDataRs) -> PyResult<Py<PyList>> {
     // TODO: Investigate if it's worth converting to tuples.
     // TODO: Numpy?
-    // This substantially improves performance.
     Ok(match &data {
-        VectorDataRs::Vector2(v) => PyList::new(py, v.iter().map(|[x,y]| (x,y))).into(),
-        VectorDataRs::Vector3(v) => PyList::new(py, v.iter().map(|[x,y,z]| (x,y,z))).into(),
-        VectorDataRs::Vector4(v) => PyList::new(py, v.iter().map(|[x,y,z,w]| (x,y,z,w))).into(),
+        VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v),
+        VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v),
     })
 }
 
@@ -321,24 +321,27 @@ fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
 }
 
 #[pyfunction]
-fn transform_points(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
+fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<Py<PyList>> {
     let points = create_vector_data_rs(points.as_ref(py))?;
-    let transform = transform.extract::<[[f32; 4]; 4]>()?;
+    let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
     vector_data_to_py_list(py, &transformed_points)
 }
 
 #[pyfunction]
-fn transform_vectors(py: Python, points: Py<PyList>, transform: &PyList) -> PyResult<Py<PyList>> {
+fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<Py<PyList>> {
     let points = create_vector_data_rs(points.as_ref(py))?;
-    let transform = transform.extract::<[[f32; 4]; 4]>()?;
+    let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
     vector_data_to_py_list(py, &transformed_points)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{eval_python_code, eval_python_code_numpy, mesh_data::create_vector_data_rs, run_python_code, run_python_code_numpy};
+    use crate::{
+        eval_python_code, eval_python_code_numpy, mesh_data::create_vector_data_rs,
+        run_python_code, run_python_code_numpy,
+    };
     use indoc::indoc;
     use ssbh_data::mesh_data::VectorData;
 
@@ -548,7 +551,6 @@ mod tests {
         });
     }
 
-    
     #[test]
     fn vector4_from_tuples() {
         eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |_, x| {
@@ -562,13 +564,16 @@ mod tests {
 
     #[test]
     fn vector4_from_ndarray() {
-        eval_python_code_numpy("numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
-            assert_eq!(
-                VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
-                value
-            );
-        });
+        eval_python_code_numpy(
+            "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
+            |_, x| {
+                let value = create_vector_data_rs(x).unwrap();
+                assert_eq!(
+                    VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
+                    value
+                );
+            },
+        );
     }
 
     #[test]
@@ -607,5 +612,101 @@ mod tests {
         eval_python_code_numpy("numpy.array()", |_, x| {
             create_vector_data_rs(x).unwrap();
         });
+    }
+
+    #[test]
+    fn transform_points_pylist() {
+        run_python_code(indoc! {r#"
+            points = [[1,2,3],[4,5,6]]
+            transform = [
+                [1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [-1,-2,-3,1]
+            ]
+            transformed = ssbh_data_py.mesh_data.transform_points(points, transform)
+            assert transformed == [[0,0,0],[3,3,3]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_points_tuple() {
+        run_python_code(indoc! {r#"
+            points = ((1,2,3),(4,5,6))
+            transform = (
+                (1,0,0,0),
+                (0,1,0,0),
+                (0,0,1,0),
+                (-1,-2,-3,1)
+            )
+            transformed = ssbh_data_py.mesh_data.transform_points(points, transform)
+            assert transformed == [[0,0,0],[3,3,3]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_points_ndarray() {
+        run_python_code_numpy(indoc! {r#"
+            points = numpy.array([[1,2,3],[4,5,6]])
+            transform = numpy.array([
+                [1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [-1,-2,-3,1]
+            ])
+            transformed = ssbh_data_py.mesh_data.transform_points(points, transform)
+            assert transformed == [[0,0,0],[3,3,3]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_vectors_pylist() {
+        run_python_code(indoc! {r#"
+            points = [[1,2,3],[4,5,6]]
+            transform = [
+                [1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [-1,-2,-3,1]
+            ]
+            transformed = ssbh_data_py.mesh_data.transform_vectors(points, transform)
+            assert transformed == [[1,2,3],[4,5,6]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_vectors_tuple() {
+        run_python_code(indoc! {r#"
+            points = ((1,2,3),(4,5,6))
+            transform = (
+                (1,0,0,0),
+                (0,1,0,0),
+                (0,0,1,0),
+                (-1,-2,-3,1)
+            )
+            transformed = ssbh_data_py.mesh_data.transform_vectors(points, transform)
+            assert transformed == [[1,2,3],[4,5,6]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_vectors_ndarray() {
+        run_python_code_numpy(indoc! {r#"
+            points = numpy.array([[1,2,3],[4,5,6]])
+            transform = numpy.array([
+                [1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [-1,-2,-3,1]
+            ])
+            transformed = ssbh_data_py.mesh_data.transform_vectors(points, transform)
+            assert transformed == [[1,2,3],[4,5,6]]
+        "#})
+        .unwrap();
     }
 }
