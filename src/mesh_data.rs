@@ -1,9 +1,11 @@
-use pyo3::wrap_pyfunction;
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
 use ssbh_data::SsbhData;
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
+
+create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
 
 pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     let mesh_data = PyModule::new(py, "mesh_data")?;
@@ -16,7 +18,8 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
-    // TODO: Add normals and tangent calculation functions.
+    mesh_data.add_function(wrap_pyfunction!(calculate_smooth_normals, mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(calculate_tangents_vec4, mesh_data)?)?;
 
     module.add_submodule(mesh_data)?;
     Ok(())
@@ -55,8 +58,9 @@ impl MeshData {
             objects,
         };
 
-        // TODO: Convert these errors to python exceptions instead of relying on panic handler?
-        mesh_data.write_to_file(path).unwrap();
+        mesh_data
+            .write_to_file(path)
+            .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
         Ok(())
     }
 }
@@ -174,7 +178,7 @@ fn create_mesh_object_rs(
         name: data.name.clone(),
         sub_index: data.sub_index,
         parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: data.vertex_indices.extract::<Vec<u32>>(py).unwrap(),
+        vertex_indices: data.vertex_indices.extract::<Vec<u32>>(py)?,
         positions: create_vec(py, &data.positions, create_attribute_rs)?,
         normals: create_vec(py, &data.normals, create_attribute_rs)?,
         binormals: create_vec(py, &data.binormals, create_attribute_rs)?,
@@ -301,23 +305,21 @@ fn create_bone_influence_rs(
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
-    match ssbh_data::mesh_data::MeshData::from_file(path) {
-        Ok(mesh_data) => {
-            let objects: Result<Vec<_>, _> = mesh_data
-                .objects
-                .iter()
-                .map(|o| Py::new(py, create_mesh_object_py(py, o)?))
-                .collect();
+    // TODO: Simplify this conversion?
+    let data = ssbh_data::mesh_data::MeshData::from_file(path)
+        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
 
-            Ok(MeshData {
-                major_version: mesh_data.major_version,
-                minor_version: mesh_data.minor_version,
-                objects: PyList::new(py, objects?).into(),
-            })
-        }
-        // TODO: How to handle errors or return None?
-        _ => panic!("Failed to read mesh."),
-    }
+    let objects: Result<Vec<_>, _> = data
+        .objects
+        .iter()
+        .map(|o| Py::new(py, create_mesh_object_py(py, o)?))
+        .collect();
+
+    Ok(MeshData {
+        major_version: data.major_version,
+        minor_version: data.minor_version,
+        objects: PyList::new(py, objects?).into(),
+    })
 }
 
 #[pyfunction]
@@ -334,6 +336,39 @@ fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyRes
     let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
     vector_data_to_py_list(py, &transformed_points)
+}
+
+// TODO: Add tests.
+#[pyfunction]
+fn calculate_smooth_normals(
+    py: Python,
+    positions: PyObject,
+    vertex_indices: PyObject,
+) -> PyResult<Py<PyList>> {
+    let positions = create_vector_data_rs(positions.as_ref(py))?;
+    let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
+    let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
+    Ok(create_py_list_from_slice(py, &normals))
+}
+
+#[pyfunction]
+fn calculate_tangents_vec4(
+    py: Python,
+    positions: PyObject,
+    normals: PyObject,
+    uvs: PyObject,
+    vertex_indices: PyObject,
+) -> PyResult<Py<PyList>> {
+    let positions = create_vector_data_rs(positions.as_ref(py))?;
+    let normals = create_vector_data_rs(normals.as_ref(py))?;
+    let uvs = create_vector_data_rs(uvs.as_ref(py))?;
+
+    let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
+    // TODO: Handle errors?
+    let tangents =
+        ssbh_data::mesh_data::calculate_tangents_vec4(&positions, &normals, &uvs, &vertex_indices)
+            .unwrap();
+    Ok(create_py_list_from_slice(py, &tangents))
 }
 
 #[cfg(test)]
@@ -706,6 +741,54 @@ mod tests {
             ])
             transformed = ssbh_data_py.mesh_data.transform_vectors(points, transform)
             assert transformed == [[1,2,3],[4,5,6]]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_smooth_normals_pylist() {
+        run_python_code(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_smooth_normals([[0,0,0]]*36, list(range(36)))
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_smooth_normals_tuple() {
+        run_python_code(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_smooth_normals(((0,0,0),(1,1,1),(2,2,2)), (0,1,2))
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_smooth_normals_ndarray() {
+        run_python_code_numpy(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_smooth_normals(numpy.zeros((12,4)), numpy.arange(12))
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_tangents_vec4_pylist() {
+        run_python_code(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_tangents_vec4([[0,0,0],[1,1,1],[2,2,2]], [[0,0,0],[1,1,1],[2,2,2]], [[0,0],[1,1],[2,2]], [0,1,2])
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_tangents_vec4_tuple() {
+        run_python_code(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_tangents_vec4(((0,0,0),(1,1,1),(2,2,2)), ((0,0,0),(1,1,1),(2,2,2)), ((0,0),(1,1),(2,2)), (0,1,2))
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn calculate_tangents_vec4_ndarray() {
+        run_python_code_numpy(indoc! {r#"
+            ssbh_data_py.mesh_data.calculate_tangents_vec4(numpy.zeros((12,4)), numpy.zeros((12,4)), numpy.zeros((12,2)), numpy.arange(12))
         "#})
         .unwrap();
     }
