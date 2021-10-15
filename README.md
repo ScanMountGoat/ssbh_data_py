@@ -13,8 +13,11 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :x: |
 
 ## Installing
-Installing: `pip install ssbh_data_py`  
-Updating: `pip install ssbh_data_py --upgrade`.  
+The package can be installed for a supported python version using `pip` on the latest version of Windows, Linux, or MacOS. The prebuilt wheels (`.whl` files) are included only for situations where `pip` might not be available such as for plugin development for applications. 
+
+Installing: `pip install ssbh_data_py`
+Updating: `pip install ssbh_data_py --upgrade`
+
 The minimum supported pip version is 20.3. 
 
 ## Requirements
