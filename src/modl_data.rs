@@ -1,8 +1,10 @@
-use pyo3::wrap_pyfunction;
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
 
 use crate::{create_py_list, create_vec};
+
+create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
 pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let modl_data = PyModule::new(py, "modl_data")?;
@@ -151,14 +153,9 @@ fn create_modl_entry_data_rs(
 
 #[pyfunction]
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
-    match ssbh_data::modl_data::ModlData::from_file(path) {
-        Ok(modl) => {
-            let data = create_modl_data_py(py, &modl)?;
-            Ok(data)
-        }
-        // TODO: How to handle errors or return None?
-        _ => panic!("Failed to read modl."),
-    }
+    let data = ssbh_data::modl_data::ModlData::from_file(path)
+        .map_err(|e| ModlDataError::new_err(format!("{}", e)))?;
+    Ok(create_modl_data_py(py, &data)?)
 }
 
 #[cfg(test)]

@@ -1,8 +1,10 @@
-use pyo3::wrap_pyfunction;
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
+
+create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
 
 pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
     let skel_data = PyModule::new(py, "skel_data")?;
@@ -72,28 +74,26 @@ impl SkelData {
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         let data = create_skel_data_rs(py, self)?;
-        data.write_to_file(path).unwrap();
+        data.write_to_file(path)
+            .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
         Ok(())
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
         let data = create_skel_data_rs(py, self)?;
         let bone_data = create_bone_data_rs(py, bone)?;
-        let transform = data.calculate_world_transform(&bone_data).unwrap();
+        let transform = data
+            .calculate_world_transform(&bone_data)
+            .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
         Ok(create_py_list_from_slice(py, &transform))
     }
 }
 
 #[pyfunction]
 fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
-    match ssbh_data::skel_data::SkelData::from_file(path) {
-        Ok(skel) => {
-            let data = create_skel_data_py(py, &skel)?;
-            Ok(data)
-        }
-        // TODO: How to handle errors or return None?
-        _ => panic!("Failed to read skel."),
-    }
+    let data = ssbh_data::skel_data::SkelData::from_file(path)
+        .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
+    Ok(create_skel_data_py(py, &data)?)
 }
 
 #[pyfunction]

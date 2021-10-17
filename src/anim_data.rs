@@ -334,15 +334,20 @@ fn create_group_data_py(
 
 // TODO: Conversion tests.
 fn create_group_data_rs(py: Python, data: &GroupData) -> PyResult<ssbh_data::anim_data::GroupData> {
+    let group_type = data.group_type.name.as_str();
+
     Ok(ssbh_data::anim_data::GroupData {
         // TODO: Find a more maintainable way to do enum conversions.
-        group_type: match data.group_type.name.as_str() {
-            "Transform" => ssbh_data::anim_data::GroupType::Transform,
-            "Visibility" => ssbh_data::anim_data::GroupType::Visibility,
-            "Material" => ssbh_data::anim_data::GroupType::Material,
-            "Camera" => ssbh_data::anim_data::GroupType::Camera,
-            _ => panic!("Unsupported group type"), // TODO: Nicer error handling.
-        },
+        group_type: match group_type {
+            "Transform" => Ok(ssbh_data::anim_data::GroupType::Transform),
+            "Visibility" => Ok(ssbh_data::anim_data::GroupType::Visibility),
+            "Material" => Ok(ssbh_data::anim_data::GroupType::Material),
+            "Camera" => Ok(ssbh_data::anim_data::GroupType::Camera),
+            _ => Err(AnimDataError::new_err(format!(
+                "{} is not a supported group type.",
+                group_type
+            ))),
+        }?,
         nodes: create_vec(py, &data.nodes, create_node_data_rs)?,
     })
 }
@@ -387,6 +392,18 @@ fn create_transform_py(
         scale: PyList::new(py, transform.scale.to_array()).into(),
         rotation: PyList::new(py, transform.rotation.to_array()).into(),
         translation: PyList::new(py, transform.translation.to_array()).into(),
+        compensate_scale: transform.compensate_scale,
+    })
+}
+
+fn create_transform_rs(
+    py: Python,
+    transform: &Transform,
+) -> PyResult<ssbh_data::anim_data::Transform> {
+    Ok(ssbh_data::anim_data::Transform {
+        scale: transform.scale.extract::<[f32; 3]>(py)?.into(),
+        rotation: transform.rotation.extract::<[f32; 4]>(py)?.into(),
+        translation: transform.translation.extract::<[f32; 3]>(py)?.into(),
         compensate_scale: transform.compensate_scale,
     })
 }
@@ -440,7 +457,7 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
             values.extract::<Vec<[f32; 4]>>().map(|v| {
                 TrackValuesRs::Vector4(
                     v.into_iter()
-                        .map(|[x, y, z, w]| ssbh_data::anim_data::Vector4::new(x, y, z, w))
+                        .map(ssbh_data::anim_data::Vector4::from)
                         .collect(),
                 )
             })
@@ -461,35 +478,12 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
             })
         })
         .or_else(|_| {
-            values.extract::<Vec<Transform>>().map(|v| {
-                TrackValuesRs::Transform(
-                    v.into_iter()
-                        .map(|t| {
-                            // TODO: Handle errors.
-                            let translation: [f32; 3] = t.translation.extract(py).unwrap();
-                            let scale: [f32; 3] = t.scale.extract(py).unwrap();
-                            let rotation: [f32; 4] = t.rotation.extract(py).unwrap();
-                            ssbh_data::anim_data::Transform {
-                                scale: ssbh_data::anim_data::Vector3::new(
-                                    scale[0], scale[1], scale[2],
-                                ),
-                                rotation: ssbh_data::anim_data::Vector4::new(
-                                    rotation[0],
-                                    rotation[1],
-                                    rotation[2],
-                                    rotation[3],
-                                ),
-                                translation: ssbh_data::anim_data::Vector3::new(
-                                    translation[0],
-                                    translation[1],
-                                    translation[2],
-                                ),
-                                compensate_scale: t.compensate_scale,
-                            }
-                        })
-                        .collect(),
-                )
-            })
+            let v = values
+                .extract::<Vec<Transform>>()?
+                .iter()
+                .map(|t| create_transform_rs(py, t))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(TrackValuesRs::Transform(v))
         })
 }
 
