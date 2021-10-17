@@ -1,4 +1,4 @@
-use pyo3::{create_exception, wrap_pyfunction};
+use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
 use pyo3::{prelude::*, types::PyList};
 
 use crate::{create_py_list, create_py_list_from_slice, create_vec};
@@ -111,7 +111,7 @@ impl AnimData {
             major_version,
             minor_version,
             groups: PyList::empty(py).into(),
-            final_frame_index: 0.0
+            final_frame_index: 0.0,
         })
     }
 
@@ -121,7 +121,7 @@ impl AnimData {
             major_version: self.major_version,
             minor_version: self.minor_version,
             groups,
-            final_frame_index: self.final_frame_index
+            final_frame_index: self.final_frame_index,
         };
 
         anim_data
@@ -144,7 +144,7 @@ fn create_anim_data_py(py: Python, data: &ssbh_data::anim_data::AnimData) -> PyR
         major_version: data.major_version,
         minor_version: data.minor_version,
         groups: create_py_list(py, &data.groups, create_group_data_py)?,
-        final_frame_index: data.final_frame_index
+        final_frame_index: data.final_frame_index,
     })
 }
 
@@ -248,6 +248,16 @@ impl Transform {
     }
 }
 
+#[pyproto]
+impl PyObjectProtocol for Transform {
+    fn __repr__(&self) -> String {
+        format!(
+            "ssbh_data_py.anim_data.Transform({}, {}, {}, {})",
+            self.scale, self.rotation, self.translation, self.compensate_scale,
+        )
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct UvTransform {
@@ -270,7 +280,13 @@ pub struct UvTransform {
 #[pymethods]
 impl UvTransform {
     #[new]
-    fn new(scale_u: f32, scale_v: f32, rotation: f32, translate_u: f32, translate_v: f32) -> PyResult<Self> {
+    fn new(
+        scale_u: f32,
+        scale_v: f32,
+        rotation: f32,
+        translate_u: f32,
+        translate_v: f32,
+    ) -> PyResult<Self> {
         Ok(UvTransform {
             scale_u,
             scale_v,
@@ -278,6 +294,18 @@ impl UvTransform {
             translate_u,
             translate_v,
         })
+    }
+}
+
+// TODO: This could likely be done with a derive macro.
+// TODO: Recursively call repr?
+#[pyproto]
+impl PyObjectProtocol for UvTransform {
+    fn __repr__(&self) -> String {
+        format!(
+            "ssbh_data_py.anim_data.UvTransform({}, {}, {}, {}, {})",
+            self.scale_u, self.scale_v, self.rotation, self.translate_u, self.translate_v,
+        )
     }
 }
 
@@ -510,6 +538,64 @@ mod tests {
             a = ssbh_data_py.anim_data.TrackData('abc')
             assert a.name == 'abc'
             assert a.values == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_transform() {
+        run_python_code(indoc! {r#"
+            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)
+            assert t.scale == [1, 2, 3]
+            assert t.rotation == [4, 5, 6, 7]
+            assert t.translation == [8, 9, 10]
+            assert t.compensate_scale == 11
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn transform_repr() {
+        // Check that repr can be used to construct the type.
+        run_python_code(indoc! {r#"
+            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)
+            s = repr(t)
+            assert s == 'ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)'
+            t2 = eval(s)
+            assert t2.scale == [1, 2, 3]
+            assert t2.rotation == [4, 5, 6, 7]
+            assert t2.translation == [8, 9, 10]
+            assert t2.compensate_scale == 11
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_uv_transform() {
+        run_python_code(indoc! {r#"
+            t = ssbh_data_py.anim_data.UvTransform(1,2,3,4,5)
+            assert t.scale_u == 1
+            assert t.scale_v == 2
+            assert t.rotation == 3
+            assert t.translate_u == 4
+            assert t.translate_v == 5
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn uv_transform_repr() {
+        // Check that repr can be used to construct the type.
+        run_python_code(indoc! {r#"
+            t = ssbh_data_py.anim_data.UvTransform(1,2,3,4,5)
+            s = repr(t)
+            assert s == 'ssbh_data_py.anim_data.UvTransform(1, 2, 3, 4, 5)'
+            t2 = eval(s)
+            assert t2.scale_u == 1
+            assert t2.scale_v == 2
+            assert t2.rotation == 3
+            assert t2.translate_u == 4
+            assert t2.translate_v == 5
         "#})
         .unwrap();
     }
