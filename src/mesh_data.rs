@@ -141,8 +141,8 @@ impl BoneInfluence {
                 py,
                 vertex_weights
                     .into_iter()
-                    .map(|w| Py::new(py, w).unwrap())
-                    .collect::<Vec<Py<VertexWeight>>>(),
+                    .map(|w| Py::new(py, w))
+                    .collect::<Result<Vec<Py<VertexWeight>>, _>>()?,
             )
             .into(),
         })
@@ -363,10 +363,10 @@ fn calculate_tangents_vec4(
     let uvs = create_vector_data_rs(uvs.as_ref(py))?;
 
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
-    // TODO: Handle errors?
     let tangents =
         ssbh_data::mesh_data::calculate_tangents_vec4(&positions, &normals, &uvs, &vertex_indices)
-            .unwrap();
+            .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
+
     Ok(create_py_list_from_slice(py, &tangents))
 }
 
