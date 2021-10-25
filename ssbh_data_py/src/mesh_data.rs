@@ -1,11 +1,18 @@
+use crate::{map_py_pylist_impl, MapPy};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
 use ssbh_data::SsbhData;
+use ssbh_data_py_derive::MapPy;
 
-use crate::{create_py_list, create_py_list_from_slice, create_vec};
+use crate::create_py_list_from_slice;
 
 create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
+
+map_py_pylist_impl!(ssbh_data::mesh_data::BoneInfluence, BoneInfluence);
+map_py_pylist_impl!(ssbh_data::mesh_data::VertexWeight, VertexWeight);
+map_py_pylist_impl!(ssbh_data::mesh_data::AttributeData, AttributeData);
+map_py_pylist_impl!(ssbh_data::mesh_data::MeshObjectData, MeshObjectData);
 
 pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     let mesh_data = PyModule::new(py, "mesh_data")?;
@@ -26,7 +33,8 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::mesh_data::MeshData)]
 struct MeshData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -51,22 +59,16 @@ impl MeshData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let objects: Vec<_> = create_vec(py, &self.objects, create_mesh_object_rs)?;
-        let mesh_data = ssbh_data::mesh_data::MeshData {
-            major_version: self.major_version,
-            minor_version: self.minor_version,
-            objects,
-        };
-
-        mesh_data
-            .write_to_file(path)
+        let data = self.map_py(py)?;
+        data.write_to_file(path)
             .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
         Ok(())
     }
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::mesh_data::MeshObjectData)]
 pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub name: String,
@@ -123,7 +125,8 @@ impl MeshObjectData {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::mesh_data::BoneInfluence)]
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
@@ -150,7 +153,8 @@ impl BoneInfluence {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::mesh_data::VertexWeight)]
 pub struct VertexWeight {
     #[pyo3(get, set)]
     pub vertex_index: u32,
@@ -170,85 +174,9 @@ impl VertexWeight {
     }
 }
 
-fn create_mesh_object_rs(
-    py: Python,
-    data: &MeshObjectData,
-) -> PyResult<ssbh_data::mesh_data::MeshObjectData> {
-    Ok(ssbh_data::mesh_data::MeshObjectData {
-        name: data.name.clone(),
-        sub_index: data.sub_index,
-        parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: data.vertex_indices.extract::<Vec<u32>>(py)?,
-        positions: create_vec(py, &data.positions, create_attribute_rs)?,
-        normals: create_vec(py, &data.normals, create_attribute_rs)?,
-        binormals: create_vec(py, &data.binormals, create_attribute_rs)?,
-        tangents: create_vec(py, &data.tangents, create_attribute_rs)?,
-        texture_coordinates: create_vec(py, &data.texture_coordinates, create_attribute_rs)?,
-        color_sets: create_vec(py, &data.color_sets, create_attribute_rs)?,
-        bone_influences: create_vec(py, &data.bone_influences, create_bone_influence_rs)?,
-    })
-}
-
-fn create_mesh_object_py(
-    py: Python,
-    data: &ssbh_data::mesh_data::MeshObjectData,
-) -> PyResult<MeshObjectData> {
-    Ok(MeshObjectData {
-        name: data.name.clone(),
-        sub_index: data.sub_index,
-        parent_bone_name: data.parent_bone_name.clone(),
-        vertex_indices: create_py_list_from_slice(py, &data.vertex_indices).into(),
-        positions: create_py_list(py, &data.positions, create_attribute_data_py)?,
-        normals: create_py_list(py, &data.normals, create_attribute_data_py)?,
-        binormals: create_py_list(py, &data.binormals, create_attribute_data_py)?,
-        tangents: create_py_list(py, &data.tangents, create_attribute_data_py)?,
-        texture_coordinates: create_py_list(
-            py,
-            &data.texture_coordinates,
-            create_attribute_data_py,
-        )?,
-        color_sets: create_py_list(py, &data.color_sets, create_attribute_data_py)?,
-        bone_influences: create_py_list(py, &data.bone_influences, create_bone_influence)?,
-    })
-}
-
-fn create_bone_influence(
-    py: Python,
-    influence: &ssbh_data::mesh_data::BoneInfluence,
-) -> PyResult<BoneInfluence> {
-    Ok(BoneInfluence {
-        bone_name: influence.bone_name.clone(),
-        vertex_weights: create_py_list(py, &influence.vertex_weights, |_, w| {
-            Ok(VertexWeight {
-                vertex_index: w.vertex_index,
-                vertex_weight: w.vertex_weight,
-            })
-        })?,
-    })
-}
-
-fn create_attribute_data_py(
-    py: Python,
-    attribute_data: &ssbh_data::mesh_data::AttributeData,
-) -> PyResult<AttributeData> {
-    Ok(AttributeData {
-        name: attribute_data.name.clone(),
-        data: vector_data_to_py_list(py, &attribute_data.data)?.into(),
-    })
-}
-
-fn vector_data_to_py_list(py: Python, data: &VectorDataRs) -> PyResult<Py<PyList>> {
-    // TODO: Investigate if it's worth converting to tuples.
-    // TODO: Numpy?
-    Ok(match &data {
-        VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v),
-        VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v),
-        VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v),
-    })
-}
-
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::mesh_data::AttributeData)]
 pub struct AttributeData {
     #[pyo3(get, set)]
     pub name: String,
@@ -268,74 +196,50 @@ impl AttributeData {
     }
 }
 
-fn create_attribute_rs(
-    py: Python,
-    attribute: &AttributeData,
-) -> PyResult<ssbh_data::mesh_data::AttributeData> {
-    Ok(ssbh_data::mesh_data::AttributeData {
-        name: attribute.name.clone(),
-        data: create_vector_data_rs(&attribute.data.as_ref(py))?,
-    })
+impl MapPy<PyObject> for VectorDataRs {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(match self {
+            VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v).into(),
+            VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v).into(),
+            VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v).into(),
+        })
+    }
 }
 
-fn create_vector_data_rs(data: &PyAny) -> PyResult<VectorDataRs> {
-    // We don't know the type from Python at this point.
-    // Try all the supported types and fail if all conversions fail.
-    // TODO: This still works with numpy arrays but might not be the most efficient.
-    data.extract::<Vec<[f32; 2]>>()
-        .map(VectorDataRs::Vector2)
-        .or_else(|_| data.extract::<Vec<[f32; 3]>>().map(VectorDataRs::Vector3))
-        .or_else(|_| data.extract::<Vec<[f32; 4]>>().map(VectorDataRs::Vector4))
-}
-
-fn create_bone_influence_rs(
-    py: Python,
-    influence: &BoneInfluence,
-) -> PyResult<ssbh_data::mesh_data::BoneInfluence> {
-    Ok(ssbh_data::mesh_data::BoneInfluence {
-        bone_name: influence.bone_name.clone(),
-        vertex_weights: create_vec(py, &influence.vertex_weights, |_, w: &VertexWeight| {
-            Ok(ssbh_data::mesh_data::VertexWeight {
-                vertex_index: w.vertex_index,
-                vertex_weight: w.vertex_weight,
-            })
-        })?,
-    })
+impl MapPy<VectorDataRs> for PyObject {
+    fn map_py(&self, py: Python) -> PyResult<VectorDataRs> {
+        // We don't know the type from Python at this point.
+        // Try all the supported types and fail if all conversions fail.
+        // TODO: This still works with numpy arrays but might not be the most efficient.
+        self.extract::<Vec<[f32; 2]>>(py)
+            .map(VectorDataRs::Vector2)
+            .or_else(|_| self.extract::<Vec<[f32; 3]>>(py).map(VectorDataRs::Vector3))
+            .or_else(|_| self.extract::<Vec<[f32; 4]>>(py).map(VectorDataRs::Vector4))
+    }
 }
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
-    // TODO: Simplify this conversion?
     let data = ssbh_data::mesh_data::MeshData::from_file(path)
         .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
 
-    let objects: Result<Vec<_>, _> = data
-        .objects
-        .iter()
-        .map(|o| Py::new(py, create_mesh_object_py(py, o)?))
-        .collect();
-
-    Ok(MeshData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        objects: PyList::new(py, objects?).into(),
-    })
+    data.map_py(py)
 }
 
 #[pyfunction]
-fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<Py<PyList>> {
-    let points = create_vector_data_rs(points.as_ref(py))?;
+fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
+    let points = points.map_py(py)?;
     let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
-    vector_data_to_py_list(py, &transformed_points)
+    transformed_points.map_py(py)
 }
 
 #[pyfunction]
-fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<Py<PyList>> {
-    let points = create_vector_data_rs(points.as_ref(py))?;
+fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
+    let points = points.map_py(py)?;
     let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
-    vector_data_to_py_list(py, &transformed_points)
+    transformed_points.map_py(py)
 }
 
 #[pyfunction]
@@ -344,7 +248,7 @@ fn calculate_smooth_normals(
     positions: PyObject,
     vertex_indices: PyObject,
 ) -> PyResult<Py<PyList>> {
-    let positions = create_vector_data_rs(positions.as_ref(py))?;
+    let positions = positions.map_py(py)?;
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
     Ok(create_py_list_from_slice(py, &normals))
@@ -358,9 +262,9 @@ fn calculate_tangents_vec4(
     uvs: PyObject,
     vertex_indices: PyObject,
 ) -> PyResult<Py<PyList>> {
-    let positions = create_vector_data_rs(positions.as_ref(py))?;
-    let normals = create_vector_data_rs(normals.as_ref(py))?;
-    let uvs = create_vector_data_rs(uvs.as_ref(py))?;
+    let positions = positions.map_py(py)?;
+    let normals = normals.map_py(py)?;
+    let uvs = uvs.map_py(py)?;
 
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let tangents =
@@ -372,11 +276,10 @@ fn calculate_tangents_vec4(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        eval_python_code, eval_python_code_numpy, mesh_data::create_vector_data_rs,
-        run_python_code, run_python_code_numpy,
-    };
+    use crate::MapPy;
+    use crate::{eval_python_code, eval_python_code_numpy, run_python_code, run_python_code_numpy};
     use indoc::indoc;
+    use pyo3::PyObject;
     use ssbh_data::mesh_data::VectorData;
 
     #[test]
@@ -488,63 +391,63 @@ mod tests {
     #[test]
     #[should_panic]
     fn vector2_from_pylist_invalid_type() {
-        eval_python_code("[[0, 1], [2, 'a']]", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0, 1], [2, 'a']]", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 
     #[test]
     #[should_panic]
     fn vector2_from_pylist_invalid_component_count() {
-        eval_python_code("[[0.0, 1.0], [2.0]]", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0.0, 1.0], [2.0]]", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 
     #[test]
     fn vector2_from_pylist_ints() {
-        eval_python_code("[[0, 1], [2, 3]]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0, 1], [2, 3]]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
 
     #[test]
     fn vector2_from_ndarray_ints() {
-        eval_python_code_numpy("numpy.array([[0, 1], [2, 3]],dtype=numpy.int8)", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code_numpy("numpy.array([[0, 1], [2, 3]],dtype=numpy.int8)", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
 
     #[test]
     fn vector2_from_pylist() {
-        eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
 
     #[test]
     fn vector2_from_tuples() {
-        eval_python_code("[(0.0, 1.0), (2.0, 3.0)]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[(0.0, 1.0), (2.0, 3.0)]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
 
     #[test]
     fn vector2_from_ndarray() {
-        eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
 
     #[test]
     fn vector3_from_pylist() {
-        eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                 value
@@ -554,8 +457,8 @@ mod tests {
 
     #[test]
     fn vector3_from_tuples() {
-        eval_python_code("[(0.0, 1.0, 2.0), (3.0, 4.0, 5.0)]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[(0.0, 1.0, 2.0), (3.0, 4.0, 5.0)]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                 value
@@ -565,19 +468,22 @@ mod tests {
 
     #[test]
     fn vector3_from_ndarray() {
-        eval_python_code_numpy("numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
-            assert_eq!(
-                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
-                value
-            );
-        });
+        eval_python_code_numpy(
+            "numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])",
+            |py, x| {
+                let value = PyObject::from(x).map_py(py).unwrap();
+                assert_eq!(
+                    VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
+                    value
+                );
+            },
+        );
     }
 
     #[test]
     fn vector4_from_pylist() {
-        eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
@@ -587,8 +493,8 @@ mod tests {
 
     #[test]
     fn vector4_from_tuples() {
-        eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |_, x| {
-            let value = create_vector_data_rs(x).unwrap();
+        eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |py, x| {
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
@@ -600,8 +506,8 @@ mod tests {
     fn vector4_from_ndarray() {
         eval_python_code_numpy(
             "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
-            |_, x| {
-                let value = create_vector_data_rs(x).unwrap();
+            |py, x| {
+                let value = PyObject::from(x).map_py(py).unwrap();
                 assert_eq!(
                     VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                     value
@@ -614,8 +520,8 @@ mod tests {
     #[should_panic]
     fn vector_from_5x5_pylist() {
         // Vector5 is not a valid variant.
-        eval_python_code("[[1.0,2.0,3.0,4.0,5.0]]", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code("[[1.0,2.0,3.0,4.0,5.0]]", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 
@@ -623,8 +529,8 @@ mod tests {
     #[should_panic]
     fn vector_from_5x5_ndarray() {
         // Vector5 is not a valid variant.
-        eval_python_code_numpy("numpy.zeros((5,5))", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code_numpy("numpy.zeros((5,5))", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 
@@ -633,8 +539,8 @@ mod tests {
     #[should_panic]
     fn vector_from_empty_pylist() {
         // TODO: How to infer the type when there are no elements?
-        eval_python_code("[]", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code("[]", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 
@@ -643,8 +549,8 @@ mod tests {
     #[should_panic]
     fn vector_from_empty_ndarray() {
         // TODO: How to infer the type when there are no elements?
-        eval_python_code_numpy("numpy.array()", |_, x| {
-            create_vector_data_rs(x).unwrap();
+        eval_python_code_numpy("numpy.array()", |py, x| {
+            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
         });
     }
 

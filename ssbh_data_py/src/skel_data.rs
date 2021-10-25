@@ -1,10 +1,17 @@
+use crate::map_py_pylist_impl;
+use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
+use ssbh_data_py_derive::MapPy;
 
-use crate::{create_py_list, create_py_list_from_slice, create_vec};
+use crate::create_py_list_from_slice;
 
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
+
+map_py_pylist_impl!(ssbh_data::skel_data::BoneData, BoneData);
+// TODO: How to implement for arrays?
+// TODO: Can this still rely on type inferencing?
 
 pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
     let skel_data = PyModule::new(py, "skel_data")?;
@@ -18,7 +25,8 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::skel_data::SkelData)]
 struct SkelData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -31,7 +39,8 @@ struct SkelData {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::skel_data::BoneData)]
 struct BoneData {
     #[pyo3(get, set)]
     pub name: String,
@@ -73,15 +82,15 @@ impl SkelData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = create_skel_data_rs(py, self)?;
+        let data = self.map_py(py)?;
         data.write_to_file(path)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
         Ok(())
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
-        let data = create_skel_data_rs(py, self)?;
-        let bone_data = create_bone_data_rs(py, bone)?;
+        let data: ssbh_data::skel_data::SkelData = self.map_py(py)?;
+        let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
         let transform = data
             .calculate_world_transform(&bone_data)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
@@ -93,7 +102,7 @@ impl SkelData {
 fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
     let data = ssbh_data::skel_data::SkelData::from_file(path)
         .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
-    Ok(create_skel_data_py(py, &data)?)
+    data.map_py(py)
 }
 
 #[pyfunction]
@@ -115,38 +124,6 @@ fn calculate_relative_transform(
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };
     Ok(create_py_list_from_slice(py, &transform))
-}
-
-fn create_skel_data_py(py: Python, data: &ssbh_data::skel_data::SkelData) -> PyResult<SkelData> {
-    Ok(SkelData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        bones: create_py_list(py, &data.bones, create_bone_data_py)?,
-    })
-}
-
-fn create_skel_data_rs(py: Python, data: &SkelData) -> PyResult<ssbh_data::skel_data::SkelData> {
-    Ok(ssbh_data::skel_data::SkelData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        bones: create_vec(py, &data.bones, create_bone_data_rs)?,
-    })
-}
-
-fn create_bone_data_rs(py: Python, data: &BoneData) -> PyResult<ssbh_data::skel_data::BoneData> {
-    Ok(ssbh_data::skel_data::BoneData {
-        name: data.name.clone(),
-        transform: data.transform.extract::<[[f32; 4]; 4]>(py)?,
-        parent_index: data.parent_index,
-    })
-}
-
-fn create_bone_data_py(py: Python, data: &ssbh_data::skel_data::BoneData) -> PyResult<BoneData> {
-    Ok(BoneData {
-        name: data.name.clone(),
-        transform: create_py_list_from_slice(py, &data.transform).into(),
-        parent_index: data.parent_index,
-    })
 }
 
 #[cfg(test)]

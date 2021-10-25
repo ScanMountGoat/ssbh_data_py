@@ -1,10 +1,13 @@
+use crate::map_py_pylist_impl;
+use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-
-use crate::{create_py_list, create_vec};
+use ssbh_data_py_derive::MapPy;
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
+
+map_py_pylist_impl!(ssbh_data::modl_data::ModlEntryData, ModlEntryData);
 
 pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let modl_data = PyModule::new(py, "modl_data")?;
@@ -17,7 +20,8 @@ pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::modl_data::ModlData)]
 struct ModlData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -62,14 +66,15 @@ impl ModlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = create_modl_data_rs(py, self)?;
+        let data = self.map_py(py)?;
         data.write_to_file(path)?;
         Ok(())
     }
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::modl_data::ModlEntryData)]
 pub struct ModlEntryData {
     #[pyo3(get, set)]
     pub mesh_object_name: String,
@@ -98,64 +103,11 @@ impl ModlEntryData {
     }
 }
 
-fn create_modl_data_py(py: Python, data: &ssbh_data::modl_data::ModlData) -> PyResult<ModlData> {
-    Ok(ModlData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        model_name: data.model_name.clone(),
-        skeleton_file_name: data.skeleton_file_name.clone(),
-        // TODO: Why can't this use the existing from slice function?
-        material_file_names: PyList::new(
-            py,
-            data.material_file_names.iter().map(|m| m.into_py(py)),
-        )
-        .into(),
-        animation_file_name: data.animation_file_name.clone(),
-        mesh_file_name: data.mesh_file_name.clone(),
-        entries: create_py_list(py, &data.entries, create_modl_entry_data_py)?,
-    })
-}
-
-fn create_modl_data_rs(py: Python, data: &ModlData) -> PyResult<ssbh_data::modl_data::ModlData> {
-    Ok(ssbh_data::modl_data::ModlData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        model_name: data.model_name.clone(),
-        skeleton_file_name: data.skeleton_file_name.clone(),
-        material_file_names: data.material_file_names.extract::<Vec<String>>(py)?,
-        animation_file_name: data.animation_file_name.clone(),
-        mesh_file_name: data.mesh_file_name.clone(),
-        entries: create_vec(py, &data.entries, create_modl_entry_data_rs)?,
-    })
-}
-
-fn create_modl_entry_data_py(
-    _py: Python,
-    data: &ssbh_data::modl_data::ModlEntryData,
-) -> PyResult<ModlEntryData> {
-    Ok(ModlEntryData {
-        mesh_object_name: data.mesh_object_name.clone(),
-        mesh_object_sub_index: data.mesh_object_sub_index,
-        material_label: data.material_label.clone(),
-    })
-}
-
-fn create_modl_entry_data_rs(
-    _py: Python,
-    data: &ModlEntryData,
-) -> PyResult<ssbh_data::modl_data::ModlEntryData> {
-    Ok(ssbh_data::modl_data::ModlEntryData {
-        mesh_object_name: data.mesh_object_name.clone(),
-        mesh_object_sub_index: data.mesh_object_sub_index,
-        material_label: data.material_label.clone(),
-    })
-}
-
 #[pyfunction]
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
     let data = ssbh_data::modl_data::ModlData::from_file(path)
         .map_err(|e| ModlDataError::new_err(format!("{}", e)))?;
-    Ok(create_modl_data_py(py, &data)?)
+    Ok(data.map_py(py)?)
 }
 
 #[cfg(test)]

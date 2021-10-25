@@ -1,9 +1,11 @@
+use crate::{create_py_list, create_py_list_from_slice, create_vec};
 use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
 use pyo3::{prelude::*, types::PyList};
-
-use crate::{create_py_list, create_py_list_from_slice, create_vec};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
+use crate::map_py_pylist_impl;
+use crate::MapPy;
+use ssbh_data_py_derive::MapPy;
 
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 

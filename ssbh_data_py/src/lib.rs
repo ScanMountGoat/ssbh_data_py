@@ -56,6 +56,110 @@ fn create_vec<T, P: PyClass + Clone, F: Fn(Python, &P) -> PyResult<T>>(
     rust_elements
 }
 
+// Define a mapping between types.
+// This allows for deriving the Python <-> Rust conversion.
+// TODO: It may be possible to use Pyo3 for this in the future.
+// The derive macro is mainly to automate mapping field names.
+trait MapPy<T> {
+    fn map_py(&self, py: Python) -> PyResult<T>;
+}
+
+macro_rules! map_py_impl {
+    ($($t:ty),*) => {
+        $(
+            impl MapPy<$t> for $t {
+                fn map_py(&self, _py: Python) -> PyResult<$t> {
+                    Ok(self.clone())
+                }
+            }
+        )*
+    }
+}
+
+pub(crate) use map_py_impl;
+
+map_py_impl!(u8, u16, u32, u64, f32, f64, String);
+
+macro_rules! map_py_pylist_impl {
+    ($t:ty) => {
+        impl MapPy<Py<PyList>> for Vec<$t> {
+            fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+                Ok(PyList::new(py, self.iter().map(|m| m.into_py(py))).into())
+            }
+        }
+
+        impl MapPy<Vec<$t>> for Py<PyList> {
+            fn map_py(&self, py: Python) -> PyResult<Vec<$t>> {
+                self.extract(py)
+            }
+        }
+    };
+    ($t:ty,$u:ty) => {
+        impl MapPy<Vec<$t>> for Py<PyList> {
+            fn map_py(&self, py: Python) -> PyResult<Vec<$t>> {
+                // TODO: Avoid unwrap.
+                Ok(self
+                    .as_ref(py)
+                    .iter()
+                    .map(|i| i.extract::<$u>().unwrap().map_py(py).unwrap())
+                    .collect())
+            }
+        }
+
+        impl MapPy<Py<PyList>> for Vec<$t> {
+            // TODO: Avoid unwrap.
+            fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+                Ok(PyList::new(
+                    py,
+                    self.iter()
+                        .map(|e| Py::new(py, e.map_py(py).unwrap()).unwrap()),
+                )
+                .into())
+            }
+        }
+    };
+}
+
+pub(crate) use map_py_pylist_impl;
+
+map_py_pylist_impl!(String);
+map_py_pylist_impl!(u32);
+
+macro_rules! map_py_pyobject_impl {
+    ($($t:ty),*) => {
+        $(
+            impl MapPy<$t> for PyObject {
+                fn map_py(&self, py: Python) -> PyResult<$t> {
+                    self.extract(py)
+                }
+            }
+        )*
+    }
+}
+
+pub(crate) use map_py_pyobject_impl;
+
+// TODO: Derive this?
+map_py_pyobject_impl!([[f32; 4]; 4]);
+impl MapPy<PyObject> for [[f32; 4]; 4] {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(create_py_list_from_slice(py, self).into())
+    }
+}
+
+map_py_pyobject_impl!(Vec<u32>);
+impl MapPy<PyObject> for Vec<u32> {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(create_py_list_from_slice(py, self).into())
+    }
+}
+
+impl<T: Clone> MapPy<Option<T>> for Option<T> {
+    fn map_py(&self, py: Python) -> PyResult<Option<T>> {
+        Ok(self.clone())
+    }
+}
+
 #[cfg(test)]
 fn run_python_code(code: &str) -> PyResult<()> {
     use pyo3::types::IntoPyDict;
@@ -78,11 +182,15 @@ fn run_python_code_numpy(code: &str) -> PyResult<()> {
 
     let module = PyModule::new(py, "ssbh_data_py").unwrap();
     ssbh_data_py(py, module).unwrap();
-    
+
     // TODO: This requires numpy to be in the current Python environment,
     // which may require some configuration to run tests with github actions.
-    let ctx = [("ssbh_data_py", module), ("numpy", PyModule::import(py, "numpy").unwrap())].into_py_dict(py);
-    
+    let ctx = [
+        ("ssbh_data_py", module),
+        ("numpy", PyModule::import(py, "numpy").unwrap()),
+    ]
+    .into_py_dict(py);
+
     py.run(code, None, Some(ctx))
 }
 
@@ -108,13 +216,16 @@ fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     let gil = Python::acquire_gil();
     let py = gil.python();
 
-
     let module = PyModule::new(py, "ssbh_data_py").unwrap();
     ssbh_data_py(py, module).unwrap();
 
     // TODO: This requires numpy to be in the current Python environment,
     // which may require some configuration to run tests with github actions.
-    let ctx = [("ssbh_data_py", module), ("numpy", PyModule::import(py, "numpy").unwrap())].into_py_dict(py);
+    let ctx = [
+        ("ssbh_data_py", module),
+        ("numpy", PyModule::import(py, "numpy").unwrap()),
+    ]
+    .into_py_dict(py);
 
     let result = py.eval(code, None, Some(ctx)).unwrap();
     f(py, result);
