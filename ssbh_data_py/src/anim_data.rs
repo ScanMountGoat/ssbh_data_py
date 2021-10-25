@@ -1,13 +1,18 @@
-use crate::{create_py_list, create_py_list_from_slice, create_vec};
+use crate::map_py_pylist_impl;
+use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
-use crate::map_py_pylist_impl;
-use crate::MapPy;
 use ssbh_data_py_derive::MapPy;
 
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
+
+map_py_pylist_impl!(ssbh_data::anim_data::GroupData, GroupData);
+map_py_pylist_impl!(ssbh_data::anim_data::NodeData, NodeData);
+map_py_pylist_impl!(ssbh_data::anim_data::TrackData, TrackData);
+map_py_pylist_impl!(ssbh_data::anim_data::UvTransform, UvTransform);
+map_py_pylist_impl!(ssbh_data::anim_data::Transform, Transform);
 
 pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     let anim_data = PyModule::new(py, "anim_data")?;
@@ -26,7 +31,8 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::AnimData)]
 pub struct AnimData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -42,7 +48,8 @@ pub struct AnimData {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::GroupData)]
 pub struct GroupData {
     #[pyo3(get, set)]
     pub group_type: GroupType,
@@ -63,7 +70,8 @@ impl GroupData {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::NodeData)]
 pub struct NodeData {
     #[pyo3(get, set)]
     pub name: String,
@@ -84,11 +92,13 @@ impl NodeData {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::TrackData)]
 pub struct TrackData {
     #[pyo3(get, set)]
     pub name: String,
 
+    // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
 }
@@ -118,16 +128,8 @@ impl AnimData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let groups: Vec<_> = create_vec(py, &self.groups, create_group_data_rs)?;
-        let anim_data = ssbh_data::anim_data::AnimData {
-            major_version: self.major_version,
-            minor_version: self.minor_version,
-            groups,
-            final_frame_index: self.final_frame_index,
-        };
-
-        anim_data
-            .write_to_file(path)
+        let data = self.map_py(py)?;
+        data.write_to_file(path)
             .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
         Ok(())
     }
@@ -135,19 +137,9 @@ impl AnimData {
 
 #[pyfunction]
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
-    let anim = ssbh_data::anim_data::AnimData::from_file(path)
+    let data = ssbh_data::anim_data::AnimData::from_file(path)
         .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
-    let data = create_anim_data_py(py, &anim)?;
-    Ok(data)
-}
-
-fn create_anim_data_py(py: Python, data: &ssbh_data::anim_data::AnimData) -> PyResult<AnimData> {
-    Ok(AnimData {
-        major_version: data.major_version,
-        minor_version: data.minor_version,
-        groups: create_py_list(py, &data.groups, create_group_data_py)?,
-        final_frame_index: data.final_frame_index,
-    })
+    data.map_py(py)
 }
 
 // TODO: Change this to be a proper Python enum once supported by PyO3.
@@ -185,6 +177,27 @@ impl From<ssbh_data::anim_data::GroupType> for GroupType {
     }
 }
 
+impl MapPy<GroupType> for ssbh_data::anim_data::GroupType {
+    fn map_py(&self, py: Python) -> PyResult<GroupType> {
+        Ok((*self).into())
+    }
+}
+
+impl MapPy<ssbh_data::anim_data::GroupType> for GroupType {
+    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::GroupType> {
+        match self.name.as_str() {
+            "Transform" => Ok(ssbh_data::anim_data::GroupType::Transform),
+            "Visibility" => Ok(ssbh_data::anim_data::GroupType::Visibility),
+            "Material" => Ok(ssbh_data::anim_data::GroupType::Material),
+            "Camera" => Ok(ssbh_data::anim_data::GroupType::Camera),
+            _ => Err(AnimDataError::new_err(format!(
+                "{} is not a supported group type.",
+                self.name
+            ))),
+        }
+    }
+}
+
 // TODO: Make a macro for this?
 // TODO: Add string and representation to match Python enum?
 #[pymethods]
@@ -216,7 +229,8 @@ impl GroupType {
 
 // TODO: Document what component counts are expected.
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::Transform)]
 pub struct Transform {
     #[pyo3(get, set)]
     pub scale: Py<PyList>,
@@ -261,7 +275,8 @@ impl PyObjectProtocol for Transform {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::UvTransform)]
 pub struct UvTransform {
     #[pyo3(get, set)]
     pub scale_u: f32,
@@ -311,133 +326,53 @@ impl PyObjectProtocol for UvTransform {
     }
 }
 
-fn create_uv_transform_py(
-    _py: Python,
-    transform: &ssbh_data::anim_data::UvTransform,
-) -> PyResult<UvTransform> {
-    Ok(UvTransform {
-        scale_u: transform.scale_u,
-        scale_v: transform.scale_u,
-        rotation: transform.scale_u,
-        translate_u: transform.scale_u,
-        translate_v: transform.scale_u,
-    })
+impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
+    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector4> {
+        let values: [f32; 4] = self.extract(py)?;
+        Ok(values.into())
+    }
 }
 
-fn create_group_data_py(
-    py: Python,
-    group: &ssbh_data::anim_data::GroupData,
-) -> PyResult<GroupData> {
-    Ok(GroupData {
-        group_type: group.group_type.into(),
-        nodes: create_py_list(py, &group.nodes, create_node_data_py)?,
-    })
+impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector4 {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, self.to_array()).into())
+    }
 }
 
-// TODO: Conversion tests.
-fn create_group_data_rs(py: Python, data: &GroupData) -> PyResult<ssbh_data::anim_data::GroupData> {
-    let group_type = data.group_type.name.as_str();
-
-    Ok(ssbh_data::anim_data::GroupData {
-        // TODO: Find a more maintainable way to do enum conversions.
-        group_type: match group_type {
-            "Transform" => Ok(ssbh_data::anim_data::GroupType::Transform),
-            "Visibility" => Ok(ssbh_data::anim_data::GroupType::Visibility),
-            "Material" => Ok(ssbh_data::anim_data::GroupType::Material),
-            "Camera" => Ok(ssbh_data::anim_data::GroupType::Camera),
-            _ => Err(AnimDataError::new_err(format!(
-                "{} is not a supported group type.",
-                group_type
-            ))),
-        }?,
-        nodes: create_vec(py, &data.nodes, create_node_data_rs)?,
-    })
+impl MapPy<ssbh_data::anim_data::Vector3> for Py<PyList> {
+    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector3> {
+        let values: [f32; 3] = self.extract(py)?;
+        Ok(values.into())
+    }
 }
 
-// TODO: IntoIter and avoid clone?
-fn create_node_data_py(py: Python, node: &ssbh_data::anim_data::NodeData) -> PyResult<NodeData> {
-    Ok(NodeData {
-        name: node.name.to_string(),
-        tracks: create_py_list(py, &node.tracks, create_track_data_py)?,
-    })
+impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector3 {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, self.to_array()).into())
+    }
 }
 
-fn create_node_data_rs(py: Python, data: &NodeData) -> PyResult<ssbh_data::anim_data::NodeData> {
-    Ok(ssbh_data::anim_data::NodeData {
-        name: data.name.clone(),
-        tracks: create_vec(py, &data.tracks, create_track_data_rs)?,
-    })
-}
-
-fn create_track_data_py(
-    py: Python,
-    track: &ssbh_data::anim_data::TrackData,
-) -> PyResult<TrackData> {
-    Ok(TrackData {
-        name: track.name.to_string(),
-        values: create_track_values_py(py, &track.values)?,
-    })
-}
-
-fn create_track_data_rs(py: Python, data: &TrackData) -> PyResult<ssbh_data::anim_data::TrackData> {
-    Ok(ssbh_data::anim_data::TrackData {
-        name: data.name.clone(),
-        values: create_track_values_rs(py, data.values.as_ref(py))?,
-    })
-}
-
-fn create_transform_py(
-    py: Python,
-    transform: &ssbh_data::anim_data::Transform,
-) -> PyResult<Transform> {
-    Ok(Transform {
-        scale: PyList::new(py, transform.scale.to_array()).into(),
-        rotation: PyList::new(py, transform.rotation.to_array()).into(),
-        translation: PyList::new(py, transform.translation.to_array()).into(),
-        compensate_scale: transform.compensate_scale,
-    })
-}
-
-fn create_transform_rs(
-    py: Python,
-    transform: &Transform,
-) -> PyResult<ssbh_data::anim_data::Transform> {
-    Ok(ssbh_data::anim_data::Transform {
-        scale: transform.scale.extract::<[f32; 3]>(py)?.into(),
-        rotation: transform.rotation.extract::<[f32; 4]>(py)?.into(),
-        translation: transform.translation.extract::<[f32; 3]>(py)?.into(),
-        compensate_scale: transform.compensate_scale,
-    })
-}
-
-fn vector4_values_to_py_list(py: Python, values: &[ssbh_data::anim_data::Vector4]) -> Py<PyList> {
-    let lists = values.iter().map(|v| PyList::new(py, v.to_array()));
-    PyList::new(py, lists).into()
-}
-
-fn create_track_values_py(
-    py: Python,
-    track_values: &ssbh_data::anim_data::TrackValues,
-) -> PyResult<Py<PyList>> {
-    match track_values {
-        ssbh_data::anim_data::TrackValues::Transform(values) => {
-            create_py_list(py, values, create_transform_py)
+impl MapPy<Py<PyList>> for TrackValuesRs {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+        match self {
+            TrackValuesRs::Transform(v) => v.map_py(py),
+            TrackValuesRs::UvTransform(v) => v.map_py(py),
+            TrackValuesRs::Float(v) => v.map_py(py),
+            TrackValuesRs::PatternIndex(v) => v.map_py(py),
+            TrackValuesRs::Boolean(v) => v.map_py(py),
+            // TODO: Find a way to just use v.map_py(py)
+            TrackValuesRs::Vector4(v) => Ok(PyList::new(
+                py,
+                v.iter().map(|i| i.map_py(py).unwrap()).collect::<Vec<_>>(),
+            )
+            .into()),
         }
-        ssbh_data::anim_data::TrackValues::UvTransform(values) => {
-            create_py_list(py, values, create_uv_transform_py)
-        }
-        ssbh_data::anim_data::TrackValues::Float(values) => {
-            Ok(create_py_list_from_slice(py, values))
-        }
-        ssbh_data::anim_data::TrackValues::PatternIndex(values) => {
-            Ok(create_py_list_from_slice(py, values))
-        }
-        ssbh_data::anim_data::TrackValues::Boolean(values) => {
-            Ok(create_py_list_from_slice(py, values))
-        }
-        ssbh_data::anim_data::TrackValues::Vector4(values) => {
-            Ok(vector4_values_to_py_list(py, values))
-        }
+    }
+}
+
+impl MapPy<TrackValuesRs> for Py<PyList> {
+    fn map_py(&self, py: Python) -> PyResult<TrackValuesRs> {
+        create_track_values_rs(py, self.as_ref(py))
     }
 }
 
@@ -466,26 +401,13 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
         })
         .or_else(|_| {
             values.extract::<Vec<UvTransform>>().map(|v| {
-                TrackValuesRs::UvTransform(
-                    v.into_iter()
-                        .map(|t| ssbh_data::anim_data::UvTransform {
-                            scale_u: t.scale_u,
-                            scale_v: t.scale_v,
-                            rotation: t.rotation,
-                            translate_u: t.translate_u,
-                            translate_v: t.translate_v,
-                        })
-                        .collect(),
-                )
+                TrackValuesRs::UvTransform(v.into_iter().map(|t| t.map_py(py).unwrap()).collect())
             })
         })
         .or_else(|_| {
-            let v = values
-                .extract::<Vec<Transform>>()?
-                .iter()
-                .map(|t| create_transform_rs(py, t))
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok(TrackValuesRs::Transform(v))
+            values.extract::<Vec<Transform>>().map(|v| {
+                TrackValuesRs::Transform(v.into_iter().map(|t| t.map_py(py).unwrap()).collect())
+            })
         })
 }
 

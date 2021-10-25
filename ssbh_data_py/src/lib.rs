@@ -78,13 +78,14 @@ macro_rules! map_py_impl {
 
 pub(crate) use map_py_impl;
 
-map_py_impl!(u8, u16, u32, u64, f32, f64, String);
+map_py_impl!(bool, u8, u16, u32, u64, f32, f64, String);
 
+// TODO: This can be a blanket implementation for anything that is MapPy and FromPyObject?
 macro_rules! map_py_pylist_impl {
     ($t:ty) => {
         impl MapPy<Py<PyList>> for Vec<$t> {
             fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
-                Ok(PyList::new(py, self.iter().map(|m| m.into_py(py))).into())
+                Ok(PyList::new(py, self.iter().map(|m| m.map_py(py).unwrap())).into())
             }
         }
 
@@ -124,6 +125,9 @@ pub(crate) use map_py_pylist_impl;
 
 map_py_pylist_impl!(String);
 map_py_pylist_impl!(u32);
+map_py_pylist_impl!(f32);
+map_py_pylist_impl!(bool);
+
 
 macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {
