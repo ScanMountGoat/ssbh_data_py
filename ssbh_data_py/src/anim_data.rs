@@ -171,13 +171,13 @@ impl From<ssbh_data::anim_data::GroupType> for GroupType {
 }
 
 impl MapPy<GroupType> for ssbh_data::anim_data::GroupType {
-    fn map_py(&self, py: Python) -> PyResult<GroupType> {
+    fn map_py(&self, _py: Python) -> PyResult<GroupType> {
         Ok((*self).into())
     }
 }
 
 impl MapPy<ssbh_data::anim_data::GroupType> for GroupType {
-    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::GroupType> {
+    fn map_py(&self, _py: Python) -> PyResult<ssbh_data::anim_data::GroupType> {
         match self.name.as_str() {
             "Transform" => Ok(ssbh_data::anim_data::GroupType::Transform),
             "Visibility" => Ok(ssbh_data::anim_data::GroupType::Visibility),
@@ -353,13 +353,14 @@ impl MapPy<Py<PyList>> for TrackValuesRs {
             TrackValuesRs::Float(v) => v.map_py(py),
             TrackValuesRs::PatternIndex(v) => v.map_py(py),
             TrackValuesRs::Boolean(v) => v.map_py(py),
-            // TODO: Find a way to just use v.map_py(py)
-            TrackValuesRs::Vector4(v) => Ok(PyList::new(
-                py,
-                v.iter().map(|i| i.map_py(py).unwrap()).collect::<Vec<_>>(),
-            )
-            .into()),
+            TrackValuesRs::Vector4(v) => v.map_py(py),
         }
+    }
+}
+
+impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(self.to_array().into_py(py))
     }
 }
 
@@ -393,14 +394,20 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
             })
         })
         .or_else(|_| {
-            values.extract::<Vec<UvTransform>>().map(|v| {
-                TrackValuesRs::UvTransform(v.into_iter().map(|t| t.map_py(py).unwrap()).collect())
-            })
+            let v = values.extract::<Vec<UvTransform>>()?;
+            Ok(TrackValuesRs::UvTransform(
+                v.into_iter()
+                    .map(|t| t.map_py(py))
+                    .collect::<Result<Vec<_>, _>>()?,
+            ))
         })
-        .or_else(|_| {
-            values.extract::<Vec<Transform>>().map(|v| {
-                TrackValuesRs::Transform(v.into_iter().map(|t| t.map_py(py).unwrap()).collect())
-            })
+        .or_else(|_: PyErr| {
+            let v = values.extract::<Vec<Transform>>()?;
+            Ok(TrackValuesRs::Transform(
+                v.into_iter()
+                    .map(|t| t.map_py(py))
+                    .collect::<Result<Vec<_>, _>>()?,
+            ))
         })
 }
 

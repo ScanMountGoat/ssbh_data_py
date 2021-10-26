@@ -34,7 +34,13 @@ trait MapPy<T> {
 // Use MapPy<PyObject> instead to utilize the ssbh_data -> ssbh_data_py conversion.
 impl<T: MapPy<PyObject>> MapPy<Py<PyList>> for Vec<T> {
     fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(py, self.iter().map(|e| e.map_py(py).unwrap())).into())
+        Ok(PyList::new(
+            py,
+            self.iter()
+                .map(|e| e.map_py(py))
+                .collect::<Result<Vec<_>, _>>()?,
+        )
+        .into())
     }
 }
 
@@ -45,7 +51,10 @@ where
     PyObject: MapPy<T>,
 {
     fn map_py(&self, py: Python) -> PyResult<Vec<T>> {
-        Ok(self.as_ref(py).iter().map(|e| PyObject::from(e).map_py(py).unwrap()).collect())
+        self.as_ref(py)
+            .iter()
+            .map(|e| PyObject::from(e).map_py(py))
+            .collect::<Result<Vec<_>, _>>()
     }
 }
 

@@ -104,7 +104,7 @@ impl ModlEntryData {
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
     let data = ssbh_data::modl_data::ModlData::from_file(path)
         .map_err(|e| ModlDataError::new_err(format!("{}", e)))?;
-    Ok(data.map_py(py)?)
+    data.map_py(py)
 }
 
 #[cfg(test)]
