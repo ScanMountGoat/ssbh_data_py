@@ -1,3 +1,17 @@
+### 0.4.0
+Changes:
+- Fields and function parameters that used to only accept lists of floats or ints now accept sequences such as tuples or numpy arrays. For example, `bone.transform = numpy.zeros((4,4))`, `mesh_object_data.vertex_indices = numpy.arange(12)`, and `attribute_data.data = [(1,0,0), (0,1,0)]` now work as expected without requiring any conversions.
+- Improved the printed representation of `ssbh_data_py.anim_data.Transform` and `ssbh_data_py.anim_data.UvTransform`
+- Added `ssbh_data_py.mesh_data.calculate_smooth_normals` and `ssbh_data_py.mesh_data.calculate_tangents_vec4` functions from ssbh_data
+- Fixed an issue where the 4th value of `Transform.rotation` would sometimes be set to `NaN`.
+- Improved the readability of Python exceptions triggered by panics in Rust code. 
+
+Breaking Changes:
+ssbh_data_py.anim_data
+- Renamed all UvTransform fields
+- Changed the expected type from float to integer for Transform.compensate_scale
+- Added the final_frame_index field to AnimData. This should be set to `frame_count - 1` or `0` for empty animations.
+
 ### 0.3.4
 Changes:
 - Added type stub files (.pyi). This enables type hints and autocompletion in supported IDEs.
