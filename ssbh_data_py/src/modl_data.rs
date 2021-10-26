@@ -1,4 +1,3 @@
-use crate::map_py_pylist_impl;
 use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
@@ -6,8 +5,6 @@ use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
-
-map_py_pylist_impl!(ssbh_data::modl_data::ModlEntryData, ModlEntryData);
 
 pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let modl_data = PyModule::new(py, "modl_data")?;

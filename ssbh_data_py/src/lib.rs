@@ -29,6 +29,26 @@ trait MapPy<T> {
     fn map_py(&self, py: Python) -> PyResult<T>;
 }
 
+// We want a conversion from Vec<T> -> Py<PyList>.
+// We can't implement ToPyObject for ssbh_lib types in ssbh_data_py.
+// Use MapPy<PyObject> instead to utilize the ssbh_data -> ssbh_data_py conversion.
+impl<T: MapPy<PyObject>> MapPy<Py<PyList>> for Vec<T> {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, self.iter().map(|e| e.map_py(py).unwrap())).into())
+    }
+}
+
+// Similarly, we need to define a conversion from Py<PyList> -> Vec<T>.
+// The element type of a PyList is PyAny, so we can use a mapping from PyObject (Py<PyAny>) to T.
+impl<T> MapPy<Vec<T>> for Py<PyList>
+where
+    PyObject: MapPy<T>,
+{
+    fn map_py(&self, py: Python) -> PyResult<Vec<T>> {
+        Ok(self.as_ref(py).iter().map(|e| PyObject::from(e).map_py(py).unwrap()).collect())
+    }
+}
+
 // Implement for primitive types.
 macro_rules! map_py_impl {
     ($($t:ty),*) => {
@@ -39,21 +59,19 @@ macro_rules! map_py_impl {
                 }
             }
 
-            impl MapPy<$t> for PyAny {
-                fn map_py(&self, _py: Python) -> PyResult<$t> {
-                    self.extract()
+            // Define the Rust <-> Python conversion to support the Vec <-> PyList conversion.
+            impl MapPy<PyObject> for $t {
+                fn map_py(
+                    &self,
+                    py: Python,
+                ) -> PyResult<PyObject> {
+                    Ok(self.into_py(py))
                 }
             }
 
-            impl MapPy<Vec<$t>> for Py<PyList> {
-                fn map_py(&self, py: Python) -> PyResult<Vec<$t>> {
+            impl MapPy<$t> for PyObject {
+                fn map_py(&self, py: Python) -> PyResult<$t> {
                     self.extract(py)
-                }
-            }
-
-            impl MapPy<Py<PyList>> for Vec<$t> {
-                fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
-                    Ok(PyList::new(py, self).into())
                 }
             }
         )*
@@ -61,35 +79,6 @@ macro_rules! map_py_impl {
 }
 
 map_py_impl!(bool, u8, u16, u32, u64, u128, f32, f64, String);
-
-macro_rules! map_py_pylist_impl {
-    ($rs:ty,$py:ty) => {
-        impl MapPy<Vec<$rs>> for Py<PyList> {
-            fn map_py(&self, py: Python) -> PyResult<Vec<$rs>> {
-                // TODO: Avoid unwrap.
-                Ok(self
-                    .as_ref(py)
-                    .iter()
-                    .map(|i| i.extract::<$py>().unwrap().map_py(py).unwrap())
-                    .collect())
-            }
-        }
-
-        impl MapPy<Py<PyList>> for Vec<$rs> {
-            // TODO: Avoid unwrap.
-            fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
-                Ok(PyList::new(
-                    py,
-                    self.iter()
-                        .map(|e| Py::new(py, e.map_py(py).unwrap()).unwrap()),
-                )
-                .into())
-            }
-        }
-    };
-}
-
-pub(crate) use map_py_pylist_impl;
 
 macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {

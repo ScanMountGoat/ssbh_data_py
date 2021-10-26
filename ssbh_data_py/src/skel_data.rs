@@ -1,4 +1,3 @@
-use crate::map_py_pylist_impl;
 use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
@@ -8,10 +7,6 @@ use ssbh_data_py_derive::MapPy;
 use crate::create_py_list_from_slice;
 
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
-
-map_py_pylist_impl!(ssbh_data::skel_data::BoneData, BoneData);
-// TODO: How to implement for arrays?
-// TODO: Can this still rely on type inferencing?
 
 pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
     let skel_data = PyModule::new(py, "skel_data")?;

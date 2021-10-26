@@ -1,4 +1,3 @@
-use crate::map_py_pylist_impl;
 use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
 use pyo3::{prelude::*, types::PyList};
@@ -7,12 +6,6 @@ use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
-
-map_py_pylist_impl!(ssbh_data::anim_data::GroupData, GroupData);
-map_py_pylist_impl!(ssbh_data::anim_data::NodeData, NodeData);
-map_py_pylist_impl!(ssbh_data::anim_data::TrackData, TrackData);
-map_py_pylist_impl!(ssbh_data::anim_data::UvTransform, UvTransform);
-map_py_pylist_impl!(ssbh_data::anim_data::Transform, Transform);
 
 pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     let anim_data = PyModule::new(py, "anim_data")?;

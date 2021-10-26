@@ -1,18 +1,12 @@
-use crate::{map_py_pylist_impl, MapPy};
+use crate::create_py_list_from_slice;
+use crate::MapPy;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 
-use crate::create_py_list_from_slice;
-
 create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
-
-map_py_pylist_impl!(ssbh_data::mesh_data::BoneInfluence, BoneInfluence);
-map_py_pylist_impl!(ssbh_data::mesh_data::VertexWeight, VertexWeight);
-map_py_pylist_impl!(ssbh_data::mesh_data::AttributeData, AttributeData);
-map_py_pylist_impl!(ssbh_data::mesh_data::MeshObjectData, MeshObjectData);
 
 pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     let mesh_data = PyModule::new(py, "mesh_data")?;
