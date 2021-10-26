@@ -63,9 +63,7 @@ impl ModlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = self.map_py(py)?;
-        data.write_to_file(path)?;
-        Ok(())
+        self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
     }
 }
 
@@ -102,9 +100,9 @@ impl ModlEntryData {
 
 #[pyfunction]
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
-    let data = ssbh_data::modl_data::ModlData::from_file(path)
-        .map_err(|e| ModlDataError::new_err(format!("{}", e)))?;
-    data.map_py(py)
+    ssbh_data::modl_data::ModlData::from_file(path)
+        .map_err(|e| ModlDataError::new_err(format!("{}", e)))?
+        .map_py(py)
 }
 
 #[cfg(test)]

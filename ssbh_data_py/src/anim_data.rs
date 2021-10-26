@@ -121,18 +121,17 @@ impl AnimData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = self.map_py(py)?;
-        data.write_to_file(path)
-            .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
-        Ok(())
+        self.map_py(py)?
+            .write_to_file(path)
+            .map_err(|e| AnimDataError::new_err(format!("{}", e)))
     }
 }
 
 #[pyfunction]
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
-    let data = ssbh_data::anim_data::AnimData::from_file(path)
-        .map_err(|e| AnimDataError::new_err(format!("{}", e)))?;
-    data.map_py(py)
+    ssbh_data::anim_data::AnimData::from_file(path)
+        .map_err(|e| AnimDataError::new_err(format!("{}", e)))?
+        .map_py(py)
 }
 
 // TODO: Change this to be a proper Python enum once supported by PyO3.

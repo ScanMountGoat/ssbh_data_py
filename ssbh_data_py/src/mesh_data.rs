@@ -53,10 +53,9 @@ impl MeshData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = self.map_py(py)?;
-        data.write_to_file(path)
-            .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
-        Ok(())
+        self.map_py(py)?
+            .write_to_file(path)
+            .map_err(|e| MeshDataError::new_err(format!("{}", e)))
     }
 }
 
@@ -214,10 +213,9 @@ impl MapPy<VectorDataRs> for PyObject {
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
-    let data = ssbh_data::mesh_data::MeshData::from_file(path)
-        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
-
-    data.map_py(py)
+    ssbh_data::mesh_data::MeshData::from_file(path)
+        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
+        .map_py(py)
 }
 
 #[pyfunction]

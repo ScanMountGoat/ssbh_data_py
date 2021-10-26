@@ -58,7 +58,7 @@ impl BoneData {
     ) -> PyResult<Self> {
         Ok(BoneData {
             name,
-            transform: create_py_list_from_slice(py, &transform).into(),
+            transform: transform.map_py(py)?,
             parent_index,
         })
     }
@@ -77,10 +77,9 @@ impl SkelData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        let data = self.map_py(py)?;
-        data.write_to_file(path)
-            .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
-        Ok(())
+        self.map_py(py)?
+            .write_to_file(path)
+            .map_err(|e| SkelDataError::new_err(format!("{}", e)))
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
@@ -95,9 +94,9 @@ impl SkelData {
 
 #[pyfunction]
 fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
-    let data = ssbh_data::skel_data::SkelData::from_file(path)
-        .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
-    data.map_py(py)
+    ssbh_data::skel_data::SkelData::from_file(path)
+        .map_err(|e| SkelDataError::new_err(format!("{}", e)))?
+        .map_py(py)
 }
 
 #[pyfunction]
@@ -106,16 +105,12 @@ fn calculate_relative_transform(
     world_transform: &PyAny,
     parent_world_transform: Option<&PyAny>,
 ) -> PyResult<Py<PyList>> {
-    // TODO: There might be a cleaner way to write this.
-    let world_transform = world_transform.extract::<[[f32; 4]; 4]>()?;
+    let world_transform = world_transform.extract()?;
     let transform = match parent_world_transform {
-        Some(m) => {
-            let parent_world_transform = m.extract::<[[f32; 4]; 4]>()?;
-            ssbh_data::skel_data::calculate_relative_transform(
-                &world_transform,
-                Some(&parent_world_transform),
-            )
-        }
+        Some(m) => ssbh_data::skel_data::calculate_relative_transform(
+            &world_transform,
+            Some(&m.extract()?),
+        ),
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };
     Ok(create_py_list_from_slice(py, &transform))
