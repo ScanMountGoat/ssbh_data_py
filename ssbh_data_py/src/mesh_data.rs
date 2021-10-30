@@ -73,6 +73,15 @@ pub struct MeshObjectData {
     pub parent_bone_name: String,
 
     #[pyo3(get, set)]
+    pub disable_depth_test: bool,
+
+    #[pyo3(get, set)]
+    pub disable_depth_write: bool,
+    
+    #[pyo3(get, set)]
+    pub sort_bias: i32,
+
+    #[pyo3(get, set)]
     pub vertex_indices: PyObject,
 
     #[pyo3(get, set)]
@@ -113,6 +122,9 @@ impl MeshObjectData {
             texture_coordinates: PyList::empty(py).into(),
             color_sets: PyList::empty(py).into(),
             bone_influences: PyList::empty(py).into(),
+            sort_bias: 0,
+            disable_depth_test: false,
+            disable_depth_write: false
         })
     }
 }

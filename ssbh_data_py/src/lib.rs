@@ -87,7 +87,7 @@ macro_rules! map_py_impl {
     }
 }
 
-map_py_impl!(bool, u8, u16, u32, u64, u128, f32, f64, String);
+map_py_impl!(bool, u8, u16, u32, u64, u128, i8, i16, i32, i64, f32, f64, String);
 
 macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {

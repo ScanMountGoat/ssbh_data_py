@@ -8,7 +8,13 @@ for o in mesh.objects:
     print(f'{o.name}{o.sub_index}')
 
     # The name of the bone used for single binding or '' otherwise.
-    print(o.parent_bone_name)
+    print(f'Parent Bone: "{o.parent_bone_name}"')
+
+    # Some mesh objects have additional settings for fixing alpha sorting issues.
+    # These can usually be left at their default values when creating new mesh objects.
+    print(f'Sort Bias: {o.sort_bias}')
+    print(f'Disable Depth Write: {o.disable_depth_write}')
+    print(f'Disable Depth Test: {o.disable_depth_test}')
 
     # The number of actual rendered vertices is based on the number of vertex indices.
     print(f'Vertex Count: {len(o.vertex_indices)}')
