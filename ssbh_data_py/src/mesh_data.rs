@@ -26,7 +26,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::mesh_data::MeshData)]
 struct MeshData {
@@ -59,7 +59,7 @@ impl MeshData {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::mesh_data::MeshObjectData)]
 pub struct MeshObjectData {
@@ -129,7 +129,7 @@ impl MeshObjectData {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::mesh_data::BoneInfluence)]
 pub struct BoneInfluence {
@@ -157,7 +157,7 @@ impl BoneInfluence {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::mesh_data::VertexWeight)]
 pub struct VertexWeight {
@@ -179,7 +179,7 @@ impl VertexWeight {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::mesh_data::AttributeData)]
 pub struct AttributeData {

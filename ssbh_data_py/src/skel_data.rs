@@ -19,7 +19,7 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.skel_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::skel_data::SkelData)]
 struct SkelData {
@@ -33,7 +33,7 @@ struct SkelData {
     pub bones: Py<PyList>,
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.skel_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::skel_data::BoneData)]
 struct BoneData {

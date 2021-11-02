@@ -23,7 +23,7 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::AnimData)]
 pub struct AnimData {
@@ -40,7 +40,7 @@ pub struct AnimData {
     pub final_frame_index: f32,
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::GroupData)]
 pub struct GroupData {
@@ -62,7 +62,7 @@ impl GroupData {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::NodeData)]
 pub struct NodeData {
@@ -84,7 +84,7 @@ impl NodeData {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::TrackData)]
 pub struct TrackData {
@@ -136,7 +136,7 @@ fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
 
 // TODO: Change this to be a proper Python enum once supported by PyO3.
 // Try to match the interface from here: https://docs.python.org/3/library/enum.html
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone)]
 pub struct GroupType {
     #[pyo3(get)]
@@ -220,7 +220,7 @@ impl GroupType {
 }
 
 // TODO: Document what component counts are expected.
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::Transform)]
 pub struct Transform {
@@ -266,7 +266,7 @@ impl PyObjectProtocol for Transform {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::anim_data::UvTransform)]
 pub struct UvTransform {

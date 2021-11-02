@@ -16,7 +16,7 @@ pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.modl_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::modl_data::ModlData)]
 struct ModlData {
@@ -67,7 +67,7 @@ impl ModlData {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "ssbh_data_py.modl_data")]
 #[derive(Debug, Clone, MapPy)]
 #[map(ssbh_data::modl_data::ModlEntryData)]
 pub struct ModlEntryData {
