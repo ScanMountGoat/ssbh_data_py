@@ -4,6 +4,7 @@ mod anim_data;
 mod mesh_data;
 mod modl_data;
 mod skel_data;
+mod adj_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
@@ -11,6 +12,7 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::modl_data::modl_data(py, module)?;
     crate::skel_data::skel_data(py, module)?;
     crate::anim_data::anim_data(py, module)?;
+    crate::adj_data::adj_data(py, module)?;
     Ok(())
 }
 
@@ -87,7 +89,7 @@ macro_rules! map_py_impl {
     }
 }
 
-map_py_impl!(bool, u8, u16, u32, u64, u128, i8, i16, i32, i64, f32, f64, String);
+map_py_impl!(bool, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, f32, f64, String);
 
 macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {

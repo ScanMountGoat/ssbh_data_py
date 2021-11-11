@@ -94,6 +94,9 @@ pub struct TrackData {
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
+
+    #[pyo3(get, set)]
+    pub scale_options: ScaleOptions,
 }
 
 #[pymethods]
@@ -103,6 +106,32 @@ impl TrackData {
         Ok(TrackData {
             name,
             values: PyList::empty(py).into(),
+            scale_options: ScaleOptions {
+                inherit_scale: false,
+                compensate_scale: false,
+            },
+        })
+    }
+}
+
+#[pyclass(module = "ssbh_data_py.anim_data")]
+#[derive(Debug, Clone, MapPy)]
+#[map(ssbh_data::anim_data::ScaleOptions)]
+pub struct ScaleOptions {
+    #[pyo3(get, set)]
+    pub inherit_scale: bool,
+
+    #[pyo3(get, set)]
+    pub compensate_scale: bool,
+}
+
+#[pymethods]
+impl ScaleOptions {
+    #[new]
+    fn new(py: Python) -> PyResult<Self> {
+        Ok(ScaleOptions {
+            inherit_scale: false,
+            compensate_scale: false,
         })
     }
 }
@@ -232,26 +261,16 @@ pub struct Transform {
 
     #[pyo3(get, set)]
     pub translation: Py<PyList>,
-
-    // TODO: Rework this field.
-    #[pyo3(get, set)]
-    pub compensate_scale: u32,
 }
 
 #[pymethods]
 impl Transform {
     #[new]
-    fn new(
-        scale: Py<PyList>,
-        rotation: Py<PyList>,
-        translation: Py<PyList>,
-        compensate_scale: u32,
-    ) -> PyResult<Self> {
+    fn new(scale: Py<PyList>, rotation: Py<PyList>, translation: Py<PyList>) -> PyResult<Self> {
         Ok(Transform {
             scale,
             rotation,
             translation,
-            compensate_scale,
         })
     }
 }
@@ -260,8 +279,8 @@ impl Transform {
 impl PyObjectProtocol for Transform {
     fn __repr__(&self) -> String {
         format!(
-            "ssbh_data_py.anim_data.Transform({}, {}, {}, {})",
-            self.scale, self.rotation, self.translation, self.compensate_scale,
+            "ssbh_data_py.anim_data.Transform({}, {}, {})",
+            self.scale, self.rotation, self.translation,
         )
     }
 }
@@ -455,6 +474,8 @@ mod tests {
             a = ssbh_data_py.anim_data.TrackData('abc')
             assert a.name == 'abc'
             assert a.values == []
+            assert a.scale_options.inherit_scale == False
+            assert a.scale_options.compensate_scale == False
         "#})
         .unwrap();
     }
@@ -462,11 +483,10 @@ mod tests {
     #[test]
     fn create_transform() {
         run_python_code(indoc! {r#"
-            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)
+            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10])
             assert t.scale == [1, 2, 3]
             assert t.rotation == [4, 5, 6, 7]
             assert t.translation == [8, 9, 10]
-            assert t.compensate_scale == 11
         "#})
         .unwrap();
     }
@@ -475,14 +495,13 @@ mod tests {
     fn transform_repr() {
         // Check that repr can be used to construct the type.
         run_python_code(indoc! {r#"
-            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)
+            t = ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10])
             s = repr(t)
-            assert s == 'ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10], 11)'
+            assert s == 'ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [8, 9, 10])'
             t2 = eval(s)
             assert t2.scale == [1, 2, 3]
             assert t2.rotation == [4, 5, 6, 7]
             assert t2.translation == [8, 9, 10]
-            assert t2.compensate_scale == 11
         "#})
         .unwrap();
     }
@@ -616,12 +635,11 @@ mod tests {
     fn create_track_values_rs_transform() {
         eval_python_code(
             indoc! {r#"
-                [ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [1, 2, 3], 1), 
+                [ssbh_data_py.anim_data.Transform([1, 2, 3], [4, 5, 6, 7], [1, 2, 3]), 
                  ssbh_data_py.anim_data.Transform(
                     scale=[0, 1, 2],
                     rotation=[1, 2, 3, 4],
-                    translation=[9, 8, 0.4],
-                    compensate_scale=0)]
+                    translation=[9, 8, 0.4])]
             "#},
             |py, x| {
                 let data: &PyList = x.downcast().unwrap();
@@ -631,13 +649,11 @@ mod tests {
                             rotation: Vector4::new(4.0, 5.0, 6.0, 7.0),
                             translation: Vector3::new(1.0, 2.0, 3.0),
                             scale: Vector3::new(1.0, 2.0, 3.0),
-                            compensate_scale: 1
                         },
                         ssbh_data::anim_data::Transform {
                             rotation: Vector4::new(1.0, 2.0, 3.0, 4.0),
                             translation: Vector3::new(9.0, 8.0, 0.4),
                             scale: Vector3::new(0.0, 1.0, 2.0),
-                            compensate_scale: 0
                         }
                     ]),
                     create_track_values_rs(py, data).unwrap()
