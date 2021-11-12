@@ -1,4 +1,4 @@
-### 0.5.0
+### 0.5.1
 Changes:
 - Added the `sort_bias`, `disable_depth_write`, and `disable_depth_test` fields to to `MeshObjectData`. These default to `0`, `False`, and `False`.
 - Types will now display as being a member of their respective module rather than a member of "builtins" when debugging objects.
