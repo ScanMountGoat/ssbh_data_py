@@ -1,3 +1,15 @@
+### 0.5.0
+Changes:
+- Added the `sort_bias`, `disable_depth_write`, and `disable_depth_test` fields to to `MeshObjectData`. These default to `0`, `False`, and `False`.
+- Types will now display as being a member of their respective module rather than a member of "builtins" when debugging objects.
+- Added support for adjb files with the `ssbh_data_py.adj_data` submodule.
+- Added scale options to `TrackData`. This is accessible as `track.scale_options.inherit_scale` and 
+`track.scale_options.compensate_scale`. 
+
+Breaking Changes:
+ssbh_data_py.anim_data
+- Moved the compensate_scale field to `TrackData`. This now applies to all frames in the track.
+
 ### 0.4.0
 Changes:
 - Fields and function parameters that used to only accept lists of floats or ints now accept sequences such as tuples or numpy arrays. For example, `bone.transform = numpy.zeros((4,4))`, `mesh_object_data.vertex_indices = numpy.arange(12)`, and `attribute_data.data = [(1,0,0), (0,1,0)]` now work as expected without requiring any conversions.
