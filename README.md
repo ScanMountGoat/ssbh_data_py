@@ -10,7 +10,8 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Modl (`.numdlb`, `.nusrcmdlb`) | 1.7 | :heavy_check_mark: | :heavy_check_mark: |
 | Mesh (`.numshb`) | 1.8, 1.9, 1.10 | :heavy_check_mark: | :heavy_check_mark: |
 | Skel (`.nusktb`) | 1.0 | :heavy_check_mark: | :heavy_check_mark: |
-| Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :x: |
+| Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :heavy_check_mark: |
+| Adj (`.adjb`) |  | :heavy_check_mark: | :heavy_check_mark: |
 
 ## Installing
 The package can be installed for a supported python version using `pip` on the latest version of Windows, Linux, or MacOS. The prebuilt wheels (`.whl` files) are included only for situations where `pip` might not be available such as for plugin development for applications. 
