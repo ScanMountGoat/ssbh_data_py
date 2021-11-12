@@ -13,6 +13,10 @@ for group in anim.groups:
         for track in node.tracks:
             print(f'Track: {track.name}')
 
+            # Scale settings are stored for the entire track.
+            # These values only affect transform tracks.
+            print(f'inherit_scale: {track.scale_options.inherit_scale}, compensate_scale: {track.scale_options.compensate_scale}')
+
             # This API may change slightly in the future.
             # There isn't a reliable way to know the type of the track values.
             # One option is to just assume the type and use a try statement.
@@ -20,7 +24,7 @@ for group in anim.groups:
             if track.name == 'Transform':
                 # Transform
                 v = track.values[0]
-                print(v.scale, v.rotation, v.translation, v.compensate_scale)
+                print(v.scale, v.rotation, v.translation)
             elif track.name == 'Visibility' or 'CustomBoolean' in track.name:
                 # bool
                 print(track.values[0])
@@ -33,6 +37,13 @@ for group in anim.groups:
             elif 'Texture' in track.name:
                 # UVTransform
                 v = track.values[0]
-                print(v.unk1, v.unk2, v.unk3, v.unk4, v.unk5)
+                print(v.scale_u, v.scale_v, v.rotation, v.translate_u, v.translate_v)
             else:
                 print(f'Unknown type: {track.values[0]}')
+
+            print()
+
+# Save any changes made to the anim.
+# Anim compression is lossy, so track values may change slightly on export.
+# This mostly applies to transform or vector tracks.
+anim.save("model.nuanmb")
