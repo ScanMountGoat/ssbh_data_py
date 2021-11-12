@@ -48,9 +48,8 @@ struct AdjEntryData {
     #[pyo3(get, set)]
     pub mesh_object_index: usize,
 
-    // TODO: Should this be PyObject to allow numpy arrays, tuples, etc?
     #[pyo3(get, set)]
-    pub vertex_adjacency: Py<PyList>,
+    pub vertex_adjacency: PyObject,
 }
 
 #[pymethods]
@@ -92,7 +91,7 @@ fn read_adj(py: Python, path: &str) -> PyResult<AdjData> {
 
 #[cfg(test)]
 mod tests {
-    use crate::run_python_code;
+    use crate::{run_python_code, run_python_code_numpy};
     use indoc::indoc;
 
     #[test]
@@ -110,6 +109,28 @@ mod tests {
             e = ssbh_data_py.adj_data.AdjEntryData(3)
             assert e.mesh_object_index == 3
             assert e.vertex_adjacency == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn vertex_adjacency_tuples() {
+        run_python_code(indoc! {r#"
+            e = ssbh_data_py.adj_data.AdjEntryData(3)
+            assert e.mesh_object_index == 3
+            e.vertex_adjacency = (-1, 3, 7)
+            assert list(e.vertex_adjacency) == [-1, 3, 7]
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn vertex_adjacency_numpy() {
+        run_python_code_numpy(indoc! {r#"
+            e = ssbh_data_py.adj_data.AdjEntryData(3)
+            assert e.mesh_object_index == 3
+            e.vertex_adjacency = numpy.array([-1, 3, 7])
+            assert e.vertex_adjacency.tolist() == [-1, 3, 7]
         "#})
         .unwrap();
     }

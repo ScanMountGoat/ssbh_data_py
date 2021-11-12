@@ -118,6 +118,13 @@ impl MapPy<PyObject> for Vec<u32> {
     }
 }
 
+map_py_pyobject_impl!(Vec<i16>);
+impl MapPy<PyObject> for Vec<i16> {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(create_py_list_from_slice(py, self).into())
+    }
+}
+
 impl<T: Clone> MapPy<Option<T>> for Option<T> {
     fn map_py(&self, _py: Python) -> PyResult<Option<T>> {
         Ok(self.clone())
