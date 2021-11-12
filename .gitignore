@@ -1,4 +1,4 @@
 /target
 Cargo.lock
 .venv
-/ssbh_data_py/*[.pyd,.so]
+*[.pyd,.so]

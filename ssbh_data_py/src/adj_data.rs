@@ -1,4 +1,5 @@
-use crate::MapPy;
+use crate::{mesh_data, MapPy};
+use pyo3::types::PyType;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -56,10 +57,29 @@ struct AdjEntryData {
 impl AdjEntryData {
     #[new]
     fn new(py: Python, mesh_object_index: usize) -> PyResult<Self> {
-        Ok(AdjEntryData {
+        Ok(Self {
             mesh_object_index,
             vertex_adjacency: PyList::empty(py).into(),
         })
+    }
+
+    #[classmethod]
+    fn from_mesh_object(
+        _cls: &PyType,
+        py: Python,
+        mesh_object_index: usize,
+        mesh_object: &mesh_data::MeshObjectData,
+    ) -> PyResult<Self> {
+        let vertex_indices: Vec<u32> = mesh_object.vertex_indices.extract(py)?;
+        let positions: Vec<mesh_data::AttributeData> = mesh_object.positions.extract(py)?;
+        // TODO: Avoid unwrap?
+        let vertex_positions = positions.first().unwrap().data.map_py(py)?;
+        let entry = ssbh_data::adj_data::AdjEntryData::from_vector_data(
+            mesh_object_index,
+            &vertex_positions,
+            &vertex_indices,
+        );
+        entry.map_py(py)
     }
 }
 
