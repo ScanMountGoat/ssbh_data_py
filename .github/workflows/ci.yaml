@@ -39,12 +39,10 @@ jobs:
       - name: Install wheels
         if:  matrix.os == 'windows-latest'
         run: pip install --find-links=target\wheels ssbh_data_py
-        working-directory: ${{env.working-directory}}
 
       - name: Install wheels
         if:  matrix.os != 'windows-latest'
         run: pip install target/wheels/ssbh_data_py*.whl
-        working-directory: ${{env.working-directory}}
 
       - name: Release
         uses: softprops/action-gh-release@v1
