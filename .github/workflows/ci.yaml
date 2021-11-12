@@ -1,4 +1,3 @@
-# Build script taken from https://github.com/BenHall-7/ssbh_data_py
 name: Package and Publish
 on: # credit for much of this build system goes to hyperjson https://github.com/mre/hyperjson/
   release:
@@ -6,6 +5,8 @@ on: # credit for much of this build system goes to hyperjson https://github.com/
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    env:
+      working-directory: ./ssbh_data_py
     strategy:
       fail-fast: false
       matrix:
