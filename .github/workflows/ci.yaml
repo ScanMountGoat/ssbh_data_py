@@ -52,7 +52,6 @@ jobs:
           files: target/wheels/ssbh_data_py*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ${{env.working-directory}}
 
       - name: PyPi publish
         if: github.event_name == 'release' && github.event.action == 'created'
