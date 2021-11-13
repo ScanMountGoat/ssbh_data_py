@@ -1,10 +1,13 @@
 use pyo3::{prelude::*, types::PyList};
 
+#[cfg(test)]
+use pyo3::types::IntoPyDict;
+
+mod adj_data;
 mod anim_data;
 mod mesh_data;
 mod modl_data;
 mod skel_data;
-mod adj_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
@@ -133,71 +136,63 @@ impl<T: Clone> MapPy<Option<T>> for Option<T> {
 
 #[cfg(test)]
 fn run_python_code(code: &str) -> PyResult<()> {
-    use pyo3::types::IntoPyDict;
-
-    let gil = Python::acquire_gil();
-    let py = gil.python();
-
-    let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, module).unwrap();
-    let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-    py.run(code, None, Some(ctx))
+    pyo3::prepare_freethreaded_python();
+    Python::with_gil(|py| {
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
+        py.run(code, None, Some(ctx))
+    })
 }
 
 #[cfg(test)]
 fn run_python_code_numpy(code: &str) -> PyResult<()> {
-    use pyo3::types::IntoPyDict;
+    pyo3::prepare_freethreaded_python();
+    Python::with_gil(|py| {
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, module).unwrap();
 
-    let gil = Python::acquire_gil();
-    let py = gil.python();
+        // This requires numpy to be in the current Python environment.
+        // This may require some configuration to run tests with github actions.
+        let ctx = [
+            ("ssbh_data_py", module),
+            ("numpy", PyModule::import(py, "numpy").unwrap()),
+        ]
+        .into_py_dict(py);
 
-    let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, module).unwrap();
-
-    // TODO: This requires numpy to be in the current Python environment,
-    // which may require some configuration to run tests with github actions.
-    let ctx = [
-        ("ssbh_data_py", module),
-        ("numpy", PyModule::import(py, "numpy").unwrap()),
-    ]
-    .into_py_dict(py);
-
-    py.run(code, None, Some(ctx))
+        py.run(code, None, Some(ctx))
+    })
 }
 
 #[cfg(test)]
 fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
-    use pyo3::types::IntoPyDict;
+    pyo3::prepare_freethreaded_python();
+    Python::with_gil(|py| {
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, module).unwrap();
+        let ctx = [("ssbh_data_py", module)].into_py_dict(py);
 
-    let gil = Python::acquire_gil();
-    let py = gil.python();
-
-    let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, module).unwrap();
-    let ctx = [("ssbh_data_py", module)].into_py_dict(py);
-
-    let result = py.eval(code, None, Some(ctx)).unwrap();
-    f(py, result);
+        let result = py.eval(code, None, Some(ctx)).unwrap();
+        f(py, result);
+    })
 }
 
 #[cfg(test)]
 fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
-    use pyo3::types::IntoPyDict;
+    pyo3::prepare_freethreaded_python();
+    Python::with_gil(|py| {
+        let module = PyModule::new(py, "ssbh_data_py").unwrap();
+        ssbh_data_py(py, module).unwrap();
 
-    let gil = Python::acquire_gil();
-    let py = gil.python();
+        // This requires numpy to be in the current Python environment.
+        // This may require some configuration to run tests with github actions.
+        let ctx = [
+            ("ssbh_data_py", module),
+            ("numpy", PyModule::import(py, "numpy").unwrap()),
+        ]
+        .into_py_dict(py);
 
-    let module = PyModule::new(py, "ssbh_data_py").unwrap();
-    ssbh_data_py(py, module).unwrap();
-
-    // TODO: This requires numpy to be in the current Python environment,
-    // which may require some configuration to run tests with github actions.
-    let ctx = [
-        ("ssbh_data_py", module),
-        ("numpy", PyModule::import(py, "numpy").unwrap()),
-    ]
-    .into_py_dict(py);
-
-    let result = py.eval(code, None, Some(ctx)).unwrap();
-    f(py, result);
+        let result = py.eval(code, None, Some(ctx)).unwrap();
+        f(py, result);
+    });
 }

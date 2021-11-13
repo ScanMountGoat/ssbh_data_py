@@ -224,25 +224,25 @@ impl MapPy<ssbh_data::anim_data::GroupType> for GroupType {
 #[pymethods]
 impl GroupType {
     #[classattr]
-    #[name = "Transform"]
+    #[pyo3(name = "Transform")]
     fn transform() -> GroupType {
         ssbh_data::anim_data::GroupType::Transform.into()
     }
 
     #[classattr]
-    #[name = "Visibility"]
+    #[pyo3(name = "Visibility")]
     fn visibility() -> GroupType {
         ssbh_data::anim_data::GroupType::Visibility.into()
     }
 
     #[classattr]
-    #[name = "Material"]
+    #[pyo3(name = "Material")]
     fn material() -> GroupType {
         ssbh_data::anim_data::GroupType::Material.into()
     }
 
     #[classattr]
-    #[name = "Camera"]
+    #[pyo3(name = "Camera")]
     fn camera() -> GroupType {
         ssbh_data::anim_data::GroupType::Camera.into()
     }
