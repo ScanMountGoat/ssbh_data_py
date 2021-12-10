@@ -1,4 +1,4 @@
-use crate::MapPy;
+use crate::{python_enum, MapPy};
 use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
@@ -163,62 +163,16 @@ fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
         .map_py(py)
 }
 
-// TODO: Change this to be a proper Python enum once supported by PyO3.
-// Try to match the interface from here: https://docs.python.org/3/library/enum.html
-#[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone)]
-pub struct GroupType {
-    #[pyo3(get)]
-    pub name: String,
+python_enum!(
+    GroupType,
+    ssbh_data::anim_data::GroupType,
+    AnimDataError,
+    "ssbh_data_py.anim_data"
+);
 
-    #[pyo3(get)]
-    pub value: u64,
-}
-
-impl From<ssbh_data::anim_data::GroupType> for GroupType {
-    fn from(group_type: ssbh_data::anim_data::GroupType) -> Self {
-        match group_type {
-            ssbh_data::anim_data::GroupType::Transform => GroupType {
-                name: "Transform".into(),
-                value: group_type as u64,
-            },
-            ssbh_data::anim_data::GroupType::Visibility => GroupType {
-                name: "Visibility".into(),
-                value: group_type as u64,
-            },
-            ssbh_data::anim_data::GroupType::Material => GroupType {
-                name: "Material".into(),
-                value: group_type as u64,
-            },
-            ssbh_data::anim_data::GroupType::Camera => GroupType {
-                name: "Camera".into(),
-                value: group_type as u64,
-            },
-        }
-    }
-}
-
-impl MapPy<GroupType> for ssbh_data::anim_data::GroupType {
-    fn map_py(&self, _py: Python) -> PyResult<GroupType> {
-        Ok((*self).into())
-    }
-}
-
-impl MapPy<ssbh_data::anim_data::GroupType> for GroupType {
-    fn map_py(&self, _py: Python) -> PyResult<ssbh_data::anim_data::GroupType> {
-        match self.name.as_str() {
-            "Transform" => Ok(ssbh_data::anim_data::GroupType::Transform),
-            "Visibility" => Ok(ssbh_data::anim_data::GroupType::Visibility),
-            "Material" => Ok(ssbh_data::anim_data::GroupType::Material),
-            "Camera" => Ok(ssbh_data::anim_data::GroupType::Camera),
-            _ => Err(AnimDataError::new_err(format!(
-                "{} is not a supported group type.",
-                self.name
-            ))),
-        }
-    }
-}
-
+// how to derive the variant class attributes to allow GroupType.Variant from Python?
+// use a macro?
+// TODO: Test that group.group_type == GroupType.Transform works?
 // TODO: Make a macro for this?
 // TODO: Add string and representation to match Python enum?
 #[pymethods]
@@ -337,6 +291,7 @@ impl PyObjectProtocol for UvTransform {
     }
 }
 
+// TODO: This is shared with other modules?
 impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
     fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector4> {
         let values: [f32; 4] = self.extract(py)?;
@@ -347,6 +302,19 @@ impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
 impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector4 {
     fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
         Ok(PyList::new(py, self.to_array()).into())
+    }
+}
+
+impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
+    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+        Ok(self.to_array().into_py(py))
+    }
+}
+
+impl MapPy<ssbh_data::anim_data::Vector4> for PyObject {
+    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector4> {
+        let values: [f32; 4] = self.extract(py)?;
+        Ok(values.into())
     }
 }
 
@@ -373,12 +341,6 @@ impl MapPy<Py<PyList>> for TrackValuesRs {
             TrackValuesRs::Boolean(v) => v.map_py(py),
             TrackValuesRs::Vector4(v) => v.map_py(py),
         }
-    }
-}
-
-impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
-        Ok(self.to_array().into_py(py))
     }
 }
 

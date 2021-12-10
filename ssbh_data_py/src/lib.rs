@@ -5,6 +5,7 @@ use pyo3::types::IntoPyDict;
 
 mod adj_data;
 mod anim_data;
+mod matl_data;
 mod mesh_data;
 mod modl_data;
 mod skel_data;
@@ -16,6 +17,7 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::skel_data::skel_data(py, module)?;
     crate::anim_data::anim_data(py, module)?;
     crate::adj_data::adj_data(py, module)?;
+    crate::matl_data::matl_data(py, module)?;
     Ok(())
 }
 
@@ -128,10 +130,55 @@ impl MapPy<PyObject> for Vec<i16> {
     }
 }
 
-impl<T: Clone> MapPy<Option<T>> for Option<T> {
-    fn map_py(&self, _py: Python) -> PyResult<Option<T>> {
-        Ok(self.clone())
+impl<T: MapPy<U>, U> MapPy<Option<U>> for Option<T> {
+    fn map_py(&self, py: Python) -> PyResult<Option<U>> {
+        match self {
+            Some(x) => Ok(Some(x.map_py(py)?)),
+            None => Ok(None),
+        }
     }
+}
+
+#[macro_export]
+macro_rules! python_enum {
+    ($ty_py:ident, $ty_rs:ty, $ty_err:ty, $module:literal) => {
+        // TODO: Change this to be a proper Python enum once supported by PyO3.
+        // Try to match the interface from here: https://docs.python.org/3/library/enum.html
+        #[pyclass(module = $module)]
+        #[derive(Debug, Clone)]
+        pub struct $ty_py {
+            #[pyo3(get)]
+            pub name: String,
+
+            // TODO: Customize this data type?
+            #[pyo3(get)]
+            pub value: u64,
+        }
+
+        impl From<$ty_rs> for $ty_py {
+            fn from(group_type: $ty_rs) -> Self {
+                Self {
+                    name: group_type.to_string(),
+                    value: group_type as u64,
+                }
+            }
+        }
+
+        impl MapPy<$ty_rs> for $ty_py {
+            fn map_py(&self, _py: Python) -> PyResult<$ty_rs> {
+                <$ty_rs>::from_repr(self.value as usize).ok_or(<$ty_err>::new_err(format!(
+                    "{} is not a supported variant.",
+                    self.value
+                )))
+            }
+        }
+
+        impl MapPy<$ty_py> for $ty_rs {
+            fn map_py(&self, _py: Python) -> PyResult<$ty_py> {
+                Ok((*self).into())
+            }
+        }
+    };
 }
 
 #[cfg(test)]
