@@ -10,7 +10,8 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Modl (`.numdlb`, `.nusrcmdlb`) | 1.7 | :heavy_check_mark: | :heavy_check_mark: |
 | Mesh (`.numshb`) | 1.8, 1.9, 1.10 | :heavy_check_mark: | :heavy_check_mark: |
 | Skel (`.nusktb`) | 1.0 | :heavy_check_mark: | :heavy_check_mark: |
-| Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :heavy_check_mark: |
+| Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :heavy_check_mark: (2.0 only) |
+| Matl (`.numatb`) | 1.6 | :heavy_check_mark: | :heavy_check_mark: |
 | Adj (`.adjb`) |  | :heavy_check_mark: | :heavy_check_mark: |
 
 ## Installing
