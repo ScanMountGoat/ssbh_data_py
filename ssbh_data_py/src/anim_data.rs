@@ -5,6 +5,8 @@ use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 
+mod enums;
+
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 
 pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
@@ -170,37 +172,9 @@ python_enum!(
     "ssbh_data_py.anim_data"
 );
 
-// how to derive the variant class attributes to allow GroupType.Variant from Python?
-// use a macro?
 // TODO: Test that group.group_type == GroupType.Transform works?
 // TODO: Make a macro for this?
-// TODO: Add string and representation to match Python enum?
-#[pymethods]
-impl GroupType {
-    #[classattr]
-    #[pyo3(name = "Transform")]
-    fn transform() -> GroupType {
-        ssbh_data::anim_data::GroupType::Transform.into()
-    }
-
-    #[classattr]
-    #[pyo3(name = "Visibility")]
-    fn visibility() -> GroupType {
-        ssbh_data::anim_data::GroupType::Visibility.into()
-    }
-
-    #[classattr]
-    #[pyo3(name = "Material")]
-    fn material() -> GroupType {
-        ssbh_data::anim_data::GroupType::Material.into()
-    }
-
-    #[classattr]
-    #[pyo3(name = "Camera")]
-    fn camera() -> GroupType {
-        ssbh_data::anim_data::GroupType::Camera.into()
-    }
-}
+// TODO: Add str and repr to match Python enum?
 
 // TODO: Document what component counts are expected.
 #[pyclass(module = "ssbh_data_py.anim_data")]

@@ -243,3 +243,86 @@ fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
         f(py, result);
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{eval_python_code, run_python_code};
+    use indoc::indoc;
+    use pyo3::create_exception;
+    use ssbh_data::anim_data::{Vector3, Vector4};
+    use strum::{Display, FromRepr};
+
+    use super::*;
+
+    create_exception!(ssbh_data_py, TestError, pyo3::exceptions::PyException);
+
+    #[derive(Display, FromRepr, Clone, Copy)]
+    enum TestEnumRs {
+        A = 2,
+        B = 7,
+        C = 4,
+    }
+
+    python_enum!(TestEnumPy, TestEnumRs, TestError, "module_name");
+
+    #[pymethods]
+    impl TestEnumPy {
+        #[classattr]
+        #[pyo3(name = "A")]
+        fn a() -> TestEnumPy {
+            TestEnumRs::A.into()
+        }
+
+        #[classattr]
+        #[pyo3(name = "B")]
+        fn b() -> TestEnumPy {
+            TestEnumRs::B.into()
+        }
+
+        #[classattr]
+        #[pyo3(name = "C")]
+        fn c() -> TestEnumPy {
+            TestEnumRs::C.into()
+        }
+    }
+
+    #[test]
+    fn python_enum_conversions() {
+        let e: TestEnumPy = TestEnumRs::A.into();
+        assert_eq!("A", e.name);
+        assert_eq!(2, e.value);
+
+        let e: TestEnumPy = TestEnumRs::B.into();
+        assert_eq!("B", e.name);
+        assert_eq!(7, e.value);
+
+        let e: TestEnumPy = TestEnumRs::C.into();
+        assert_eq!("C", e.name);
+        assert_eq!(4, e.value);
+    }
+
+    #[test]
+    fn python_enum_stuff() {
+        run_test_python(indoc! {r#"
+            t = test_module.TestEnumPy.A
+            assert t.name == 'A' and t.value == 2
+
+            t = test_module.TestEnumPy.B
+            assert t.name == 'B' and t.value == 7
+
+            t = test_module.TestEnumPy.C
+            assert t.name == 'C' and t.value == 4
+        "#})
+        .unwrap();
+    }
+
+    fn run_test_python(code: &str) -> PyResult<()> {
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let module = PyModule::new(py, "test_module").unwrap();
+            module.add_class::<TestEnumPy>().unwrap();
+            let ctx = [("test_module", module)].into_py_dict(py);
+            py.run(code, None, Some(ctx))
+        })
+    }
+}

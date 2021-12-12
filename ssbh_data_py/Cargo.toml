@@ -15,6 +15,7 @@ crate-type = ["cdylib"]
 
 [dev-dependencies]
 indoc = "1.0"
+strum = "0.23.0"
 
 [build-dependencies]
 ssbh_data = { path = "../../ssbh_lib/ssbh_data" }
