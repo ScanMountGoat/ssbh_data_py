@@ -4,12 +4,24 @@ use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 
+mod enums;
+
 create_exception!(ssbh_data_py, MatlDataError, pyo3::exceptions::PyException);
 
 pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let matl_data = PyModule::new(py, "matl_data")?;
+    // TODO: Automatically register classes?
     matl_data.add_class::<MatlData>()?;
     matl_data.add_class::<MatlEntryData>()?;
+    matl_data.add_class::<ParamId>()?;
+    matl_data.add_class::<BlendFactor>()?;
+    matl_data.add_class::<FillMode>()?;
+    matl_data.add_class::<CullMode>()?;
+    matl_data.add_class::<WrapMode>()?;
+    matl_data.add_class::<MinFilter>()?;
+    matl_data.add_class::<MagFilter>()?;
+    matl_data.add_class::<MaxAnisotropy>()?;
+
     matl_data.add_function(wrap_pyfunction!(read_matl, matl_data)?)?;
 
     module.add_submodule(matl_data)?;
