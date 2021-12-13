@@ -1,8 +1,8 @@
-use crate::{python_enum, MapPy};
+use crate::{python_enum, MapPy, Pyi, PyTypeString};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::{MapPy, Pyi};
 
 mod enums;
 
@@ -29,9 +29,9 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::MatlData)]
-struct MatlData {
+pub struct MatlData {
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -62,7 +62,7 @@ impl MatlData {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::MatlEntryData)]
 pub struct MatlEntryData {
     #[pyo3(get, set)]
@@ -114,7 +114,7 @@ impl MatlEntryData {
 // TODO: Is there a workaround for MapPy not supporting generic structs?
 // Have type aliases for each variant in Rust and separate ParamData types in Python?
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::BlendStateParam)]
 pub struct BlendStateParam {
     #[pyo3(get, set)]
@@ -125,7 +125,7 @@ pub struct BlendStateParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::FloatParam)]
 pub struct FloatParam {
     #[pyo3(get, set)]
@@ -136,7 +136,7 @@ pub struct FloatParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::BooleanParam)]
 pub struct BooleanParam {
     #[pyo3(get, set)]
@@ -147,7 +147,7 @@ pub struct BooleanParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::Vector4Param)]
 pub struct Vector4Param {
     #[pyo3(get, set)]
@@ -158,7 +158,7 @@ pub struct Vector4Param {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::RasterizerStateParam)]
 pub struct RasterizerStateParam {
     #[pyo3(get, set)]
@@ -169,7 +169,7 @@ pub struct RasterizerStateParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::SamplerParam)]
 pub struct SamplerParam {
     #[pyo3(get, set)]
@@ -180,7 +180,7 @@ pub struct SamplerParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::TextureParam)]
 pub struct TextureParam {
     #[pyo3(get, set)]
@@ -198,7 +198,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::BlendStateData)]
 pub struct BlendStateData {
     pub source_color: BlendFactor,
@@ -214,7 +214,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::RasterizerStateData)]
 pub struct RasterizerStateData {
     pub fill_mode: FillMode,
@@ -237,7 +237,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::SamplerData)]
 pub struct SamplerData {
     pub wraps: WrapMode,

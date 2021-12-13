@@ -4,7 +4,53 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
+use indoc::indoc;
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident};
+
+#[proc_macro_derive(Pyi, attributes(pyi))]
+pub fn pyi_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    // TODO: Convert types (ex: Option<T> -> Optional[T])
+    let fields: Vec<_> = match &input.data {
+        Data::Struct(DataStruct {
+            fields: Fields::Named(fields),
+            ..
+        }) => fields
+            .named
+            .iter()
+            // .map(|field| field.ident.as_ref().unwrap())
+            .collect(),
+        _ => panic!("Unsupported type"),
+    };
+
+    let field_names: Vec<_> = fields.iter().map(|f| f.ident.as_ref().unwrap().to_string()).collect();
+    let field_types: Vec<_> = fields.iter().map(|f| &f.ty).collect();
+
+    let class_name = name.to_string();
+
+    // Generate a python class to use for type stubs (.pyi) files.
+    let expanded = quote! {
+        impl Pyi for #name {
+            fn pyi() -> String {
+                let mut result = format!("class {}:\n", #class_name);
+                #(
+                    result += &format!("    {}: {}\n", #field_names, <#field_types>::py_type_string());
+                )*
+                result
+            }
+        }
+
+        impl PyTypeString for #name {
+            fn py_type_string() -> String {
+                #class_name.to_string()
+            }
+        }
+    };
+
+    expanded.into()
+}
 
 #[proc_macro_derive(MapPy, attributes(map))]
 pub fn map_py_derive(input: TokenStream) -> TokenStream {
@@ -37,12 +83,11 @@ pub fn map_py_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Unsupported type"),
     };
 
-    let expanded = generate_map_py(name, &map_type, &map_data);
-    TokenStream::from(expanded)
+    generate_map_py(name, &map_type, &map_data).into()
 }
 
 fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) -> TokenStream2 {
-    let expanded = quote! {
+    quote! {
         // Map from the implementing type to the map type.
         impl crate::MapPy<#map_type> for #name {
             fn map_py(
@@ -88,6 +133,5 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
                 x.map_py(py)
             }
         }
-    };
-    expanded
+    }
 }

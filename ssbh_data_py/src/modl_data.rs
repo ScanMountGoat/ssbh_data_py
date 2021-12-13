@@ -1,8 +1,8 @@
-use crate::MapPy;
+use crate::{MapPy, Pyi, PyTypeString};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::{MapPy, Pyi};
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
@@ -17,9 +17,9 @@ pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.modl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::modl_data::ModlData)]
-struct ModlData {
+pub struct ModlData {
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -68,7 +68,7 @@ impl ModlData {
 }
 
 #[pyclass(module = "ssbh_data_py.modl_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::modl_data::ModlEntryData)]
 pub struct ModlEntryData {
     #[pyo3(get, set)]
@@ -107,6 +107,8 @@ fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::run_python_code;
     use indoc::indoc;
 
@@ -143,5 +145,18 @@ mod tests {
             assert m.material_label == "b"
         "#})
         .unwrap();
+    }
+
+    #[test]
+    fn modl_entry_pyi() {
+        assert_eq!(
+            indoc! {r#"
+                class ModlEntryData:
+                    mesh_object_name: Any
+                    mesh_object_sub_index: Any
+                    material_label: Any
+            "#},
+            ModlEntryData::pyi()
+        );
     }
 }

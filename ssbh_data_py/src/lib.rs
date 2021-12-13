@@ -3,12 +3,12 @@ use pyo3::{prelude::*, types::PyList};
 #[cfg(test)]
 use pyo3::types::IntoPyDict;
 
-mod adj_data;
-mod anim_data;
-mod matl_data;
-mod mesh_data;
-mod modl_data;
-mod skel_data;
+pub mod adj_data;
+pub mod anim_data;
+pub mod matl_data;
+pub mod mesh_data;
+pub mod modl_data;
+pub mod skel_data;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
@@ -178,7 +178,61 @@ macro_rules! python_enum {
                 Ok((*self).into())
             }
         }
+
+        impl crate::PyTypeString for $ty_py {
+            fn py_type_string() -> String {
+                stringify!($ty_py).to_string()
+            }
+        }
     };
+}
+
+// TODO: Move these to a separate module?
+/// A trait for generating a type's corresponding Python class for Python type stub files (.pyi).
+pub trait Pyi {
+    fn pyi() -> String;
+}
+
+/// A trait for defining the corresponding python type for a Rust type for Python type stub files (.pyi).
+pub trait PyTypeString {
+    fn py_type_string() -> String;
+}
+
+macro_rules! py_type_string_primitive_impl {
+    ($py:literal, $($rs:ty),*) => {
+        $(
+            impl PyTypeString for $rs {
+                fn py_type_string() -> String {
+                    $py.to_string()
+                }
+            }
+        )*
+    };
+}
+
+py_type_string_primitive_impl!("bool", bool);
+py_type_string_primitive_impl!("str", &str, String);
+py_type_string_primitive_impl!("float", f32, f64);
+py_type_string_primitive_impl!("int", u8, u16, u32, u64);
+
+impl<T: PyTypeString> PyTypeString for Option<T> {
+    fn py_type_string() -> String {
+        format!("Optional[{}]", T::py_type_string())
+    }
+}
+
+impl PyTypeString for Py<PyList> {
+    // TODO: Add a type override helper attribute for Pyi derive?
+    fn py_type_string() -> String {
+        "list[Any]".to_string()
+    }
+}
+
+impl PyTypeString for PyObject {
+    // TODO: Add a type override helper attribute for Pyi derive?
+    fn py_type_string() -> String {
+        "Any".to_string()
+    }
 }
 
 #[cfg(test)]
