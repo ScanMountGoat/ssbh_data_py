@@ -1,8 +1,15 @@
 use pyo3::{prelude::*, types::PyList};
 
 /// A trait for generating a type's corresponding Python class for Python type stub files (.pyi).
-pub trait Pyi {
-    fn pyi() -> String;
+pub trait Pyi: PyiClass {
+    fn pyi() -> String {
+        // TODO: Combine class attributes, methods, etc
+        Self::pyi_class()
+    }
+}
+
+pub trait PyiClass {
+    fn pyi_class() -> String;
 }
 
 /// A trait for defining the corresponding python type for a Rust type for Python type stub files (.pyi).

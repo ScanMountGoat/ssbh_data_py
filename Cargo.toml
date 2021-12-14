@@ -1,2 +1,2 @@
 [workspace]
-members = ["ssbh_data_py", "ssbh_data_py_derive"]
+members = ["ssbh_data_py", "ssbh_data_py_derive", "pyi"]

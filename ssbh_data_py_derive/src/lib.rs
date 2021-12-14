@@ -69,8 +69,8 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
 
     // Generate a python class string to use for type stubs (.pyi) files.
     let expanded = quote! {
-        impl Pyi for #name {
-            fn pyi() -> String {
+        impl crate::PyiClass for #name {
+            fn pyi_class() -> String {
                 let mut result = format!("class {}:\n", #class_name);
                 #(
                     result += &format!("    {}: {}\n", #field_names, #field_py_types);
@@ -79,7 +79,9 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl PyTypeString for #name {
+        impl crate::Pyi for #name { }
+
+        impl crate::PyTypeString for #name {
             fn py_type_string() -> String {
                 #class_name.to_string()
             }

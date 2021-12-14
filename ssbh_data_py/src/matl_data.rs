@@ -1,4 +1,4 @@
-use crate::{python_enum, MapPy, PyTypeString, Pyi};
+use crate::{python_enum, MapPy, PyTypeString};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -39,6 +39,7 @@ pub struct MatlData {
     pub minor_version: u16,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[MatlEntryData]")]
     pub entries: Py<PyList>,
 }
 
@@ -161,6 +162,7 @@ pub struct Vector4Param {
     pub param_id: ParamId,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[float]")]
     pub data: PyObject,
 }
 
@@ -236,6 +238,7 @@ python_enum!(
     "ssbh_data_py.matl_data"
 );
 
+// TODO: "None" doesn't work as a variant?
 python_enum!(
     CullMode,
     ssbh_data::matl_data::CullMode,
@@ -252,6 +255,7 @@ pub struct SamplerData {
     pub wrapr: WrapMode,
     pub min_filter: MinFilter,
     pub mag_filter: MagFilter,
+    #[pyi(python_type = "list[float]")]
     pub border_color: PyObject,
     pub lod_bias: f32,
     pub max_anisotropy: Option<MaxAnisotropy>,
