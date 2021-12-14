@@ -1,4 +1,4 @@
-use crate::{python_enum, MapPy, Pyi, PyTypeString};
+use crate::{python_enum, MapPy, PyTypeString, Pyi};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -72,24 +72,31 @@ pub struct MatlEntryData {
     pub shader_label: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[BlendStateParam]")]
     pub blend_states: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[FloatParam]")]
     pub floats: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[BooleanParam]")]
     pub booleans: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[Vector4Param]")]
     pub vectors: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[RasterizerStateParam]")]
     pub rasterizer_states: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[SamplerParam]")]
     pub samplers: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[TextureParam]")]
     pub textures: Py<PyList>,
 }
 

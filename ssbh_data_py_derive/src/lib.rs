@@ -4,39 +4,76 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use indoc::indoc;
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident};
+use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
+
+fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
+    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
+        for nested in l.nested {
+            // There may be multiple attributes, so just find the first matching attribute.
+            // ex: #[pyi(python_type = "list[float]")] or #[pyi(python_type("list[float]"))]
+            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
+                match v.path.get_ident().unwrap().to_string().as_str() {
+                    "python_type" => match v.lit {
+                        syn::Lit::Str(s) => return Some(s.value()),
+                        _ => (),
+                    },
+                    _ => (),
+                }
+            }
+        }
+    }
+
+    None
+}
 
 #[proc_macro_derive(Pyi, attributes(pyi))]
 pub fn pyi_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
 
-    // TODO: Convert types (ex: Option<T> -> Optional[T])
     let fields: Vec<_> = match &input.data {
         Data::Struct(DataStruct {
             fields: Fields::Named(fields),
             ..
-        }) => fields
-            .named
-            .iter()
-            // .map(|field| field.ident.as_ref().unwrap())
-            .collect(),
+        }) => fields.named.iter().collect(),
         _ => panic!("Unsupported type"),
     };
 
-    let field_names: Vec<_> = fields.iter().map(|f| f.ident.as_ref().unwrap().to_string()).collect();
-    let field_types: Vec<_> = fields.iter().map(|f| &f.ty).collect();
+    // Assume that Rust fields match Python and are not renamed by PyO3.
+    let field_names: Vec<_> = fields
+        .iter()
+        .map(|f| f.ident.as_ref().unwrap().to_string())
+        .collect();
+
+    // Use the attribute as an override for the type string if present.
+    let field_py_types: Vec<_> = fields
+        .iter()
+        .map(|f| {
+            get_pyi_field_type(&f.attrs)
+                .map(|ty| {
+                    quote! {
+                        #ty
+                    }
+                })
+                .unwrap_or({
+                    let field_type = &f.ty;
+
+                    quote! {
+                        <#field_type>::py_type_string()
+                    }
+                })
+        })
+        .collect();
 
     let class_name = name.to_string();
 
-    // Generate a python class to use for type stubs (.pyi) files.
+    // Generate a python class string to use for type stubs (.pyi) files.
     let expanded = quote! {
         impl Pyi for #name {
             fn pyi() -> String {
                 let mut result = format!("class {}:\n", #class_name);
                 #(
-                    result += &format!("    {}: {}\n", #field_names, <#field_types>::py_type_string());
+                    result += &format!("    {}: {}\n", #field_names, #field_py_types);
                 )*
                 result
             }

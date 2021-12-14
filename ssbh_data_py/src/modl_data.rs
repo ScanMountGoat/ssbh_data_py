@@ -33,6 +33,7 @@ pub struct ModlData {
     pub skeleton_file_name: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[str]")]
     pub material_file_names: Py<PyList>,
 
     #[pyo3(get, set)]
@@ -42,9 +43,12 @@ pub struct ModlData {
     pub mesh_file_name: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[ModlEntryData]")]
     pub entries: Py<PyList>,
 }
 
+// TODO: How to add automatically add functions and methods to the pyi generation?
+// TODO: Could this be bone via the inventory crate?
 #[pymethods]
 impl ModlData {
     #[new]
