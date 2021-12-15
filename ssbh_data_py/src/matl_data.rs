@@ -1,4 +1,5 @@
-use crate::{python_enum, MapPy, PyTypeString};
+use crate::{python_enum, MapPy, PyTypeString, PyiMethods};
+use pyo3::indoc::indoc;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -28,9 +29,16 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+// a: PyiClass + PyiMethods
+// b: PyiClass
+trait A {}
+trait B {}
+trait C {}
+
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::MatlData)]
+#[pyi(has_methods = true)]
 pub struct MatlData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -59,6 +67,19 @@ impl MatlData {
         self.map_py(py)?
             .write_to_file(path)
             .map_err(|e| MatlDataError::new_err(format!("{}", e)))
+    }
+}
+
+impl PyiMethods for MatlData {
+    fn pyi_methods() -> String {
+        r#"
+    def __init__(
+            self,
+            major_version: int = ...,
+            minor_version: int = ...,
+        ) -> None: ...
+    
+    def save(self, path: str) -> None: ..."#.to_string()
     }
 }
 

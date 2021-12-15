@@ -26,6 +26,26 @@ fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
     None
 }
 
+fn get_has_pyi_methods(attrs: &[Attribute]) -> Option<bool> {
+    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
+        for nested in l.nested {
+            // There may be multiple attributes, so just find the first matching attribute.
+            // ex: #[pyi(has_methods = true)]
+            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
+                match v.path.get_ident().unwrap().to_string().as_str() {
+                    "has_methods" => match v.lit {
+                        syn::Lit::Bool(s) => return Some(s.value()),
+                        _ => (),
+                    },
+                    _ => (),
+                }
+            }
+        }
+    }
+
+    None
+}
+
 #[proc_macro_derive(Pyi, attributes(pyi))]
 pub fn pyi_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -65,6 +85,12 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
         })
         .collect();
 
+
+    // TODO: There's probably a nicer way to do this using an attribute macro.
+    // The macro would generate the PyiMethods implementation from the function signatures.
+    let has_methods = get_has_pyi_methods(&input.attrs).unwrap_or(false);
+    let impl_pyi_methods = if has_methods { quote! {}} else {quote! {impl crate::PyiMethods for #name { }}};
+
     let class_name = name.to_string();
 
     // Generate a python class string to use for type stubs (.pyi) files.
@@ -79,7 +105,7 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl crate::Pyi for #name { }
+        #impl_pyi_methods
 
         impl crate::PyTypeString for #name {
             fn py_type_string() -> String {

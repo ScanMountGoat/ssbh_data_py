@@ -74,6 +74,8 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
     writeln!(&mut f).unwrap();
     for (name, variants) in enums {
         write_enum_class_attrs(&mut f, name, enum_path, variants);
+
+        // Each enum uses the same class structure for now.
         writeln!(&mut f, "impl crate::PyiClass for {} {{", name).unwrap();
 
         writeln!(&mut f, "    fn pyi_class() -> String {{").unwrap();
@@ -82,21 +84,18 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
 
         writeln!(&mut f, "}}").unwrap();
 
-        // TODO: Should combining outputs be handled by the PyiTrait itself?
+        // Add a class variable for each enum variant.
         // TODO: Is there a way to differentiate between class and instance variables?
-        writeln!(&mut f, "impl crate::Pyi for {} {{", name).unwrap();
-
-        writeln!(&mut f, "    fn pyi() -> String {{").unwrap();
-        writeln!(&mut f, "        let mut result = <Self as crate::PyiClass>::pyi_class() + \"\n\";").unwrap();
-
+        // HACK: Just use the methods trait to also optionally include class attributes.
+        writeln!(&mut f, "impl crate::PyiMethods for {} {{", name).unwrap();
+        writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
+        writeln!(&mut f, "        let mut result = String::new();").unwrap();
         for variant in *variants {
             writeln!(&mut f, r#"        result += "    {}: {} = ...\n";"#, variant, name).unwrap();
         }
         writeln!(&mut f, "        result").unwrap();
         writeln!(&mut f, "    }}").unwrap();
-
         writeln!(&mut f, "}}").unwrap();
-
     }
 
 }
