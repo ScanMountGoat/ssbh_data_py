@@ -1,5 +1,4 @@
 use crate::{python_enum, MapPy, PyTypeString, PyiMethods};
-use pyo3::indoc::indoc;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -9,11 +8,13 @@ mod enums;
 
 create_exception!(ssbh_data_py, MatlDataError, pyo3::exceptions::PyException);
 
+// TODO: No constructor for SamplerData, BlendStateData, RasterizerStateData?
 pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let matl_data = PyModule::new(py, "matl_data")?;
     // TODO: Automatically register classes?
     matl_data.add_class::<MatlData>()?;
     matl_data.add_class::<MatlEntryData>()?;
+
     matl_data.add_class::<ParamId>()?;
     matl_data.add_class::<BlendFactor>()?;
     matl_data.add_class::<FillMode>()?;
@@ -23,17 +24,23 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     matl_data.add_class::<MagFilter>()?;
     matl_data.add_class::<MaxAnisotropy>()?;
 
+    matl_data.add_class::<BlendStateParam>()?;
+    matl_data.add_class::<FloatParam>()?;
+    matl_data.add_class::<BooleanParam>()?;
+    matl_data.add_class::<Vector4Param>()?;
+    matl_data.add_class::<RasterizerStateParam>()?;
+    matl_data.add_class::<SamplerParam>()?;
+    matl_data.add_class::<TextureParam>()?;
+
+    matl_data.add_class::<RasterizerStateData>()?;
+    matl_data.add_class::<SamplerData>()?;
+    matl_data.add_class::<BlendStateData>()?;
+
     matl_data.add_function(wrap_pyfunction!(read_matl, matl_data)?)?;
 
     module.add_submodule(matl_data)?;
     Ok(())
 }
-
-// a: PyiClass + PyiMethods
-// b: PyiClass
-trait A {}
-trait B {}
-trait C {}
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
@@ -79,7 +86,8 @@ impl PyiMethods for MatlData {
             minor_version: int = ...,
         ) -> None: ...
     
-    def save(self, path: str) -> None: ..."#.to_string()
+    def save(self, path: str) -> None: ..."#
+            .to_string()
     }
 }
 
@@ -140,11 +148,48 @@ impl MatlEntryData {
     }
 }
 
+macro_rules! param_new_impl {
+    ($(($py_class:ty,$data:ty)),*) => {
+        $(
+            #[pymethods]
+            impl $py_class {
+                #[new]
+                fn new(_py: Python, param_id: ParamId, data: $data) -> PyResult<Self> {
+                    Ok(Self { param_id, data })
+                }
+            }
+
+            // TODO: Find a better place to generate the methods.
+            impl crate::PyiMethods for $py_class {
+                fn pyi_methods() -> String {
+                    format!(r#"
+    def __init__(
+            self,
+            param_id: ParamId = ...,
+            data: {} = ...,
+        ) -> None: ..."#, <$data>::py_type_string())
+                }
+            }
+        )*
+    };
+}
+
+param_new_impl!(
+    (BlendStateParam, BlendStateData),
+    (FloatParam, f32),
+    (BooleanParam, bool),
+    (Vector4Param, PyObject),
+    (RasterizerStateParam, RasterizerStateData),
+    (SamplerParam, SamplerData),
+    (TextureParam, String)
+);
+
 // TODO: Is there a workaround for MapPy not supporting generic structs?
 // Have type aliases for each variant in Rust and separate ParamData types in Python?
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::BlendStateParam)]
+#[pyi(has_methods = true)]
 pub struct BlendStateParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -156,6 +201,7 @@ pub struct BlendStateParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::FloatParam)]
+#[pyi(has_methods = true)]
 pub struct FloatParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -167,6 +213,7 @@ pub struct FloatParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::BooleanParam)]
+#[pyi(has_methods = true)]
 pub struct BooleanParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -178,6 +225,7 @@ pub struct BooleanParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::Vector4Param)]
+#[pyi(has_methods = true)]
 pub struct Vector4Param {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -190,6 +238,7 @@ pub struct Vector4Param {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::RasterizerStateParam)]
+#[pyi(has_methods = true)]
 pub struct RasterizerStateParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -201,6 +250,7 @@ pub struct RasterizerStateParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::SamplerParam)]
+#[pyi(has_methods = true)]
 pub struct SamplerParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
@@ -212,6 +262,7 @@ pub struct SamplerParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::TextureParam)]
+#[pyi(has_methods = true)]
 pub struct TextureParam {
     #[pyo3(get, set)]
     pub param_id: ParamId,
