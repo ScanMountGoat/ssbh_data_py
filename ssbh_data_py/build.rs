@@ -19,7 +19,7 @@ fn write_enum_class_attrs<W: Write>(
         writeln!(w, "    #[pyo3(name = {:?})]", variant).unwrap();
         writeln!(
             w,
-            "    fn {}() -> {} {{",
+            "    pub fn {}() -> {} {{",
             variant.to_lowercase(),
             class_name
         )

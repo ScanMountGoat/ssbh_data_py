@@ -8,7 +8,6 @@ mod enums;
 
 create_exception!(ssbh_data_py, MatlDataError, pyo3::exceptions::PyException);
 
-// TODO: No constructor for SamplerData, BlendStateData, RasterizerStateData?
 pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     let matl_data = PyModule::new(py, "matl_data")?;
     // TODO: Automatically register classes?
@@ -280,11 +279,37 @@ python_enum!(
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
+#[pyi(has_methods = true)]
 #[map(ssbh_data::matl_data::BlendStateData)]
 pub struct BlendStateData {
+    #[pyo3(get, set)]
     pub source_color: BlendFactor,
+
+    #[pyo3(get, set)]
     pub destination_color: BlendFactor,
+
+    #[pyo3(get, set)]
     pub alpha_sample_to_coverage: bool,
+}
+
+// TODO: Is it worth having default parameterless constructors?
+// This will cause increased breaking changes and potentially unwanted default values.
+#[pymethods]
+impl BlendStateData {
+    #[new]
+    fn new(_py: Python) -> PyResult<Self> {
+        Ok(Self {
+            source_color: BlendFactor::one(),
+            destination_color: BlendFactor::zero(),
+            alpha_sample_to_coverage: false,
+        })
+    }
+}
+
+impl crate::PyiMethods for BlendStateData {
+    fn pyi_methods() -> String {
+        "    def __init__(self) -> None: ...".to_string()
+    }
 }
 
 python_enum!(
@@ -297,10 +322,34 @@ python_enum!(
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::RasterizerStateData)]
+#[pyi(has_methods = true)]
 pub struct RasterizerStateData {
+    #[pyo3(get, set)]
     pub fill_mode: FillMode,
+
+    #[pyo3(get, set)]
     pub cull_mode: CullMode,
+
+    #[pyo3(get, set)]
     pub depth_bias: f32,
+}
+
+#[pymethods]
+impl RasterizerStateData {
+    #[new]
+    fn new(_py: Python) -> PyResult<Self> {
+        Ok(Self {
+            fill_mode: FillMode::solid(),
+            cull_mode: CullMode::back(),
+            depth_bias: 0.0,
+        })
+    }
+}
+
+impl crate::PyiMethods for RasterizerStateData {
+    fn pyi_methods() -> String {
+        "    def __init__(self) -> None: ...".to_string()
+    }
 }
 
 python_enum!(
@@ -321,16 +370,57 @@ python_enum!(
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi)]
 #[map(ssbh_data::matl_data::SamplerData)]
+#[pyi(has_methods = true)]
 pub struct SamplerData {
+    #[pyo3(get, set)]
     pub wraps: WrapMode,
+
+    #[pyo3(get, set)]
     pub wrapt: WrapMode,
+
+    #[pyo3(get, set)]
     pub wrapr: WrapMode,
+
+    #[pyo3(get, set)]
     pub min_filter: MinFilter,
+
+    #[pyo3(get, set)]
     pub mag_filter: MagFilter,
+
     #[pyi(python_type = "list[float]")]
+    #[pyo3(get, set)]
     pub border_color: PyObject,
+
+    #[pyo3(get, set)]
     pub lod_bias: f32,
+
+    #[pyo3(get, set)]
     pub max_anisotropy: Option<MaxAnisotropy>,
+}
+
+// TODO: Is it worth having default parameterless constructors?
+// This will cause increased breaking changes and potentially unwanted default values.
+#[pymethods]
+impl SamplerData {
+    #[new]
+    fn new(py: Python) -> PyResult<Self> {
+        Ok(Self {
+            wraps: WrapMode::clamptoedge(),
+            wrapt: WrapMode::clamptoedge(),
+            wrapr: WrapMode::clamptoedge(),
+            min_filter: MinFilter::linearmipmaplinear(),
+            mag_filter: MagFilter::linear(),
+            border_color: PyList::new(py, [0.0; 4]).into(),
+            lod_bias: 0.0,
+            max_anisotropy: Some(MaxAnisotropy::two()),
+        })
+    }
+}
+
+impl crate::PyiMethods for SamplerData {
+    fn pyi_methods() -> String {
+        "    def __init__(self) -> None: ...".to_string()
+    }
 }
 
 impl MapPy<ssbh_data::matl_data::Color4f> for PyObject {
