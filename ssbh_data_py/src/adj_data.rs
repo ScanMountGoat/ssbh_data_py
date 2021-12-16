@@ -1,9 +1,9 @@
-use crate::{mesh_data, MapPy};
+use crate::{mesh_data, MapPy, PyRepr};
 use pyo3::types::PyType;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::{MapPy, Pyi, PyRepr};
 
 create_exception!(ssbh_data_py, AdjDataError, pyo3::exceptions::PyException);
 
@@ -18,10 +18,11 @@ pub fn adj_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.adj_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjData)]
 struct AdjData {
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AdjEntryData]")]
     pub entries: Py<PyList>,
 }
 
@@ -42,13 +43,14 @@ impl AdjData {
 }
 
 #[pyclass(module = "ssbh_data_py.adj_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjEntryData)]
 struct AdjEntryData {
     #[pyo3(get, set)]
     pub mesh_object_index: usize,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[int]")]
     pub vertex_adjacency: PyObject,
 }
 

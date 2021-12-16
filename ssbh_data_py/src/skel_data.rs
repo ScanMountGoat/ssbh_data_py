@@ -1,8 +1,8 @@
-use crate::MapPy;
+use crate::{MapPy, PyRepr};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::{MapPy, Pyi, PyRepr};
 
 use crate::create_py_list_from_slice;
 
@@ -20,7 +20,7 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.skel_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::SkelData)]
 struct SkelData {
     #[pyo3(get, set)]
@@ -30,17 +30,19 @@ struct SkelData {
     pub minor_version: u16,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[BoneData]")]
     pub bones: Py<PyList>,
 }
 
 #[pyclass(module = "ssbh_data_py.skel_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::BoneData)]
 struct BoneData {
     #[pyo3(get, set)]
     pub name: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[list[float]]")]
     pub transform: PyObject,
 
     #[pyo3(get, set)]

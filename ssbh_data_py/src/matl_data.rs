@@ -1,8 +1,8 @@
-use crate::{python_enum, MapPy, PyTypeString, PyiMethods};
+use crate::{python_enum, MapPy, PyTypeString, PyiMethods, PyRepr};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, Pyi};
+use ssbh_data_py_derive::{MapPy, Pyi, PyRepr};
 
 mod enums;
 
@@ -42,7 +42,7 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::MatlData)]
 #[pyi(has_methods = true)]
 pub struct MatlData {
@@ -91,7 +91,7 @@ impl PyiMethods for MatlData {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::MatlEntryData)]
 pub struct MatlEntryData {
     #[pyo3(get, set)]
@@ -186,7 +186,7 @@ param_new_impl!(
 // TODO: Is there a workaround for MapPy not supporting generic structs?
 // Have type aliases for each variant in Rust and separate ParamData types in Python?
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::BlendStateParam)]
 #[pyi(has_methods = true)]
 pub struct BlendStateParam {
@@ -198,7 +198,7 @@ pub struct BlendStateParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::FloatParam)]
 #[pyi(has_methods = true)]
 pub struct FloatParam {
@@ -210,7 +210,7 @@ pub struct FloatParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::BooleanParam)]
 #[pyi(has_methods = true)]
 pub struct BooleanParam {
@@ -222,7 +222,7 @@ pub struct BooleanParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::Vector4Param)]
 #[pyi(has_methods = true)]
 pub struct Vector4Param {
@@ -235,7 +235,7 @@ pub struct Vector4Param {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::RasterizerStateParam)]
 #[pyi(has_methods = true)]
 pub struct RasterizerStateParam {
@@ -247,7 +247,7 @@ pub struct RasterizerStateParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::SamplerParam)]
 #[pyi(has_methods = true)]
 pub struct SamplerParam {
@@ -259,7 +259,7 @@ pub struct SamplerParam {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::TextureParam)]
 #[pyi(has_methods = true)]
 pub struct TextureParam {
@@ -278,7 +278,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[pyi(has_methods = true)]
 #[map(ssbh_data::matl_data::BlendStateData)]
 pub struct BlendStateData {
@@ -320,7 +320,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::RasterizerStateData)]
 #[pyi(has_methods = true)]
 pub struct RasterizerStateData {
@@ -368,7 +368,7 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::SamplerData)]
 #[pyi(has_methods = true)]
 pub struct SamplerData {

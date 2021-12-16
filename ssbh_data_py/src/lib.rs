@@ -3,6 +3,7 @@ use pyo3::{prelude::*, types::PyList};
 #[cfg(test)]
 use pyo3::types::IntoPyDict;
 
+// External crates won't depend on ssbh_data_py, so just make everything public for convenience.
 pub mod adj_data;
 pub mod anim_data;
 pub mod matl_data;
@@ -15,6 +16,9 @@ pub use pyi::*;
 
 mod map_py;
 pub use map_py::*;
+
+mod repr;
+pub use repr::*;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {

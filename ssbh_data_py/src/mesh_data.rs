@@ -1,10 +1,13 @@
 use crate::create_py_list_from_slice;
 use crate::MapPy;
+use crate::PyRepr;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::PyRepr;
+use ssbh_data_py_derive::Pyi;
 
 create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
 
@@ -27,7 +30,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshData)]
 struct MeshData {
     #[pyo3(get, set)]
@@ -37,6 +40,7 @@ struct MeshData {
     pub minor_version: u16,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[MeshObjectData]")]
     pub objects: Py<PyList>,
 }
 
@@ -60,7 +64,7 @@ impl MeshData {
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshObjectData)]
 pub struct MeshObjectData {
     #[pyo3(get, set)]
@@ -77,32 +81,40 @@ pub struct MeshObjectData {
 
     #[pyo3(get, set)]
     pub disable_depth_write: bool,
-    
+
     #[pyo3(get, set)]
     pub sort_bias: i32,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[int]")]
     pub vertex_indices: PyObject,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub positions: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub normals: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub binormals: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub tangents: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub texture_coordinates: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[AttributeData]")]
     pub color_sets: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[BoneInfluence]")]
     pub bone_influences: Py<PyList>,
 }
 
@@ -124,18 +136,20 @@ impl MeshObjectData {
             bone_influences: PyList::empty(py).into(),
             sort_bias: 0,
             disable_depth_test: false,
-            disable_depth_write: false
+            disable_depth_write: false,
         })
     }
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::BoneInfluence)]
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
+
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[VertexWeight]")]
     pub vertex_weights: Py<PyList>,
 }
 
@@ -158,7 +172,7 @@ impl BoneInfluence {
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::VertexWeight)]
 pub struct VertexWeight {
     #[pyo3(get, set)]
@@ -180,13 +194,14 @@ impl VertexWeight {
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::AttributeData)]
 pub struct AttributeData {
     #[pyo3(get, set)]
     pub name: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[list[float]]")]
     pub data: PyObject,
 }
 

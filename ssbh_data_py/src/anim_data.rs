@@ -1,9 +1,9 @@
-use crate::{python_enum, MapPy};
-use pyo3::{create_exception, wrap_pyfunction, PyObjectProtocol};
+use crate::{python_enum, MapPy, PyRepr};
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
 
 mod enums;
 
@@ -26,7 +26,7 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::AnimData)]
 pub struct AnimData {
     #[pyo3(get, set)]
@@ -43,13 +43,14 @@ pub struct AnimData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::GroupData)]
 pub struct GroupData {
     #[pyo3(get, set)]
     pub group_type: GroupType,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[NodeData]")]
     pub nodes: Py<PyList>,
 }
 
@@ -65,13 +66,14 @@ impl GroupData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::NodeData)]
 pub struct NodeData {
     #[pyo3(get, set)]
     pub name: String,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[TrackData]")]
     pub tracks: Py<PyList>,
 }
 
@@ -87,7 +89,7 @@ impl NodeData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::TrackData)]
 pub struct TrackData {
     #[pyo3(get, set)]
@@ -95,6 +97,7 @@ pub struct TrackData {
 
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
+    #[pyi(python_type = "Any")] // TODO: Should this be a union?
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
 
     #[pyo3(get, set)]
@@ -117,7 +120,7 @@ impl TrackData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::ScaleOptions)]
 pub struct ScaleOptions {
     #[pyo3(get, set)]
@@ -172,13 +175,9 @@ python_enum!(
     "ssbh_data_py.anim_data"
 );
 
-// TODO: Test that group.group_type == GroupType.Transform works?
-// TODO: Make a macro for this?
-// TODO: Add str and repr to match Python enum?
-
 // TODO: Document what component counts are expected.
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::Transform)]
 pub struct Transform {
     #[pyo3(get, set)]
@@ -203,18 +202,8 @@ impl Transform {
     }
 }
 
-#[pyproto]
-impl PyObjectProtocol for Transform {
-    fn __repr__(&self) -> String {
-        format!(
-            "ssbh_data_py.anim_data.Transform({}, {}, {})",
-            self.scale, self.rotation, self.translation,
-        )
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::UvTransform)]
 pub struct UvTransform {
     #[pyo3(get, set)]
@@ -250,18 +239,6 @@ impl UvTransform {
             translate_u,
             translate_v,
         })
-    }
-}
-
-// TODO: This could likely be done with a derive macro.
-// TODO: Recursively call repr?
-#[pyproto]
-impl PyObjectProtocol for UvTransform {
-    fn __repr__(&self) -> String {
-        format!(
-            "ssbh_data_py.anim_data.UvTransform({}, {}, {}, {}, {})",
-            self.scale_u, self.scale_v, self.rotation, self.translate_u, self.translate_v,
-        )
     }
 }
 

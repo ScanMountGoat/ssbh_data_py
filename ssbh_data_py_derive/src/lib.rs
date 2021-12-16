@@ -4,7 +4,9 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
+use syn::{
+    parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, FnArg, Ident, ItemFn, Pat,
+};
 
 fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
     if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
@@ -79,17 +81,20 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
                     let field_type = &f.ty;
 
                     quote! {
-                        <#field_type>::py_type_string()
+                        <#field_type as crate::PyTypeString>::py_type_string()
                     }
                 })
         })
         .collect();
 
-
     // TODO: There's probably a nicer way to do this using an attribute macro.
     // The macro would generate the PyiMethods implementation from the function signatures.
     let has_methods = get_has_pyi_methods(&input.attrs).unwrap_or(false);
-    let impl_pyi_methods = if has_methods { quote! {}} else {quote! {impl crate::PyiMethods for #name { }}};
+    let impl_pyi_methods = if has_methods {
+        quote! {}
+    } else {
+        quote! {impl crate::PyiMethods for #name { }}
+    };
 
     let class_name = name.to_string();
 
@@ -199,4 +204,87 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
             }
         }
     }
+}
+
+#[proc_macro_derive(PyRepr, attributes(pyrepr))]
+pub fn py_repr_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    // TODO: Add the module name as a parameter?
+    let name = &input.ident;
+
+    // For the repr, assume there is a constructor with all fields.
+    // We can simply call the py_repr function on all fields in order.
+    // The trait allows use to handle nested types automatically.
+    let field_reprs: Vec<_> = match &input.data {
+        Data::Struct(DataStruct {
+            fields: Fields::Named(fields),
+            ..
+        }) => fields
+            .named
+            .iter()
+            .map(|field| &field.ident)
+            .map(|i| {
+                quote! {
+                    self.#i.py_repr()
+                }
+            })
+            .collect(),
+        _ => panic!("Unsupported type"),
+    };
+
+    let format_string = format!(
+        "{}({})",
+        name.to_string(),
+        vec!["{}"; field_reprs.len()].join(", ")
+    );
+    let result: TokenStream2 = quote! {
+        impl crate::PyRepr for #name {
+            fn py_repr(&self) -> String {
+                format!(#format_string, #(#field_reprs),*)
+            }
+        }
+
+        #[pyproto]
+        impl pyo3::PyObjectProtocol for #name {
+            fn __repr__(&self) -> String {
+                self.py_repr()
+            }
+        }
+    };
+    result.into()
+}
+
+#[proc_macro_attribute]
+pub fn show_streams(attr: TokenStream, item: TokenStream) -> TokenStream {
+    // TODO: Can we just append something after the constructor to implement a PyRepr trait?
+    println!("attr: \"{}\"", attr.to_string());
+    println!("item: \"{}\"", item.to_string());
+
+    let new_item = item.clone();
+    let input = parse_macro_input!(new_item as ItemFn);
+    println!(
+        "{:?}",
+        // Get the names and types of the function signatures.
+        // TODO: Use this to build the pyi implementation?
+        input
+            .sig
+            .inputs
+            .iter()
+            .map(|i| {
+                if let FnArg::Typed(typed) = i {
+                    if let Pat::Ident(arg_ident) = typed.pat.as_ref() {
+                        Some(arg_ident.ident.to_string())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    );
+
+    // TODO: Can we generate the implementations here?
+    item
 }

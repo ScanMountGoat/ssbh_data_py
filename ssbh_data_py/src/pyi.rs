@@ -41,7 +41,7 @@ macro_rules! py_type_string_primitive_impl {
 py_type_string_primitive_impl!("bool", bool);
 py_type_string_primitive_impl!("str", &str, String);
 py_type_string_primitive_impl!("float", f32, f64);
-py_type_string_primitive_impl!("int", u8, u16, u32, u64);
+py_type_string_primitive_impl!("int", u8, u16, u32, u64, usize, i32, i64);
 
 impl<T: PyTypeString> PyTypeString for Option<T> {
     fn py_type_string() -> String {
