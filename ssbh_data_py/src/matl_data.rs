@@ -44,6 +44,7 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::MatlData)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct MatlData {
     #[pyo3(get, set)]
@@ -93,6 +94,7 @@ impl PyiMethods for MatlData {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::MatlEntryData)]
+#[pyrepr("ssbh_data_py.matl_data")]
 pub struct MatlEntryData {
     #[pyo3(get, set)]
     pub material_label: String,
@@ -188,6 +190,7 @@ param_new_impl!(
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::BlendStateParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct BlendStateParam {
     #[pyo3(get, set)]
@@ -200,6 +203,7 @@ pub struct BlendStateParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::FloatParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct FloatParam {
     #[pyo3(get, set)]
@@ -212,6 +216,7 @@ pub struct FloatParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::BooleanParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct BooleanParam {
     #[pyo3(get, set)]
@@ -224,6 +229,7 @@ pub struct BooleanParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::Vector4Param)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct Vector4Param {
     #[pyo3(get, set)]
@@ -237,6 +243,7 @@ pub struct Vector4Param {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::RasterizerStateParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct RasterizerStateParam {
     #[pyo3(get, set)]
@@ -249,6 +256,7 @@ pub struct RasterizerStateParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::SamplerParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct SamplerParam {
     #[pyo3(get, set)]
@@ -261,6 +269,7 @@ pub struct SamplerParam {
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::TextureParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct TextureParam {
     #[pyo3(get, set)]
@@ -281,6 +290,7 @@ python_enum!(
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[pyi(has_methods = true)]
 #[map(ssbh_data::matl_data::BlendStateData)]
+#[pyrepr("ssbh_data_py.matl_data")]
 pub struct BlendStateData {
     #[pyo3(get, set)]
     pub source_color: BlendFactor,
@@ -322,6 +332,7 @@ python_enum!(
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::RasterizerStateData)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct RasterizerStateData {
     #[pyo3(get, set)]
@@ -370,6 +381,7 @@ python_enum!(
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::SamplerData)]
+#[pyrepr("ssbh_data_py.matl_data")]
 #[pyi(has_methods = true)]
 pub struct SamplerData {
     #[pyo3(get, set)]

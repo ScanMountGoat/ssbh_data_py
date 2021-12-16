@@ -28,6 +28,7 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::AnimData)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct AnimData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -45,6 +46,7 @@ pub struct AnimData {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::GroupData)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct GroupData {
     #[pyo3(get, set)]
     pub group_type: GroupType,
@@ -68,6 +70,7 @@ impl GroupData {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::NodeData)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct NodeData {
     #[pyo3(get, set)]
     pub name: String,
@@ -91,6 +94,7 @@ impl NodeData {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::TrackData)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct TrackData {
     #[pyo3(get, set)]
     pub name: String,
@@ -122,6 +126,7 @@ impl TrackData {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::ScaleOptions)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct ScaleOptions {
     #[pyo3(get, set)]
     pub inherit_scale: bool,
@@ -179,6 +184,7 @@ python_enum!(
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::Transform)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct Transform {
     #[pyo3(get, set)]
     pub scale: Py<PyList>,
@@ -205,6 +211,7 @@ impl Transform {
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::UvTransform)]
+#[pyrepr("ssbh_data_py.anim_data")]
 pub struct UvTransform {
     #[pyo3(get, set)]
     pub scale_u: f32,

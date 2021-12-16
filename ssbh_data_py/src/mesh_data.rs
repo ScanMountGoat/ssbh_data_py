@@ -32,6 +32,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshData)]
+#[pyrepr("ssbh_data_py.mesh_data")]
 struct MeshData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -66,6 +67,7 @@ impl MeshData {
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshObjectData)]
+#[pyrepr("ssbh_data_py.mesh_data")]
 pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub name: String,
@@ -144,6 +146,7 @@ impl MeshObjectData {
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::BoneInfluence)]
+#[pyrepr("ssbh_data_py.mesh_data")]
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
@@ -174,6 +177,7 @@ impl BoneInfluence {
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::VertexWeight)]
+#[pyrepr("ssbh_data_py.mesh_data")]
 pub struct VertexWeight {
     #[pyo3(get, set)]
     pub vertex_index: u32,
@@ -196,6 +200,7 @@ impl VertexWeight {
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::AttributeData)]
+#[pyrepr("ssbh_data_py.mesh_data")]
 pub struct AttributeData {
     #[pyo3(get, set)]
     pub name: String,

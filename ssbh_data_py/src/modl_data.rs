@@ -19,6 +19,7 @@ pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.modl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::modl_data::ModlData)]
+#[pyrepr("ssbh_data_py.modl_data")]
 pub struct ModlData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -74,6 +75,7 @@ impl ModlData {
 #[pyclass(module = "ssbh_data_py.modl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::modl_data::ModlEntryData)]
+#[pyrepr("ssbh_data_py.modl_data")]
 pub struct ModlEntryData {
     #[pyo3(get, set)]
     pub mesh_object_name: String,
@@ -111,8 +113,6 @@ fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use crate::run_python_code;
     use indoc::indoc;
 

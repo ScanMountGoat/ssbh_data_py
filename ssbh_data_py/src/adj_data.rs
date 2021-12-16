@@ -20,6 +20,7 @@ pub fn adj_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.adj_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjData)]
+#[pyrepr("ssbh_data_py.adj_data")]
 struct AdjData {
     #[pyo3(get, set)]
     #[pyi(python_type = "list[AdjEntryData]")]
@@ -45,6 +46,7 @@ impl AdjData {
 #[pyclass(module = "ssbh_data_py.adj_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjEntryData)]
+#[pyrepr("ssbh_data_py.adj_data")]
 struct AdjEntryData {
     #[pyo3(get, set)]
     pub mesh_object_index: usize,

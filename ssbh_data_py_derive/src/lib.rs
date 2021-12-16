@@ -210,7 +210,14 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
 pub fn py_repr_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    // TODO: Add the module name as a parameter?
+    // ex: #[pyrepr("ssbh_data_py.matl_data")]
+    let module: syn::LitStr = input
+        .attrs
+        .iter()
+        .find(|a| a.path.is_ident("pyrepr"))
+        .map(|a| a.parse_args().unwrap())
+        .expect("Must specify a the module with a pyrepr attribute");
+
     let name = &input.ident;
 
     // For the repr, assume there is a constructor with all fields.
@@ -234,7 +241,8 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
     };
 
     let format_string = format!(
-        "{}({})",
+        "{}.{}({})",
+        module.value(),
         name.to_string(),
         vec!["{}"; field_reprs.len()].join(", ")
     );

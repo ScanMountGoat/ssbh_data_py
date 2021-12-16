@@ -22,6 +22,7 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[pyclass(module = "ssbh_data_py.skel_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::SkelData)]
+#[pyrepr("ssbh_data_py.skel_data")]
 struct SkelData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -37,6 +38,7 @@ struct SkelData {
 #[pyclass(module = "ssbh_data_py.skel_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::BoneData)]
+#[pyrepr("ssbh_data_py.skel_data")]
 struct BoneData {
     #[pyo3(get, set)]
     pub name: String,
