@@ -1,8 +1,8 @@
-use crate::{python_enum, MapPy, PyTypeString, PyiMethods, PyRepr};
+use crate::{python_enum, MapPy, PyRepr, PyTypeString, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, Pyi, PyRepr};
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
 
 mod enums;
 
@@ -79,12 +79,11 @@ impl MatlData {
 
 impl PyiMethods for MatlData {
     fn pyi_methods() -> String {
-        r#"
-    def __init__(
-            self,
-            major_version: int = ...,
-            minor_version: int = ...,
-        ) -> None: ...
+r#"    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
     
     def save(self, path: str) -> None: ..."#
             .to_string()
@@ -95,6 +94,7 @@ impl PyiMethods for MatlData {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::MatlEntryData)]
 #[pyrepr("ssbh_data_py.matl_data")]
+#[pyi(has_methods = true)]
 pub struct MatlEntryData {
     #[pyo3(get, set)]
     pub material_label: String,
@@ -149,6 +149,17 @@ impl MatlEntryData {
     }
 }
 
+impl PyiMethods for MatlEntryData {
+    fn pyi_methods() -> String {
+r#"    def __init__(
+        self,
+        material_label: str = ...,
+        shader_label: str = ...,
+    ) -> None: ..."#
+            .to_string()
+    }
+}
+
 macro_rules! param_new_impl {
     ($(($py_class:ty,$data:ty)),*) => {
         $(
@@ -163,12 +174,12 @@ macro_rules! param_new_impl {
             // TODO: Find a better place to generate the methods.
             impl crate::PyiMethods for $py_class {
                 fn pyi_methods() -> String {
-                    format!(r#"
-    def __init__(
-            self,
-            param_id: ParamId = ...,
-            data: {} = ...,
-        ) -> None: ..."#, <$data>::py_type_string())
+                    format!(
+r#"    def __init__(
+        self,
+        param_id: ParamId = ...,
+        data: {} = ...,
+    ) -> None: ..."#, <$data>::py_type_string())
                 }
             }
         )*
