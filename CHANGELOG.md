@@ -2,7 +2,6 @@
 Changes:
 - Added support for numatb files with the `ssbh_data_py.matl_data` submodule.
 - Improved the printed output of ssbh_data_py classes when calling `repr()`, `str()`, or `print()`.
-- Added automated builds for PyPi for Python 3.10 for Windows, Linux, and MacOS.
 - Removed support for Python 3.6.
 
 ### 0.5.1
