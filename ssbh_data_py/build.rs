@@ -60,9 +60,7 @@ fn main() {
     generate_enum_file(
         "src/anim_data/enums.rs",
         "ssbh_data::anim_data",
-        &[
-            ("GroupType", GroupType::VARIANTS),
-        ],
+        &[("GroupType", GroupType::VARIANTS)],
     );
 }
 
@@ -84,7 +82,12 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "impl crate::PyiClass for {} {{", name).unwrap();
 
         writeln!(&mut f, "    fn pyi_class() -> String {{").unwrap();
-        writeln!(&mut f, r#"        "class {}:\n    name: str\n    value: int\n".to_string()"#, name).unwrap();
+        writeln!(
+            &mut f,
+            r#"        "class {}:\n    name: str\n    value: int\n".to_string()"#,
+            name
+        )
+        .unwrap();
         writeln!(&mut f, "    }}").unwrap();
 
         writeln!(&mut f, "}}").unwrap();
@@ -96,7 +99,12 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
         writeln!(&mut f, "        let mut result = String::new();").unwrap();
         for variant in *variants {
-            writeln!(&mut f, r#"        result += "    {}: {} = ...\n";"#, variant, name).unwrap();
+            writeln!(
+                &mut f,
+                r#"        result += "    {}: {} = ...\n";"#,
+                variant, name
+            )
+            .unwrap();
         }
         writeln!(&mut f, "        result").unwrap();
         writeln!(&mut f, "    }}").unwrap();
@@ -106,7 +114,13 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         // TODO: how to get the appropriate variant name?
         writeln!(&mut f, "impl crate::PyRepr for {} {{", name).unwrap();
         writeln!(&mut f, "    fn py_repr(&self) -> String {{").unwrap();
-        writeln!(&mut f, "        \"{}.{}\".to_string()", enum_path.replace("ssbh_data::", "ssbh_data_py."), name).unwrap();
+        writeln!(
+            &mut f,
+            "        \"{}.{}\".to_string()",
+            enum_path.replace("ssbh_data::", "ssbh_data_py."),
+            name
+        )
+        .unwrap();
         writeln!(&mut f, "    }}").unwrap();
         writeln!(&mut f, "}}").unwrap();
         writeln!(&mut f).unwrap();
@@ -117,5 +131,4 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "    }}").unwrap();
         writeln!(&mut f, "}}").unwrap();
     }
-
 }

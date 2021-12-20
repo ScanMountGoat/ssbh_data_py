@@ -2,7 +2,7 @@ use crate::{MapPy, PyRepr};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, Pyi, PyRepr};
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
 
 use crate::create_py_list_from_slice;
 

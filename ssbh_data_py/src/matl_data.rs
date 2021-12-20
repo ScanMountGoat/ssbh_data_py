@@ -79,7 +79,7 @@ impl MatlData {
 
 impl PyiMethods for MatlData {
     fn pyi_methods() -> String {
-r#"    def __init__(
+        r#"    def __init__(
         self,
         major_version: int = ...,
         minor_version: int = ...,
@@ -151,7 +151,7 @@ impl MatlEntryData {
 
 impl PyiMethods for MatlEntryData {
     fn pyi_methods() -> String {
-r#"    def __init__(
+        r#"    def __init__(
         self,
         material_label: str = ...,
         shader_label: str = ...,

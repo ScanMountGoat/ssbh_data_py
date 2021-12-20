@@ -138,7 +138,7 @@ pub struct ScaleOptions {
 #[pymethods]
 impl ScaleOptions {
     #[new]
-    fn new(py: Python) -> PyResult<Self> {
+    fn new(_py: Python) -> PyResult<Self> {
         Ok(ScaleOptions {
             inherit_scale: false,
             compensate_scale: false,

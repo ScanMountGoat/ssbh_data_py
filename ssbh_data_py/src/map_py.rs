@@ -1,5 +1,5 @@
-use pyo3::{prelude::*, types::PyList};
 use crate::create_py_list_from_slice;
+use pyo3::{prelude::*, types::PyList};
 
 // Define a mapping between types.
 // This allows for deriving the Python <-> Rust conversion.

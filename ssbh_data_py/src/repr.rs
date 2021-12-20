@@ -30,7 +30,6 @@ impl PyRepr for bool {
     }
 }
 
-
 impl PyRepr for String {
     fn py_repr(&self) -> String {
         // Python uses single quotes instead of Rust's double quotes.
@@ -55,7 +54,7 @@ impl<T: PyRepr> PyRepr for Option<T> {
     fn py_repr(&self) -> String {
         self.as_ref()
             .map(|t| t.py_repr())
-            .unwrap_or("None".to_string())
+            .unwrap_or_else(|| "None".to_string())
     }
 }
 

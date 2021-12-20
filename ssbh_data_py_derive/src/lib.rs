@@ -14,12 +14,10 @@ fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
             // There may be multiple attributes, so just find the first matching attribute.
             // ex: #[pyi(python_type = "list[float]")] or #[pyi(python_type("list[float]"))]
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
-                match v.path.get_ident().unwrap().to_string().as_str() {
-                    "python_type" => match v.lit {
-                        syn::Lit::Str(s) => return Some(s.value()),
-                        _ => (),
-                    },
-                    _ => (),
+                if v.path.get_ident().unwrap().to_string().as_str() == "python_type" {
+                    if let syn::Lit::Str(s) = v.lit {
+                        return Some(s.value());
+                    }
                 }
             }
         }
@@ -34,12 +32,10 @@ fn get_has_pyi_methods(attrs: &[Attribute]) -> Option<bool> {
             // There may be multiple attributes, so just find the first matching attribute.
             // ex: #[pyi(has_methods = true)]
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
-                match v.path.get_ident().unwrap().to_string().as_str() {
-                    "has_methods" => match v.lit {
-                        syn::Lit::Bool(s) => return Some(s.value()),
-                        _ => (),
-                    },
-                    _ => (),
+                if v.path.get_ident().unwrap().to_string().as_str() == "has_methods" {
+                    if let syn::Lit::Bool(s) = v.lit {
+                        return Some(s.value());
+                    }
                 }
             }
         }
@@ -243,7 +239,7 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
     let format_string = format!(
         "{}.{}({})",
         module.value(),
-        name.to_string(),
+        name,
         vec!["{}"; field_reprs.len()].join(", ")
     );
     let result: TokenStream2 = quote! {
@@ -266,8 +262,8 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn show_streams(attr: TokenStream, item: TokenStream) -> TokenStream {
     // TODO: Can we just append something after the constructor to implement a PyRepr trait?
-    println!("attr: \"{}\"", attr.to_string());
-    println!("item: \"{}\"", item.to_string());
+    println!("attr: \"{}\"", attr);
+    println!("item: \"{}\"", item);
 
     let new_item = item.clone();
     let input = parse_macro_input!(new_item as ItemFn);
