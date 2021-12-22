@@ -57,17 +57,14 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Unsupported type"),
     };
 
-    // Assume that Rust fields match Python and are not renamed by PyO3.
-    let field_names: Vec<_> = fields
-        .iter()
-        .map(|f| f.ident.as_ref().unwrap().to_string())
-        .collect();
-
-    // Use the attribute as an override for the type string if present.
-    let field_py_types: Vec<_> = fields
+    let formatted_fields: Vec<_> = fields
         .iter()
         .map(|f| {
-            get_pyi_field_type(&f.attrs)
+            // Assume that Rust fields match Python and are not renamed by PyO3.
+            let py_name = f.ident.as_ref().unwrap().to_string();
+
+            // Use the attribute as an override for the type string if present.
+            let py_type = get_pyi_field_type(&f.attrs)
                 .map(|ty| {
                     quote! {
                         #ty
@@ -79,7 +76,11 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
                     quote! {
                         <#field_type as crate::PyTypeString>::py_type_string()
                     }
-                })
+                });
+
+            quote! {
+                format!("    {}: {}", #py_name, #py_type)
+            }
         })
         .collect();
 
@@ -98,11 +99,7 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl crate::PyiClass for #name {
             fn pyi_class() -> String {
-                let mut result = format!("class {}:\n", #class_name);
-                #(
-                    result += &format!("    {}: {}\n", #field_names, #field_py_types);
-                )*
-                result
+                format!("class {}:\n{}", #class_name, &[#(#formatted_fields),*].join("\n"))
             }
         }
 

@@ -84,7 +84,7 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "    fn pyi_class() -> String {{").unwrap();
         writeln!(
             &mut f,
-            r#"        "class {}:\n    name: str\n    value: int\n".to_string()"#,
+            r#"        "class {}:\n    name: str\n    value: int".to_string()"#,
             name
         )
         .unwrap();
@@ -98,13 +98,24 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "impl crate::PyiMethods for {} {{", name).unwrap();
         writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
         writeln!(&mut f, "        let mut result = String::new();").unwrap();
-        for variant in *variants {
-            writeln!(
-                &mut f,
-                r#"        result += "    {}: {} = ...\n";"#,
-                variant, name
-            )
-            .unwrap();
+        // TODO: There's probably a cleaner way to do this using join.
+        for (i,variant) in variants.iter().enumerate() {
+            if i == variants.len() - 1 {
+                writeln!(
+                    &mut f,
+                    r#"        result += "    {}: {} = ...";"#,
+                    variant, name
+                )
+                .unwrap();
+            } else {
+                writeln!(
+                    &mut f,
+                    r#"        result += "    {}: {} = ...\n";"#,
+                    variant, name
+                )
+                .unwrap();
+            }
+
         }
         writeln!(&mut f, "        result").unwrap();
         writeln!(&mut f, "    }}").unwrap();

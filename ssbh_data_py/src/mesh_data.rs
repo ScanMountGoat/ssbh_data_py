@@ -1,6 +1,7 @@
 use crate::create_py_list_from_slice;
 use crate::MapPy;
 use crate::PyRepr;
+use crate::PyiMethods;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -33,7 +34,8 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshData)]
 #[pyrepr("ssbh_data_py.mesh_data")]
-struct MeshData {
+#[pyi(has_methods = true)]
+pub struct MeshData {
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -64,10 +66,24 @@ impl MeshData {
     }
 }
 
+impl PyiMethods for MeshData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
+
+    def save(self, path: str) -> None: ..."#
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::MeshObjectData)]
 #[pyrepr("ssbh_data_py.mesh_data")]
+#[pyi(has_methods = true)]
 pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub name: String,
@@ -143,10 +159,22 @@ impl MeshObjectData {
     }
 }
 
+impl PyiMethods for MeshObjectData {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        name: str,
+        sub_index: int
+    ) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::BoneInfluence)]
 #[pyrepr("ssbh_data_py.mesh_data")]
+#[pyi(has_methods = true)]
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
@@ -174,10 +202,22 @@ impl BoneInfluence {
     }
 }
 
+impl PyiMethods for BoneInfluence {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        bone_name: str,
+        vertex_weights: list[VertexWeight]
+    ) -> None: ..."#
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::VertexWeight)]
 #[pyrepr("ssbh_data_py.mesh_data")]
+#[pyi(has_methods = true)]
 pub struct VertexWeight {
     #[pyo3(get, set)]
     pub vertex_index: u32,
@@ -197,10 +237,22 @@ impl VertexWeight {
     }
 }
 
+impl PyiMethods for VertexWeight {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        vertex_index: int,
+        vertex_weight: float
+    ) -> None: ..."#
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.mesh_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::mesh_data::AttributeData)]
 #[pyrepr("ssbh_data_py.mesh_data")]
+#[pyi(has_methods = true)]
 pub struct AttributeData {
     #[pyo3(get, set)]
     pub name: String,
@@ -218,6 +270,16 @@ impl AttributeData {
             name,
             data: PyList::empty(py).into(),
         })
+    }
+}
+
+impl PyiMethods for AttributeData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        name: str,
+    ) -> None: ..."#
+            .to_string()
     }
 }
 

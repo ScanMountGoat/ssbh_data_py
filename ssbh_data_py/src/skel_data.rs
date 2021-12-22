@@ -1,4 +1,4 @@
-use crate::{MapPy, PyRepr};
+use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -23,7 +23,8 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::SkelData)]
 #[pyrepr("ssbh_data_py.skel_data")]
-struct SkelData {
+#[pyi(has_methods = true)]
+pub struct SkelData {
     #[pyo3(get, set)]
     pub major_version: u16,
 
@@ -39,7 +40,8 @@ struct SkelData {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::skel_data::BoneData)]
 #[pyrepr("ssbh_data_py.skel_data")]
-struct BoneData {
+#[pyi(has_methods = true)]
+pub struct BoneData {
     #[pyo3(get, set)]
     pub name: String,
 
@@ -65,6 +67,34 @@ impl BoneData {
             transform: transform.map_py(py)?,
             parent_index,
         })
+    }
+}
+
+impl PyiMethods for BoneData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        name: str,
+        transform: list[list[float]],
+        parent_index: Optional[int]
+    ) -> None: ..."#
+            .to_string()
+    }
+}
+
+impl PyiMethods for SkelData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
+
+    def save(self, path: str) -> None: ...
+
+    def calculate_world_transform(
+        self, bone: BoneData) -> list[list[float]]: ..."#
+            .to_string()
     }
 }
 

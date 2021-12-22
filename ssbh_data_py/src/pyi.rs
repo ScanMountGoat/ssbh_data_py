@@ -17,7 +17,12 @@ pub trait PyiMethods {
 
 impl<T: PyiClass + PyiMethods> Pyi for T {
     fn pyi() -> String {
-        format!("{}\n{}\n", Self::pyi_class(), Self::pyi_methods())
+        let methods = Self::pyi_methods();
+        if methods.is_empty() {
+            Self::pyi_class()
+        } else {
+            format!("{}\n\n{}", Self::pyi_class(), methods)
+        }
     }
 }
 

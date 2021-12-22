@@ -1,4 +1,4 @@
-use crate::{MapPy, PyRepr};
+use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
@@ -20,6 +20,7 @@ pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::modl_data::ModlData)]
 #[pyrepr("ssbh_data_py.modl_data")]
+#[pyi(has_methods = true)]
 pub struct ModlData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -72,10 +73,24 @@ impl ModlData {
     }
 }
 
+impl PyiMethods for ModlData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
+    
+    def save(self, path: str) -> None: ..."#
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.modl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::modl_data::ModlEntryData)]
 #[pyrepr("ssbh_data_py.modl_data")]
+#[pyi(has_methods = true)]
 pub struct ModlEntryData {
     #[pyo3(get, set)]
     pub mesh_object_name: String,
@@ -101,6 +116,18 @@ impl ModlEntryData {
             mesh_object_sub_index,
             material_label,
         })
+    }
+}
+
+impl PyiMethods for ModlEntryData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        mesh_object_name: str,
+        mesh_object_sub_index: int,
+        material_label: str
+    ) -> None: ..."#
+            .to_string()
     }
 }
 

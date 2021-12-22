@@ -1,4 +1,4 @@
-use crate::{python_enum, MapPy, PyRepr};
+use crate::{python_enum, MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
@@ -18,6 +18,7 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     anim_data.add_class::<Transform>()?;
     anim_data.add_class::<UvTransform>()?;
     anim_data.add_class::<GroupType>()?;
+    anim_data.add_class::<ScaleOptions>()?;
 
     anim_data.add_function(wrap_pyfunction!(read_anim, anim_data)?)?;
 
@@ -29,6 +30,7 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::AnimData)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct AnimData {
     #[pyo3(get, set)]
     pub major_version: u16,
@@ -37,6 +39,7 @@ pub struct AnimData {
     pub minor_version: u16,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[GroupData]")]
     pub groups: Py<PyList>,
 
     #[pyo3(get, set)]
@@ -47,6 +50,7 @@ pub struct AnimData {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::GroupData)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct GroupData {
     #[pyo3(get, set)]
     pub group_type: GroupType,
@@ -67,10 +71,21 @@ impl GroupData {
     }
 }
 
+impl PyiMethods for GroupData {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        group_type: GroupType,
+    ) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::NodeData)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct NodeData {
     #[pyo3(get, set)]
     pub name: String,
@@ -91,17 +106,31 @@ impl NodeData {
     }
 }
 
+impl PyiMethods for NodeData {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        name: str,
+    ) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::TrackData)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct TrackData {
     #[pyo3(get, set)]
     pub name: String,
 
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
-    #[pyi(python_type = "Any")] // TODO: Should this be a union?
+    #[pyi(
+        python_type = "Union[list[UvTransform], list[Transform],
+                  list[float], list[bool], list[int], list[list[float]]]"
+    )]
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
 
     #[pyo3(get, set)]
@@ -123,10 +152,21 @@ impl TrackData {
     }
 }
 
+impl PyiMethods for TrackData {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        name: str,
+    ) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::ScaleOptions)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct ScaleOptions {
     #[pyo3(get, set)]
     pub inherit_scale: bool,
@@ -143,6 +183,12 @@ impl ScaleOptions {
             inherit_scale: false,
             compensate_scale: false,
         })
+    }
+}
+
+impl PyiMethods for ScaleOptions {
+    fn pyi_methods() -> String {
+        "    def __init__(self) -> None: ...".to_string()
     }
 }
 
@@ -166,6 +212,19 @@ impl AnimData {
     }
 }
 
+impl PyiMethods for AnimData {
+    fn pyi_methods() -> String {
+        r#"    def __init__(
+        self,
+        major_version: int = ...,
+        minor_version: int = ...,
+    ) -> None: ...
+
+    def save(self, path: str) -> None: ..."#
+            .to_string()
+    }
+}
+
 #[pyfunction]
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
     ssbh_data::anim_data::AnimData::from_file(path)
@@ -185,14 +244,18 @@ python_enum!(
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::Transform)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct Transform {
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[float]")]
     pub scale: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[float]")]
     pub rotation: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyi(python_type = "list[float]")]
     pub translation: Py<PyList>,
 }
 
@@ -208,10 +271,23 @@ impl Transform {
     }
 }
 
+impl PyiMethods for Transform {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        scale: list[float],
+        rotation: list[float],
+        translation: list[float],
+    ) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::anim_data::UvTransform)]
 #[pyrepr("ssbh_data_py.anim_data")]
+#[pyi(has_methods = true)]
 pub struct UvTransform {
     #[pyo3(get, set)]
     pub scale_u: f32,
@@ -246,6 +322,20 @@ impl UvTransform {
             translate_u,
             translate_v,
         })
+    }
+}
+
+impl PyiMethods for UvTransform {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        scale_u: float,
+        scale_v: float,
+        rotation: float,
+        translate_u: float,
+        translate_v: float
+    ) -> None: ..."
+            .to_string()
     }
 }
 
@@ -396,6 +486,18 @@ mod tests {
             assert a.values == []
             assert a.scale_options.inherit_scale == False
             assert a.scale_options.compensate_scale == False
+            assert a.scale_options.inherit_scale == False
+            assert a.scale_options.compensate_scale == False
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_scale_options() {
+        run_python_code(indoc! {r#"
+            o = ssbh_data_py.anim_data.ScaleOptions()
+            assert o.inherit_scale == False
+            assert o.compensate_scale == False
         "#})
         .unwrap();
     }
