@@ -3,7 +3,7 @@ use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi, PyInit};
 
 mod enums;
 
@@ -241,7 +241,7 @@ python_enum!(
 
 // TODO: Document what component counts are expected.
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::Transform)]
 #[pyrepr("ssbh_data_py.anim_data")]
 #[pyi(has_methods = true)]
@@ -259,32 +259,8 @@ pub struct Transform {
     pub translation: Py<PyList>,
 }
 
-#[pymethods]
-impl Transform {
-    #[new]
-    fn new(scale: Py<PyList>, rotation: Py<PyList>, translation: Py<PyList>) -> PyResult<Self> {
-        Ok(Transform {
-            scale,
-            rotation,
-            translation,
-        })
-    }
-}
-
-impl PyiMethods for Transform {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        scale: list[float],
-        rotation: list[float],
-        translation: list[float],
-    ) -> None: ..."
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::UvTransform)]
 #[pyrepr("ssbh_data_py.anim_data")]
 #[pyi(has_methods = true)]
@@ -303,40 +279,6 @@ pub struct UvTransform {
 
     #[pyo3(get, set)]
     pub translate_v: f32,
-}
-
-#[pymethods]
-impl UvTransform {
-    #[new]
-    fn new(
-        scale_u: f32,
-        scale_v: f32,
-        rotation: f32,
-        translate_u: f32,
-        translate_v: f32,
-    ) -> PyResult<Self> {
-        Ok(UvTransform {
-            scale_u,
-            scale_v,
-            rotation,
-            translate_u,
-            translate_v,
-        })
-    }
-}
-
-impl PyiMethods for UvTransform {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        scale_u: float,
-        scale_v: float,
-        rotation: float,
-        translate_u: float,
-        translate_v: float
-    ) -> None: ..."
-            .to_string()
-    }
 }
 
 // TODO: This is shared with other modules?

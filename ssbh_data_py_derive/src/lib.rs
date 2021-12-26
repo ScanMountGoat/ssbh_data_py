@@ -1,7 +1,8 @@
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream};
 use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::Span;
 use quote::quote;
 
 use syn::{
@@ -57,7 +58,46 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Unsupported type"),
     };
 
-    let formatted_fields: Vec<_> = fields
+    // We need extra indentation here for the methods within a class.
+    let formatted_fields = format_fields(&fields, 8);
+    let has_methods = get_has_pyi_methods(&input.attrs).unwrap_or(false);
+    let impl_pyi_methods = if has_methods {
+        quote! {}
+    } else {
+        quote! {
+            impl crate::PyiMethods for #name {
+                fn pyi_methods() -> String {
+                    format!("    def init(\n        self,\n{}    \n    ) -> None: ...", &[#(#formatted_fields),*].join(",\n"))
+                }
+            }
+        }
+    };
+
+    let class_name = name.to_string();
+
+    // Generate a python class string to use for type stubs (.pyi) files.
+    let formatted_fields = format_fields(&fields, 4);
+    let expanded = quote! {
+        impl crate::PyiClass for #name {
+            fn pyi_class() -> String {
+                format!("class {}:\n{}", #class_name, &[#(#formatted_fields),*].join("\n"))
+            }
+        }
+
+        #impl_pyi_methods
+
+        impl crate::PyTypeString for #name {
+            fn py_type_string() -> String {
+                #class_name.to_string()
+            }
+        }
+    };
+
+    expanded.into()
+}
+
+fn format_fields(fields: &[&syn::Field], indent: usize) -> Vec<TokenStream2> {
+    fields
         .iter()
         .map(|f| {
             // Assume that Rust fields match Python and are not renamed by PyO3.
@@ -79,40 +119,10 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
                 });
 
             quote! {
-                format!("    {}: {}", #py_name, #py_type)
+                format!("{}{}: {}", " ".repeat(#indent), #py_name, #py_type)
             }
         })
-        .collect();
-
-    // TODO: There's probably a nicer way to do this using an attribute macro.
-    // The macro would generate the PyiMethods implementation from the function signatures.
-    let has_methods = get_has_pyi_methods(&input.attrs).unwrap_or(false);
-    let impl_pyi_methods = if has_methods {
-        quote! {}
-    } else {
-        quote! {impl crate::PyiMethods for #name { }}
-    };
-
-    let class_name = name.to_string();
-
-    // Generate a python class string to use for type stubs (.pyi) files.
-    let expanded = quote! {
-        impl crate::PyiClass for #name {
-            fn pyi_class() -> String {
-                format!("class {}:\n{}", #class_name, &[#(#formatted_fields),*].join("\n"))
-            }
-        }
-
-        #impl_pyi_methods
-
-        impl crate::PyTypeString for #name {
-            fn py_type_string() -> String {
-                #class_name.to_string()
-            }
-        }
-    };
-
-    expanded.into()
+        .collect()
 }
 
 #[proc_macro_derive(MapPy, attributes(map))]
@@ -212,7 +222,7 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
         .iter()
         .find(|a| a.path.is_ident("pyrepr"))
         .map(|a| a.parse_args().unwrap())
-        .expect("Must specify a the module with a pyrepr attribute");
+        .expect("Must specify the module with a pyrepr attribute");
 
     let name = &input.ident;
 
@@ -257,6 +267,77 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
         }
     };
     result.into()
+}
+
+#[proc_macro_derive(PyInit, attributes(pyinit))]
+pub fn py_init_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    let fields: Vec<_> = match &input.data {
+        Data::Struct(DataStruct {
+            fields: Fields::Named(fields),
+            ..
+        }) => fields.named.iter().collect(),
+        _ => panic!("Unsupported type"),
+    };
+
+    let field_params: Vec<_> = fields
+        .iter()
+        .map(|f| {
+            let field_name = f.ident.as_ref().unwrap();
+            let field_type = &f.ty;
+            quote! {
+                #field_name: #field_type
+            }
+        })
+        .collect();
+
+    let field_names: Vec<_> = fields.iter().map(|f| f.ident.as_ref()).collect();
+
+    // TODO: Investigate why quotes get removed from strings.
+    let arg_defaults: Vec<_> = fields.iter().filter_map(|f| {
+        let name = &f.ident;
+        get_py_init_default_value(&f.attrs).map(|default| quote! { #name = #default.into() })
+    }).collect();
+
+    // Generate a python class string to use for type stubs (.pyi) files.
+    let expanded = quote! {
+        #[pymethods]
+        impl #name {
+            #[new]
+            #[args(#(#arg_defaults),*)]
+            fn new(
+                _py: Python,
+                #(#field_params),*
+            ) -> PyResult<Self> {
+                Ok(Self {
+                    #(#field_names),*
+                })
+            }
+        }
+    };
+
+    expanded.into()
+}
+
+fn get_py_init_default_value(attrs: &[Attribute]) -> Option<String> {
+    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyinit"))?.parse_meta() {
+        for nested in l.nested {
+            // There may be multiple attributes, so just find the first matching attribute.
+            // ex: #[pyinit(default = "5")] or #[pyinit(default("5"))]
+            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
+                if v.path.get_ident().unwrap().to_string().as_str() == "default" {
+                    if let syn::Lit::Str(s) = v.lit {
+                        return Some(s.value())
+
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 #[proc_macro_attribute]

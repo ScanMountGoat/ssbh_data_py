@@ -72,8 +72,8 @@ impl PyiMethods for MeshData {
     fn pyi_methods() -> String {
         r#"    def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 1,
+        minor_version: int = 10,
     ) -> None: ...
 
     def save(self, path: str) -> None: ..."#

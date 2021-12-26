@@ -2,7 +2,7 @@ use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi, PyInit};
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
@@ -49,8 +49,6 @@ pub struct ModlData {
     pub entries: Py<PyList>,
 }
 
-// TODO: How to add automatically add functions and methods to the pyi generation?
-// TODO: Could this be bone via the inventory crate?
 #[pymethods]
 impl ModlData {
     #[new]
@@ -73,12 +71,14 @@ impl ModlData {
     }
 }
 
+// TODO: Can we document the actual default value here?
+// Add the default to some sort of derive attribute?
 impl PyiMethods for ModlData {
     fn pyi_methods() -> String {
         r#"    def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 1,
+        minor_version: int = 7,
     ) -> None: ...
     
     def save(self, path: str) -> None: ..."#
@@ -87,10 +87,9 @@ impl PyiMethods for ModlData {
 }
 
 #[pyclass(module = "ssbh_data_py.modl_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::modl_data::ModlEntryData)]
 #[pyrepr("ssbh_data_py.modl_data")]
-#[pyi(has_methods = true)]
 pub struct ModlEntryData {
     #[pyo3(get, set)]
     pub mesh_object_name: String,
@@ -100,35 +99,6 @@ pub struct ModlEntryData {
 
     #[pyo3(get, set)]
     pub material_label: String,
-}
-
-#[pymethods]
-impl ModlEntryData {
-    #[new]
-    fn new(
-        _py: Python,
-        mesh_object_name: String,
-        mesh_object_sub_index: u64,
-        material_label: String,
-    ) -> PyResult<Self> {
-        Ok(ModlEntryData {
-            mesh_object_name,
-            mesh_object_sub_index,
-            material_label,
-        })
-    }
-}
-
-impl PyiMethods for ModlEntryData {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        mesh_object_name: str,
-        mesh_object_sub_index: int,
-        material_label: str
-    ) -> None: ..."#
-            .to_string()
-    }
 }
 
 #[pyfunction]
