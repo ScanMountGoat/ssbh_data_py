@@ -64,7 +64,7 @@ impl BoneData {
     ) -> PyResult<Self> {
         Ok(BoneData {
             name,
-            transform: transform.map_py(py)?,
+            transform: transform.map_py(py, false)?,
             parent_index,
         })
     }
@@ -111,14 +111,14 @@ impl SkelData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py)?
+        self.map_py(py, false)?
             .write_to_file(path)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
-        let data: ssbh_data::skel_data::SkelData = self.map_py(py)?;
-        let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
+        let data: ssbh_data::skel_data::SkelData = self.map_py(py, false)?;
+        let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py, false)?;
         let transform = data
             .calculate_world_transform(&bone_data)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
@@ -127,10 +127,10 @@ impl SkelData {
 }
 
 #[pyfunction]
-fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
+fn read_skel(py: Python, path: &str, use_numpy: bool) -> PyResult<SkelData> {
     ssbh_data::skel_data::SkelData::from_file(path)
         .map_err(|e| SkelDataError::new_err(format!("{}", e)))?
-        .map_py(py)
+        .map_py(py, use_numpy)
 }
 
 #[pyfunction]

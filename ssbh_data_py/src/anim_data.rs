@@ -206,7 +206,7 @@ impl AnimData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py)?
+        self.map_py(py, false)?
             .write_to_file(path)
             .map_err(|e| AnimDataError::new_err(format!("{}", e)))
     }
@@ -229,7 +229,7 @@ impl PyiMethods for AnimData {
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
     ssbh_data::anim_data::AnimData::from_file(path)
         .map_err(|e| AnimDataError::new_err(format!("{}", e)))?
-        .map_py(py)
+        .map_py(py, false)
 }
 
 python_enum!(
@@ -341,59 +341,59 @@ impl PyiMethods for UvTransform {
 
 // TODO: This is shared with other modules?
 impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
-    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector4> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
         let values: [f32; 4] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
         Ok(PyList::new(py, self.to_array()).into())
     }
 }
 
 impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         Ok(self.to_array().into_py(py))
     }
 }
 
 impl MapPy<ssbh_data::anim_data::Vector4> for PyObject {
-    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector4> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
         let values: [f32; 4] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<ssbh_data::anim_data::Vector3> for Py<PyList> {
-    fn map_py(&self, py: Python) -> PyResult<ssbh_data::anim_data::Vector3> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector3> {
         let values: [f32; 3] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector3 {
-    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
         Ok(PyList::new(py, self.to_array()).into())
     }
 }
 
 impl MapPy<Py<PyList>> for TrackValuesRs {
-    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
         match self {
-            TrackValuesRs::Transform(v) => v.map_py(py),
-            TrackValuesRs::UvTransform(v) => v.map_py(py),
-            TrackValuesRs::Float(v) => v.map_py(py),
-            TrackValuesRs::PatternIndex(v) => v.map_py(py),
-            TrackValuesRs::Boolean(v) => v.map_py(py),
-            TrackValuesRs::Vector4(v) => v.map_py(py),
+            TrackValuesRs::Transform(v) => v.map_py(py, false),
+            TrackValuesRs::UvTransform(v) => v.map_py(py, false),
+            TrackValuesRs::Float(v) => v.map_py(py, false),
+            TrackValuesRs::PatternIndex(v) => v.map_py(py, false),
+            TrackValuesRs::Boolean(v) => v.map_py(py, false),
+            TrackValuesRs::Vector4(v) => v.map_py(py, false),
         }
     }
 }
 
 impl MapPy<TrackValuesRs> for Py<PyList> {
-    fn map_py(&self, py: Python) -> PyResult<TrackValuesRs> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<TrackValuesRs> {
         create_track_values_rs(py, self.as_ref(py))
     }
 }
@@ -425,7 +425,7 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
             let v = values.extract::<Vec<UvTransform>>()?;
             Ok(TrackValuesRs::UvTransform(
                 v.into_iter()
-                    .map(|t| t.map_py(py))
+                    .map(|t| t.map_py(py, false))
                     .collect::<Result<Vec<_>, _>>()?,
             ))
         })
@@ -433,7 +433,7 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
             let v = values.extract::<Vec<Transform>>()?;
             Ok(TrackValuesRs::Transform(
                 v.into_iter()
-                    .map(|t| t.map_py(py))
+                    .map(|t| t.map_py(py, false))
                     .collect::<Result<Vec<_>, _>>()?,
             ))
         })

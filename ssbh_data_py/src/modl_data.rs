@@ -69,7 +69,7 @@ impl ModlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
+        self.map_py(py, false)?.write_to_file(path).map_err(PyErr::from)
     }
 }
 
@@ -135,7 +135,7 @@ impl PyiMethods for ModlEntryData {
 fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
     ssbh_data::modl_data::ModlData::from_file(path)
         .map_err(|e| ModlDataError::new_err(format!("{}", e)))?
-        .map_py(py)
+        .map_py(py, false)
 }
 
 #[cfg(test)]

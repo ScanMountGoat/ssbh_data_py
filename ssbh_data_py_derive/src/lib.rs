@@ -139,7 +139,7 @@ pub fn map_py_derive(input: TokenStream) -> TokenStream {
             let named_fields: Vec<_> = fields.named.iter().map(|field| &field.ident).collect();
             quote! {
                 #(
-                    #named_fields: self.#named_fields.map_py(py)?
+                    #named_fields: self.#named_fields.map_py(py, use_numpy)?
                 ),*
             }
         }
@@ -156,6 +156,7 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
             fn map_py(
                 &self,
                 py: pyo3::Python,
+                use_numpy: bool
             ) -> pyo3::prelude::PyResult<#map_type> {
                 Ok(
                     #map_type {
@@ -170,6 +171,7 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
             fn map_py(
                 &self,
                 py: pyo3::Python,
+                use_numpy: bool
             ) -> pyo3::prelude::PyResult<#name> {
                 Ok(
                     #name {
@@ -184,16 +186,17 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
             fn map_py(
                 &self,
                 py: pyo3::Python,
+                use_numpy: bool
             ) -> pyo3::prelude::PyResult<pyo3::PyObject> {
-                let x: #name = self.map_py(py)?;
+                let x: #name = self.map_py(py, use_numpy)?;
                 Ok(x.into_py(py))
             }
         }
 
         impl crate::MapPy<#map_type> for pyo3::PyObject {
-            fn map_py(&self, py: pyo3::Python) -> pyo3::prelude::PyResult<#map_type> {
+            fn map_py(&self, py: pyo3::Python, use_numpy: bool) -> pyo3::prelude::PyResult<#map_type> {
                 let x: #name = self.extract(py)?;
-                x.map_py(py)
+                x.map_py(py, use_numpy)
             }
         }
     }

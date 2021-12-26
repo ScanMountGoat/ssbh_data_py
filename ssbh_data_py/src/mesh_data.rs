@@ -2,6 +2,8 @@ use crate::create_py_list_from_slice;
 use crate::MapPy;
 use crate::PyRepr;
 use crate::PyiMethods;
+use numpy::IntoPyArray;
+use numpy::ToPyArray;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -60,7 +62,7 @@ impl MeshData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py)?
+        self.map_py(py, false)?
             .write_to_file(path)
             .map_err(|e| MeshDataError::new_err(format!("{}", e)))
     }
@@ -103,6 +105,8 @@ pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub sort_bias: i32,
 
+    // TODO: How to add optional numpy support here?
+    // Should this be done at the type level for Vec<T>?
     #[pyo3(get, set)]
     #[pyi(python_type = "list[int]")]
     pub vertex_indices: PyObject,
@@ -284,17 +288,46 @@ impl PyiMethods for AttributeData {
 }
 
 impl MapPy<PyObject> for VectorDataRs {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
-        Ok(match self {
-            VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v).into(),
-            VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v).into(),
-            VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v).into(),
-        })
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+        if !use_numpy {
+            Ok(match self {
+                VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v).into(),
+                VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v).into(),
+                VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v).into(),
+            })
+        } else {
+            // This gives a roughly 4.7x speedup for reading a 25 MB mesh (gamewatch).
+            // TODO: Can we avoid flattening and then reshaping?
+            // TODO: Handle errors?
+            Ok(match self {
+                VectorDataRs::Vector2(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+                    (v.len(), 2),
+                    v.iter().copied().flatten().collect::<Vec<f32>>(),
+                )
+                .unwrap()
+                .into_pyarray(py)
+                .into(),
+                VectorDataRs::Vector3(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+                    (v.len(), 3),
+                    v.iter().copied().flatten().collect::<Vec<f32>>(),
+                )
+                .unwrap()
+                .into_pyarray(py)
+                .into(),
+                VectorDataRs::Vector4(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+                    (v.len(), 4),
+                    v.iter().copied().flatten().collect::<Vec<f32>>(),
+                )
+                .unwrap()
+                .into_pyarray(py)
+                .into(),
+            })
+        }
     }
 }
 
 impl MapPy<VectorDataRs> for PyObject {
-    fn map_py(&self, py: Python) -> PyResult<VectorDataRs> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<VectorDataRs> {
         // We don't know the type from Python at this point.
         // Try all the supported types and fail if all conversions fail.
         // TODO: This still works with numpy arrays but might not be the most efficient.
@@ -305,27 +338,29 @@ impl MapPy<VectorDataRs> for PyObject {
     }
 }
 
+// TODO: How to make this argument optional?
+// TODO: How to test this?
 #[pyfunction]
-fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
+fn read_mesh(py: Python, path: &str, use_numpy: bool) -> PyResult<MeshData> {
     ssbh_data::mesh_data::MeshData::from_file(path)
         .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
-        .map_py(py)
+        .map_py(py, use_numpy)
 }
 
 #[pyfunction]
 fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
-    let points = points.map_py(py)?;
+    let points = points.map_py(py, false)?;
     let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
-    transformed_points.map_py(py)
+    transformed_points.map_py(py, false)
 }
 
 #[pyfunction]
 fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
-    let points = points.map_py(py)?;
+    let points = points.map_py(py, false)?;
     let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
-    transformed_points.map_py(py)
+    transformed_points.map_py(py, false)
 }
 
 #[pyfunction]
@@ -334,7 +369,7 @@ fn calculate_smooth_normals(
     positions: PyObject,
     vertex_indices: PyObject,
 ) -> PyResult<Py<PyList>> {
-    let positions = positions.map_py(py)?;
+    let positions = positions.map_py(py, false)?;
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
     Ok(create_py_list_from_slice(py, &normals))
@@ -348,9 +383,9 @@ fn calculate_tangents_vec4(
     uvs: PyObject,
     vertex_indices: PyObject,
 ) -> PyResult<Py<PyList>> {
-    let positions = positions.map_py(py)?;
-    let normals = normals.map_py(py)?;
-    let uvs = uvs.map_py(py)?;
+    let positions = positions.map_py(py, false)?;
+    let normals = normals.map_py(py, false)?;
+    let uvs = uvs.map_py(py, false)?;
 
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let tangents =
@@ -478,7 +513,7 @@ mod tests {
     #[should_panic]
     fn vector2_from_pylist_invalid_type() {
         eval_python_code("[[0, 1], [2, 'a']]", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 
@@ -486,14 +521,14 @@ mod tests {
     #[should_panic]
     fn vector2_from_pylist_invalid_component_count() {
         eval_python_code("[[0.0, 1.0], [2.0]]", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 
     #[test]
     fn vector2_from_pylist_ints() {
         eval_python_code("[[0, 1], [2, 3]]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -501,7 +536,7 @@ mod tests {
     #[test]
     fn vector2_from_ndarray_ints() {
         eval_python_code_numpy("numpy.array([[0, 1], [2, 3]],dtype=numpy.int8)", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -509,7 +544,7 @@ mod tests {
     #[test]
     fn vector2_from_pylist() {
         eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -517,7 +552,7 @@ mod tests {
     #[test]
     fn vector2_from_tuples() {
         eval_python_code("[(0.0, 1.0), (2.0, 3.0)]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -525,7 +560,7 @@ mod tests {
     #[test]
     fn vector2_from_ndarray() {
         eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
     }
@@ -533,7 +568,7 @@ mod tests {
     #[test]
     fn vector3_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                 value
@@ -544,7 +579,7 @@ mod tests {
     #[test]
     fn vector3_from_tuples() {
         eval_python_code("[(0.0, 1.0, 2.0), (3.0, 4.0, 5.0)]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(
                 VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                 value
@@ -557,7 +592,7 @@ mod tests {
         eval_python_code_numpy(
             "numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])",
             |py, x| {
-                let value = PyObject::from(x).map_py(py).unwrap();
+                let value = PyObject::from(x).map_py(py, false).unwrap();
                 assert_eq!(
                     VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
                     value
@@ -569,7 +604,7 @@ mod tests {
     #[test]
     fn vector4_from_pylist() {
         eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
@@ -580,7 +615,7 @@ mod tests {
     #[test]
     fn vector4_from_tuples() {
         eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |py, x| {
-            let value = PyObject::from(x).map_py(py).unwrap();
+            let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
@@ -593,7 +628,7 @@ mod tests {
         eval_python_code_numpy(
             "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
             |py, x| {
-                let value = PyObject::from(x).map_py(py).unwrap();
+                let value = PyObject::from(x).map_py(py, false).unwrap();
                 assert_eq!(
                     VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                     value
@@ -607,7 +642,7 @@ mod tests {
     fn vector_from_5x5_pylist() {
         // Vector5 is not a valid variant.
         eval_python_code("[[1.0,2.0,3.0,4.0,5.0]]", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 
@@ -616,7 +651,7 @@ mod tests {
     fn vector_from_5x5_ndarray() {
         // Vector5 is not a valid variant.
         eval_python_code_numpy("numpy.zeros((5,5))", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 
@@ -626,7 +661,7 @@ mod tests {
     fn vector_from_empty_pylist() {
         // TODO: How to infer the type when there are no elements?
         eval_python_code("[]", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 
@@ -636,7 +671,7 @@ mod tests {
     fn vector_from_empty_ndarray() {
         // TODO: How to infer the type when there are no elements?
         eval_python_code_numpy("numpy.array()", |py, x| {
-            let _: VectorData = PyObject::from(x).map_py(py).unwrap();
+            let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
 

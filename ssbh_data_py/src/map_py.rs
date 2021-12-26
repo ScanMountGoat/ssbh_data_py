@@ -3,21 +3,20 @@ use pyo3::{prelude::*, types::PyList};
 
 // Define a mapping between types.
 // This allows for deriving the Python <-> Rust conversion.
-// TODO: It may be possible to use PyO3 for this in the future.
 // The derive macro is mainly to automate mapping field names.
 pub trait MapPy<T> {
-    fn map_py(&self, py: Python) -> PyResult<T>;
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<T>;
 }
 
 // We want a conversion from Vec<T> -> Py<PyList>.
 // We can't implement ToPyObject for ssbh_lib types in ssbh_data_py.
 // Use MapPy<PyObject> instead to utilize the ssbh_data -> ssbh_data_py conversion.
 impl<T: MapPy<PyObject>> MapPy<Py<PyList>> for Vec<T> {
-    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
         Ok(PyList::new(
             py,
             self.iter()
-                .map(|e| e.map_py(py))
+                .map(|e| e.map_py(py, use_numpy))
                 .collect::<Result<Vec<_>, _>>()?,
         )
         .into())
@@ -30,10 +29,10 @@ impl<T> MapPy<Vec<T>> for Py<PyList>
 where
     PyObject: MapPy<T>,
 {
-    fn map_py(&self, py: Python) -> PyResult<Vec<T>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Vec<T>> {
         self.as_ref(py)
             .iter()
-            .map(|e| PyObject::from(e).map_py(py))
+            .map(|e| PyObject::from(e).map_py(py, use_numpy))
             .collect::<Result<Vec<_>, _>>()
     }
 }
@@ -43,7 +42,7 @@ macro_rules! map_py_impl {
     ($($t:ty),*) => {
         $(
             impl MapPy<$t> for $t {
-                fn map_py(&self, _py: Python) -> PyResult<$t> {
+                fn map_py(&self, _py: Python, use_numpy: bool) -> PyResult<$t> {
                     Ok(self.clone())
                 }
             }
@@ -53,13 +52,14 @@ macro_rules! map_py_impl {
                 fn map_py(
                     &self,
                     py: Python,
+                    use_numpy: bool
                 ) -> PyResult<PyObject> {
                     Ok(self.into_py(py))
                 }
             }
 
             impl MapPy<$t> for PyObject {
-                fn map_py(&self, py: Python) -> PyResult<$t> {
+                fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<$t> {
                     self.extract(py)
                 }
             }
@@ -73,7 +73,7 @@ macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {
         $(
             impl MapPy<$t> for PyObject {
-                fn map_py(&self, py: Python) -> PyResult<$t> {
+                fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<$t> {
                     self.extract(py)
                 }
             }
@@ -84,30 +84,55 @@ macro_rules! map_py_pyobject_impl {
 // TODO: Derive this?
 map_py_pyobject_impl!([[f32; 4]; 4]);
 impl MapPy<PyObject> for [[f32; 4]; 4] {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
 
 map_py_pyobject_impl!(Vec<u32>);
 impl MapPy<PyObject> for Vec<u32> {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
 
 map_py_pyobject_impl!(Vec<i16>);
 impl MapPy<PyObject> for Vec<i16> {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
 
 impl<T: MapPy<U>, U> MapPy<Option<U>> for Option<T> {
-    fn map_py(&self, py: Python) -> PyResult<Option<U>> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Option<U>> {
         match self {
-            Some(x) => Ok(Some(x.map_py(py)?)),
+            Some(x) => Ok(Some(x.map_py(py, use_numpy)?)),
             None => Ok(None),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pyo3::PyObject;
+
+    use crate::{eval_python_code, MapPy};
+
+    #[test]
+    fn map_integers()  {
+        // We shouldn't need to evaluate with numpy for these conversions.
+        eval_python_code("1", |py, x| {
+            assert_eq!(1u32, PyObject::from(x).map_py(py, true).unwrap());
+            assert_eq!(1u32, PyObject::from(x).map_py(py, false).unwrap());
+        });
+    }
+
+    #[test]
+    fn map_bools()  {
+        // We shouldn't need to evaluate with numpy for these conversions.
+        eval_python_code("True", |py, x| {
+            assert_eq!(true, PyObject::from(x).map_py(py, true).unwrap());
+            assert_eq!(true, PyObject::from(x).map_py(py, false).unwrap());
+        });
     }
 }

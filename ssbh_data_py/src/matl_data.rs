@@ -71,7 +71,7 @@ impl MatlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py)?
+        self.map_py(py, false)?
             .write_to_file(path)
             .map_err(|e| MatlDataError::new_err(format!("{}", e)))
     }
@@ -447,14 +447,14 @@ impl crate::PyiMethods for SamplerData {
 }
 
 impl MapPy<ssbh_data::matl_data::Color4f> for PyObject {
-    fn map_py(&self, py: Python) -> PyResult<ssbh_data::matl_data::Color4f> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::matl_data::Color4f> {
         let [r, g, b, a] = self.extract::<[f32; 4]>(py)?;
         Ok(ssbh_data::matl_data::Color4f { r, g, b, a })
     }
 }
 
 impl MapPy<PyObject> for ssbh_data::matl_data::Color4f {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         Ok(PyList::new(py, [self.r, self.g, self.b, self.a]).into())
     }
 }
@@ -491,7 +491,7 @@ python_enum!(
 fn read_matl(py: Python, path: &str) -> PyResult<MatlData> {
     ssbh_data::matl_data::MatlData::from_file(path)
         .map_err(|e| MatlDataError::new_err(format!("{}", e)))?
-        .map_py(py)
+        .map_py(py, false)
 }
 
 #[cfg(test)]
