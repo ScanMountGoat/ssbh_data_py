@@ -6,6 +6,9 @@ from typing import List, Tuple, Any, Optional, Union
 def read_mesh(path: str) -> MeshData: ...
 
 
+def read_mesh_numpy(path: str) -> MeshData: ...
+
+
 def transform_points(
     points: list[list[float]], transform: list[list[float]]) -> list[list[float]]: ...
 

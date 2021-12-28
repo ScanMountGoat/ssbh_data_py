@@ -3,7 +3,6 @@ use crate::MapPy;
 use crate::PyRepr;
 use crate::PyiMethods;
 use numpy::IntoPyArray;
-use numpy::ToPyArray;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -23,6 +22,7 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_class::<VertexWeight>()?;
 
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(read_mesh_numpy, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(calculate_smooth_normals, mesh_data)?)?;
@@ -338,13 +338,20 @@ impl MapPy<VectorDataRs> for PyObject {
     }
 }
 
-// TODO: How to make this argument optional?
-// TODO: How to test this?
+// TODO: How to make use_numpy an optional argument?
+// TODO: How to test conversions with/without numpy?
 #[pyfunction]
-fn read_mesh(py: Python, path: &str, use_numpy: bool) -> PyResult<MeshData> {
+fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
     ssbh_data::mesh_data::MeshData::from_file(path)
         .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
-        .map_py(py, use_numpy)
+        .map_py(py, false)
+}
+
+#[pyfunction]
+fn read_mesh_numpy(py: Python, path: &str) -> PyResult<MeshData> {
+    ssbh_data::mesh_data::MeshData::from_file(path)
+        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
+        .map_py(py, true)
 }
 
 #[pyfunction]
