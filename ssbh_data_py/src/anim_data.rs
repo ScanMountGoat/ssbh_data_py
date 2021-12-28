@@ -129,7 +129,7 @@ pub struct TrackData {
     #[pyo3(get, set)]
     #[pyi(python_type = "Union[list[UvTransform], list[Transform],
                   list[float], list[bool], list[int], list[list[float]]]")]
-    pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
+    pub values: Py<PyList>,
 
     #[pyo3(get, set)]
     pub scale_options: ScaleOptions,

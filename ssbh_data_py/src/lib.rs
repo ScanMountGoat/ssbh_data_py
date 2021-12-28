@@ -49,7 +49,6 @@ macro_rules! python_enum {
             #[pyo3(get)]
             pub name: String,
 
-            // TODO: Customize this data type?
             #[pyo3(get)]
             pub value: u64,
         }

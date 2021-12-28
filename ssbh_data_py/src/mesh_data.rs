@@ -105,8 +105,6 @@ pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub sort_bias: i32,
 
-    // TODO: How to add optional numpy support here?
-    // Should this be done at the type level for Vec<T>?
     #[pyo3(get, set)]
     #[pyi(python_type = "list[int]")]
     pub vertex_indices: PyObject,

@@ -92,6 +92,7 @@ impl MapPy<PyObject> for [[f32; 4]; 4] {
 map_py_pyobject_impl!(Vec<u32>);
 impl MapPy<PyObject> for Vec<u32> {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
+        // TODO: Use numpy?
         Ok(create_py_list_from_slice(py, self).into())
     }
 }

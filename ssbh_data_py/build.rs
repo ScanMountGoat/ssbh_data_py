@@ -152,7 +152,6 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "}}").unwrap();
 
         // We don't allow constructing enums directly, so just pick the appropriate class attribute.
-        // TODO: how to get the appropriate variant name?
         writeln!(&mut f, "impl crate::PyRepr for {} {{", name).unwrap();
         writeln!(&mut f, "    fn py_repr(&self) -> String {{").unwrap();
         writeln!(

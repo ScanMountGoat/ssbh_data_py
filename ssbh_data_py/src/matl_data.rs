@@ -186,6 +186,7 @@ r#"    def __init__(
     };
 }
 
+// Define a Python class for each parameter type to avoid dealing with generics.
 param_new_impl!(
     (BlendStateParam, BlendStateData),
     (FloatParam, f32),
@@ -196,8 +197,6 @@ param_new_impl!(
     (TextureParam, String)
 );
 
-// TODO: Is there a workaround for MapPy not supporting generic structs?
-// Have type aliases for each variant in Rust and separate ParamData types in Python?
 #[pyclass(module = "ssbh_data_py.matl_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::matl_data::BlendStateParam)]

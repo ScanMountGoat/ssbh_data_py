@@ -37,7 +37,8 @@ impl PyRepr for String {
     }
 }
 
-// TODO: Investigate why this works to just use the Display implementation.
+// Simply calling Display produces the correct formatting.
+// The tests below check that this doesn't break.
 impl PyRepr for Py<PyList> {
     fn py_repr(&self) -> String {
         format!("{}", self)
