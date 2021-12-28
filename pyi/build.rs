@@ -21,7 +21,7 @@ fn generate_pyi_file(file_path: &str, functions: &[&str], class_definitions: &[S
     writeln!(&mut f, "# Changes made to this file will not be saved.").unwrap();
     writeln!(
         &mut f,
-        "from typing import List, Tuple, Any, Optional, Union"
+        "from typing import List, Tuple, Any, Optional, Union, ClassVar"
     )
     .unwrap();
     writeln!(&mut f).unwrap();

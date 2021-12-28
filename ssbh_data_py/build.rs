@@ -129,32 +129,27 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         // HACK: Just use the methods trait to also optionally include class attributes.
         writeln!(&mut f, "impl crate::PyiMethods for {} {{", name).unwrap();
         writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
-        writeln!(&mut f, "        let mut result = String::new();").unwrap();
-        // TODO: There's probably a cleaner way to do this using join.
-        for variant in *variants {
-            writeln!(
-                &mut f,
-                r#"        result += "    {}: {} = ...\n";"#,
-                variant, name
+
+        let class_attributes = variants
+            .iter()
+            .map(|v| format!("    {}: ClassVar[{}]", v, name))
+            .collect::<Vec<String>>()
+            .join("\n");
+        writeln!(
+            &mut f,
+            r#"        "{}\n\n{}\n\n{}".to_string()"#,
+            class_attributes,
+            format!(
+                "    @staticmethod\n    def from_value(value: int) -> Optional[{}]: ...",
+                name
+            ),
+            format!(
+                "    @staticmethod\n    def from_str(value: str) -> Optional[{}]: ...",
+                name
             )
-            .unwrap();
-        }
-
-        // Define any conversion methods.
-        writeln!(
-            &mut f,
-            r#"        result += "\n    @staticmethod\n    def from_value(value: int) -> Optional[{}]: ...\n";"#,
-            name
-        )
-        .unwrap();
-        writeln!(
-            &mut f,
-            r#"        result += "\n    @staticmethod\n    def from_str(value: str) -> Optional[{}]: ...";"#,
-            name
         )
         .unwrap();
 
-        writeln!(&mut f, "        result").unwrap();
         writeln!(&mut f, "    }}").unwrap();
         writeln!(&mut f, "}}").unwrap();
 
