@@ -216,8 +216,8 @@ impl PyiMethods for AnimData {
     fn pyi_methods() -> String {
         r#"    def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 2,
+        minor_version: int = 0,
     ) -> None: ...
 
     def save(self, path: str) -> None: ..."#
@@ -244,7 +244,6 @@ python_enum!(
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::Transform)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct Transform {
     #[pyo3(get, set)]
     #[pyi(python_type = "list[float]")]
@@ -263,7 +262,6 @@ pub struct Transform {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::UvTransform)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct UvTransform {
     #[pyo3(get, set)]
     pub scale_u: f32,

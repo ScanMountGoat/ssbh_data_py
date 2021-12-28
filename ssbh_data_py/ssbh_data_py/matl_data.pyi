@@ -13,8 +13,8 @@ class MatlData:
 
     def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 1,
+        minor_version: int = 6,
     ) -> None: ...
     
     def save(self, path: str) -> None: ...
@@ -33,8 +33,8 @@ class MatlEntryData:
 
     def __init__(
         self,
-        material_label: str = ...,
-        shader_label: str = ...,
+        material_label: str,
+        shader_label: str,
     ) -> None: ...
 
 
@@ -44,8 +44,8 @@ class BlendStateParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: BlendStateData = ...,
+        param_id: ParamId,
+        data: BlendStateData,
     ) -> None: ...
 
 
@@ -55,8 +55,8 @@ class FloatParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: float = ...,
+        param_id: ParamId,
+        data: float,
     ) -> None: ...
 
 
@@ -66,8 +66,8 @@ class BooleanParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: bool = ...,
+        param_id: ParamId,
+        data: bool,
     ) -> None: ...
 
 
@@ -77,8 +77,8 @@ class Vector4Param:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: Any = ...,
+        param_id: ParamId,
+        data: Any,
     ) -> None: ...
 
 
@@ -88,8 +88,8 @@ class RasterizerStateParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: RasterizerStateData = ...,
+        param_id: ParamId,
+        data: RasterizerStateData,
     ) -> None: ...
 
 
@@ -99,8 +99,8 @@ class SamplerParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: SamplerData = ...,
+        param_id: ParamId,
+        data: SamplerData,
     ) -> None: ...
 
 
@@ -110,8 +110,8 @@ class TextureParam:
 
     def __init__(
         self,
-        param_id: ParamId = ...,
-        data: str = ...,
+        param_id: ParamId,
+        data: str,
     ) -> None: ...
 
 

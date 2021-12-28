@@ -81,8 +81,8 @@ impl PyiMethods for MatlData {
     fn pyi_methods() -> String {
         r#"    def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 1,
+        minor_version: int = 6,
     ) -> None: ...
     
     def save(self, path: str) -> None: ..."#
@@ -153,8 +153,8 @@ impl PyiMethods for MatlEntryData {
     fn pyi_methods() -> String {
         r#"    def __init__(
         self,
-        material_label: str = ...,
-        shader_label: str = ...,
+        material_label: str,
+        shader_label: str,
     ) -> None: ..."#
             .to_string()
     }
@@ -177,8 +177,8 @@ macro_rules! param_new_impl {
                     format!(
 r#"    def __init__(
         self,
-        param_id: ParamId = ...,
-        data: {} = ...,
+        param_id: ParamId,
+        data: {},
     ) -> None: ..."#, <$data>::py_type_string())
                 }
             }

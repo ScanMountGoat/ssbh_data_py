@@ -67,7 +67,7 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
         quote! {
             impl crate::PyiMethods for #name {
                 fn pyi_methods() -> String {
-                    format!("    def init(\n        self,\n{}    \n    ) -> None: ...", &[#(#formatted_fields),*].join(",\n"))
+                    format!("    def __init__(\n        self,\n{}\n    ) -> None: ...", &[#(#formatted_fields),*].join(",\n"))
                 }
             }
         }

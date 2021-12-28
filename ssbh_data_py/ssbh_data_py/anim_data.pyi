@@ -14,8 +14,8 @@ class AnimData:
 
     def __init__(
         self,
-        major_version: int = ...,
-        minor_version: int = ...,
+        major_version: int = 2,
+        minor_version: int = 0,
     ) -> None: ...
 
     def save(self, path: str) -> None: ...
@@ -79,7 +79,7 @@ class Transform:
         self,
         scale: list[float],
         rotation: list[float],
-        translation: list[float],
+        translation: list[float]
     ) -> None: ...
 
 
