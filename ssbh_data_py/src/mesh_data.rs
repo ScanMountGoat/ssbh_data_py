@@ -327,7 +327,7 @@ impl MapPy<PyObject> for VectorDataRs {
 }
 
 impl MapPy<VectorDataRs> for PyObject {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<VectorDataRs> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<VectorDataRs> {
         // We don't know the type from Python at this point.
         // Try all the supported types and fail if all conversions fail.
         // TODO: This still works with numpy arrays but might not be the most efficient.

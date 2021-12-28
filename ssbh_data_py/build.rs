@@ -137,16 +137,14 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
             .join("\n");
         writeln!(
             &mut f,
-            r#"        "{}\n\n{}\n\n{}".to_string()"#,
-            class_attributes,
-            format!(
-                "    @staticmethod\n    def from_value(value: int) -> Optional[{}]: ...",
-                name
-            ),
-            format!(
-                "    @staticmethod\n    def from_str(value: str) -> Optional[{}]: ...",
-                name
-            )
+            r#"        "{}
+
+    @staticmethod
+    def from_value(value: int) -> Optional[{}]: ...
+
+    @staticmethod
+    def from_str(value: str) -> Optional[{}]: ...".to_string()"#,
+            class_attributes, name, name
         )
         .unwrap();
 

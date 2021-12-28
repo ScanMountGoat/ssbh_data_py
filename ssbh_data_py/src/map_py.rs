@@ -42,7 +42,7 @@ macro_rules! map_py_impl {
     ($($t:ty),*) => {
         $(
             impl MapPy<$t> for $t {
-                fn map_py(&self, _py: Python, use_numpy: bool) -> PyResult<$t> {
+                fn map_py(&self, _py: Python, _use_numpy: bool) -> PyResult<$t> {
                     Ok(self.clone())
                 }
             }
@@ -52,14 +52,14 @@ macro_rules! map_py_impl {
                 fn map_py(
                     &self,
                     py: Python,
-                    use_numpy: bool
+                    _use_numpy: bool
                 ) -> PyResult<PyObject> {
                     Ok(self.into_py(py))
                 }
             }
 
             impl MapPy<$t> for PyObject {
-                fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<$t> {
+                fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<$t> {
                     self.extract(py)
                 }
             }
@@ -73,7 +73,7 @@ macro_rules! map_py_pyobject_impl {
     ($($t:ty),*) => {
         $(
             impl MapPy<$t> for PyObject {
-                fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<$t> {
+                fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<$t> {
                     self.extract(py)
                 }
             }
@@ -84,21 +84,21 @@ macro_rules! map_py_pyobject_impl {
 // TODO: Derive this?
 map_py_pyobject_impl!([[f32; 4]; 4]);
 impl MapPy<PyObject> for [[f32; 4]; 4] {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
 
 map_py_pyobject_impl!(Vec<u32>);
 impl MapPy<PyObject> for Vec<u32> {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
 
 map_py_pyobject_impl!(Vec<i16>);
 impl MapPy<PyObject> for Vec<i16> {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
     }
 }
@@ -119,7 +119,7 @@ mod tests {
     use crate::{eval_python_code, MapPy};
 
     #[test]
-    fn map_integers()  {
+    fn map_integers() {
         // We shouldn't need to evaluate with numpy for these conversions.
         eval_python_code("1", |py, x| {
             assert_eq!(1u32, PyObject::from(x).map_py(py, true).unwrap());
@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn map_bools()  {
+    fn map_bools() {
         // We shouldn't need to evaluate with numpy for these conversions.
         eval_python_code("True", |py, x| {
             assert_eq!(true, PyObject::from(x).map_py(py, true).unwrap());

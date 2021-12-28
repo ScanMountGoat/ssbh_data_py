@@ -447,14 +447,14 @@ impl crate::PyiMethods for SamplerData {
 }
 
 impl MapPy<ssbh_data::matl_data::Color4f> for PyObject {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::matl_data::Color4f> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::matl_data::Color4f> {
         let [r, g, b, a] = self.extract::<[f32; 4]>(py)?;
         Ok(ssbh_data::matl_data::Color4f { r, g, b, a })
     }
 }
 
 impl MapPy<PyObject> for ssbh_data::matl_data::Color4f {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(PyList::new(py, [self.r, self.g, self.b, self.a]).into())
     }
 }

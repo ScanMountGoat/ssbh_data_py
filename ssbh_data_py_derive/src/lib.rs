@@ -1,13 +1,10 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use proc_macro2::Span;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-use syn::{
-    parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, FnArg, Ident, ItemFn, Pat,
-};
+use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
 
 fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
     if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {

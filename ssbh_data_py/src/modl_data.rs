@@ -2,7 +2,7 @@ use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi, PyInit};
+use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
@@ -67,7 +67,9 @@ impl ModlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?.write_to_file(path).map_err(PyErr::from)
+        self.map_py(py, false)?
+            .write_to_file(path)
+            .map_err(PyErr::from)
     }
 }
 

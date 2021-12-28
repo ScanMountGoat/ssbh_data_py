@@ -3,7 +3,7 @@ use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi, PyInit};
+use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 mod enums;
 
@@ -127,10 +127,8 @@ pub struct TrackData {
 
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
-    #[pyi(
-        python_type = "Union[list[UvTransform], list[Transform],
-                  list[float], list[bool], list[int], list[list[float]]]"
-    )]
+    #[pyi(python_type = "Union[list[UvTransform], list[Transform],
+                  list[float], list[bool], list[int], list[list[float]]]")]
     pub values: Py<PyList>, // TODO: Is inferring the value type the best option?
 
     #[pyo3(get, set)]
@@ -281,46 +279,46 @@ pub struct UvTransform {
 
 // TODO: This is shared with other modules?
 impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
         let values: [f32; 4] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
         Ok(PyList::new(py, self.to_array()).into())
     }
 }
 
 impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(self.to_array().into_py(py))
     }
 }
 
 impl MapPy<ssbh_data::anim_data::Vector4> for PyObject {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
         let values: [f32; 4] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<ssbh_data::anim_data::Vector3> for Py<PyList> {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector3> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector3> {
         let values: [f32; 3] = self.extract(py)?;
         Ok(values.into())
     }
 }
 
 impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector3 {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
         Ok(PyList::new(py, self.to_array()).into())
     }
 }
 
 impl MapPy<Py<PyList>> for TrackValuesRs {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
         match self {
             TrackValuesRs::Transform(v) => v.map_py(py, false),
             TrackValuesRs::UvTransform(v) => v.map_py(py, false),
@@ -333,7 +331,7 @@ impl MapPy<Py<PyList>> for TrackValuesRs {
 }
 
 impl MapPy<TrackValuesRs> for Py<PyList> {
-    fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<TrackValuesRs> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<TrackValuesRs> {
         create_track_values_rs(py, self.as_ref(py))
     }
 }
