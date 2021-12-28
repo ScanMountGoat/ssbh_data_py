@@ -64,7 +64,7 @@ macro_rules! python_enum {
         }
 
         impl MapPy<$ty_rs> for $ty_py {
-            fn map_py(&self, _py: Python, use_numpy: bool) -> PyResult<$ty_rs> {
+            fn map_py(&self, _py: Python, _use_numpy: bool) -> PyResult<$ty_rs> {
                 <$ty_rs>::from_repr(self.value as usize).ok_or(<$ty_err>::new_err(format!(
                     "{} is not a supported variant.",
                     self.value
@@ -73,7 +73,7 @@ macro_rules! python_enum {
         }
 
         impl MapPy<$ty_py> for $ty_rs {
-            fn map_py(&self, _py: Python, use_numpy: bool) -> PyResult<$ty_py> {
+            fn map_py(&self, _py: Python, _use_numpy: bool) -> PyResult<$ty_py> {
                 Ok((*self).into())
             }
         }

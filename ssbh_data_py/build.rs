@@ -7,12 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use strum::VariantNames;
 
-fn write_enum_class_attrs<W: Write>(
-    w: &mut W,
-    class_name: &str,
-    enum_path: &str,
-    variants: &[&str],
-) {
+fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, variants: &[&str]) {
     writeln!(w, "#[pymethods]").unwrap();
     writeln!(w, "impl {} {{", class_name).unwrap();
     for variant in variants {
@@ -34,6 +29,42 @@ fn write_enum_class_attrs<W: Write>(
         writeln!(w, "    }}").unwrap();
         writeln!(w).unwrap();
     }
+
+    // TODO: This would be cleaner as part of a macro?
+    // TODO: Multiple pymethods blocks?
+    // usize -> enum
+    writeln!(w, "    #[staticmethod]").unwrap();
+    writeln!(
+        w,
+        "    pub fn from_value(value: usize) -> Option<{}> {{",
+        class_name
+    )
+    .unwrap();
+    writeln!(
+        w,
+        "        {}::{}::from_repr(value).map(Into::into)",
+        enum_path, class_name
+    )
+    .unwrap();
+    writeln!(w, "    }}").unwrap();
+
+    writeln!(w).unwrap();
+
+    // String -> enum
+    writeln!(w, "    #[staticmethod]").unwrap();
+    writeln!(
+        w,
+        "    pub fn from_str(value: &str) -> Option<{}> {{",
+        class_name
+    )
+    .unwrap();
+    writeln!(
+        w,
+        "        {}::{}::from_str(value).map(Into::into).ok()",
+        enum_path, class_name
+    )
+    .unwrap();
+    writeln!(w, "    }}").unwrap();
     writeln!(w, "}}").unwrap();
 }
 
@@ -74,9 +105,10 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
     writeln!(&mut f, "// Changes made to this file will not be saved.").unwrap();
     writeln!(&mut f, "use pyo3::prelude::*;").unwrap();
     writeln!(&mut f, "use super::*;").unwrap();
+    writeln!(&mut f, "use std::str::FromStr;").unwrap();
     writeln!(&mut f).unwrap();
     for (name, variants) in enums {
-        write_enum_class_attrs(&mut f, name, enum_path, variants);
+        write_enum_pymethods(&mut f, name, enum_path, variants);
 
         // Each enum uses the same class structure for now.
         writeln!(&mut f, "impl crate::PyiClass for {} {{", name).unwrap();
@@ -99,24 +131,29 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
         writeln!(&mut f, "        let mut result = String::new();").unwrap();
         // TODO: There's probably a cleaner way to do this using join.
-        for (i,variant) in variants.iter().enumerate() {
-            if i == variants.len() - 1 {
-                writeln!(
-                    &mut f,
-                    r#"        result += "    {}: {} = ...";"#,
-                    variant, name
-                )
-                .unwrap();
-            } else {
-                writeln!(
-                    &mut f,
-                    r#"        result += "    {}: {} = ...\n";"#,
-                    variant, name
-                )
-                .unwrap();
-            }
-
+        for variant in *variants {
+            writeln!(
+                &mut f,
+                r#"        result += "    {}: {} = ...\n";"#,
+                variant, name
+            )
+            .unwrap();
         }
+
+        // Define any conversion methods.
+        writeln!(
+            &mut f,
+            r#"        result += "\n    @staticmethod\n    def from_value(value: int) -> Optional[{}]: ...\n";"#,
+            name
+        )
+        .unwrap();
+        writeln!(
+            &mut f,
+            r#"        result += "\n    @staticmethod\n    def from_str(value: str) -> Optional[{}]: ...";"#,
+            name
+        )
+        .unwrap();
+
         writeln!(&mut f, "        result").unwrap();
         writeln!(&mut f, "    }}").unwrap();
         writeln!(&mut f, "}}").unwrap();
