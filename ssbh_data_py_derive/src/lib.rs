@@ -1,8 +1,8 @@
 extern crate proc_macro;
 
-use proc_macro::{TokenStream};
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro::TokenStream;
 use proc_macro2::Span;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
 use syn::{
@@ -296,10 +296,13 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
     let field_names: Vec<_> = fields.iter().map(|f| f.ident.as_ref()).collect();
 
     // TODO: Investigate why quotes get removed from strings.
-    let arg_defaults: Vec<_> = fields.iter().filter_map(|f| {
-        let name = &f.ident;
-        get_py_init_default_value(&f.attrs).map(|default| quote! { #name = #default.into() })
-    }).collect();
+    let arg_defaults: Vec<_> = fields
+        .iter()
+        .filter_map(|f| {
+            let name = &f.ident;
+            get_py_init_default_value(&f.attrs).map(|default| quote! { #name = #default.into() })
+        })
+        .collect();
 
     // Generate a python class string to use for type stubs (.pyi) files.
     let expanded = quote! {
@@ -322,15 +325,18 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
 }
 
 fn get_py_init_default_value(attrs: &[Attribute]) -> Option<String> {
-    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyinit"))?.parse_meta() {
+    if let Ok(syn::Meta::List(l)) = attrs
+        .iter()
+        .find(|a| a.path.is_ident("pyinit"))?
+        .parse_meta()
+    {
         for nested in l.nested {
             // There may be multiple attributes, so just find the first matching attribute.
             // ex: #[pyinit(default = "5")] or #[pyinit(default("5"))]
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
                 if v.path.get_ident().unwrap().to_string().as_str() == "default" {
                     if let syn::Lit::Str(s) = v.lit {
-                        return Some(s.value())
-
+                        return Some(s.value());
                     }
                 }
             }
@@ -338,38 +344,4 @@ fn get_py_init_default_value(attrs: &[Attribute]) -> Option<String> {
     }
 
     None
-}
-
-#[proc_macro_attribute]
-pub fn show_streams(attr: TokenStream, item: TokenStream) -> TokenStream {
-    // TODO: Can we just append something after the constructor to implement a PyRepr trait?
-    println!("attr: \"{}\"", attr);
-    println!("item: \"{}\"", item);
-
-    let new_item = item.clone();
-    let input = parse_macro_input!(new_item as ItemFn);
-    println!(
-        "{:?}",
-        // Get the names and types of the function signatures.
-        // TODO: Use this to build the pyi implementation?
-        input
-            .sig
-            .inputs
-            .iter()
-            .map(|i| {
-                if let FnArg::Typed(typed) = i {
-                    if let Pat::Ident(arg_ident) = typed.pat.as_ref() {
-                        Some(arg_ident.ident.to_string())
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>()
-    );
-
-    // TODO: Can we generate the implementations here?
-    item
 }
