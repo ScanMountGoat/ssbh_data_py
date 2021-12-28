@@ -127,10 +127,10 @@ impl SkelData {
 }
 
 #[pyfunction]
-fn read_skel(py: Python, path: &str, use_numpy: bool) -> PyResult<SkelData> {
+fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
     ssbh_data::skel_data::SkelData::from_file(path)
         .map_err(|e| SkelDataError::new_err(format!("{}", e)))?
-        .map_py(py, use_numpy)
+        .map_py(py, false)
 }
 
 #[pyfunction]
