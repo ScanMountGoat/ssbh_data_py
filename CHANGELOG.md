@@ -1,3 +1,9 @@
+### 0.5.3
+Changes:
+- Added `from_str` and `from_value` static methods to enum types.
+- Improved type hints.
+- Added `ssbh_data_py.mesh_data.read_mesh_numpy`. This is an experimental API and may change in future releases. 
+
 ### 0.5.2
 Changes:
 - Added support for numatb files with the `ssbh_data_py.matl_data` submodule.
