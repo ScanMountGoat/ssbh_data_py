@@ -3,10 +3,7 @@
 from typing import List, Tuple, Any, Optional, Union, ClassVar
 
 
-def read_mesh(path: str) -> MeshData: ...
-
-
-def read_mesh_numpy(path: str) -> MeshData: ...
+def read_mesh(path: str, use_numpy: bool = False) -> MeshData: ...
 
 
 def transform_points(

@@ -22,7 +22,6 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_class::<VertexWeight>()?;
 
     mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
-    mesh_data.add_function(wrap_pyfunction!(read_mesh_numpy, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
     mesh_data.add_function(wrap_pyfunction!(calculate_smooth_normals, mesh_data)?)?;
@@ -336,22 +335,15 @@ impl MapPy<VectorDataRs> for PyObject {
     }
 }
 
-// TODO: How to make use_numpy an optional argument?
 // TODO: How to test conversions with/without numpy?
 #[pyfunction]
-fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
+fn read_mesh(py: Python, path: &str, use_numpy: Option<bool>) -> PyResult<MeshData> {
     ssbh_data::mesh_data::MeshData::from_file(path)
         .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py, use_numpy.unwrap_or(false))
 }
 
-#[pyfunction]
-fn read_mesh_numpy(py: Python, path: &str) -> PyResult<MeshData> {
-    ssbh_data::mesh_data::MeshData::from_file(path)
-        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
-        .map_py(py, true)
-}
-
+// TODO: Should these also take a numpy parameter?
 #[pyfunction]
 fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
     let points = points.map_py(py, false)?;
