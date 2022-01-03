@@ -10,6 +10,7 @@ pub mod matl_data;
 pub mod mesh_data;
 pub mod modl_data;
 pub mod skel_data;
+pub mod meshex_data;
 
 mod pyi;
 pub use pyi::*;
@@ -28,6 +29,7 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::anim_data::anim_data(py, module)?;
     crate::adj_data::adj_data(py, module)?;
     crate::matl_data::matl_data(py, module)?;
+    crate::meshex_data::meshex_data(py, module)?;
     Ok(())
 }
 

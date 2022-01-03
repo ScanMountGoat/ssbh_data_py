@@ -4,6 +4,7 @@ use ssbh_data_py::mesh_data::*;
 use ssbh_data_py::modl_data::*;
 use ssbh_data_py::skel_data::*;
 use ssbh_data_py::adj_data::*;
+use ssbh_data_py::meshex_data::*;
 
 use ssbh_data_py::Pyi;
 
@@ -129,6 +130,16 @@ fn main() {
         &[
             AdjData::pyi(),
             AdjEntryData::pyi(),
+        ],
+    );
+
+    generate_pyi_file(
+        "../ssbh_data_py/ssbh_data_py/meshex_data.pyi",
+        &["def read_meshex(path: str) -> MeshExData: ..."],
+        &[
+            MeshExData::pyi(),
+            MeshObjectGroupData::pyi(),
+            EntryFlags::pyi(),
         ],
     );
 }
