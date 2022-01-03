@@ -1,4 +1,4 @@
-use crate::{mesh_data, MapPy, PyRepr};
+use crate::{mesh_data, MapPy, PyRepr, PyiMethods};
 use pyo3::types::PyType;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
@@ -21,7 +21,8 @@ pub fn adj_data(py: Python, module: &PyModule) -> PyResult<()> {
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjData)]
 #[pyrepr("ssbh_data_py.adj_data")]
-struct AdjData {
+#[pyi(has_methods = true)]
+pub struct AdjData {
     #[pyo3(get, set)]
     #[pyi(python_type = "list[AdjEntryData]")]
     pub entries: Py<PyList>,
@@ -43,11 +44,21 @@ impl AdjData {
     }
 }
 
+impl PyiMethods for AdjData {
+    fn pyi_methods() -> String {
+        "    def __init__(self,) -> None: ...
+    
+    def save(self, path: str) -> None: ..."
+            .to_string()
+    }
+}
+
 #[pyclass(module = "ssbh_data_py.adj_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
 #[map(ssbh_data::adj_data::AdjEntryData)]
 #[pyrepr("ssbh_data_py.adj_data")]
-struct AdjEntryData {
+#[pyi(has_methods = true)]
+pub struct AdjEntryData {
     #[pyo3(get, set)]
     pub mesh_object_index: usize,
 
@@ -66,9 +77,8 @@ impl AdjEntryData {
         })
     }
 
-    #[classmethod]
+    #[staticmethod]
     fn from_mesh_object(
-        _cls: &PyType,
         py: Python,
         mesh_object_index: usize,
         mesh_object: &mesh_data::MeshObjectData,
@@ -83,6 +93,20 @@ impl AdjEntryData {
             &vertex_indices,
         );
         entry.map_py(py, false)
+    }
+}
+
+impl PyiMethods for AdjEntryData {
+    fn pyi_methods() -> String {
+        "    def __init__(
+        self,
+        mesh_object_index: int
+    ) -> None: ...
+    
+    @staticmethod
+    def from_mesh_object(mesh_object_index: int,
+                         mesh_object: MeshObjectData) -> AdjEntryData: ..."
+            .to_string()
     }
 }
 
