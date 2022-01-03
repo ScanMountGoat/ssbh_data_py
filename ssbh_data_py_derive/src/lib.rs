@@ -1,8 +1,10 @@
 extern crate proc_macro;
 
+use std::str::FromStr;
+
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 
 use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
 
@@ -279,36 +281,46 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Unsupported type"),
     };
 
+    // PyO3 treats parameters of type Option<T> as optional parameters in Python.
+    // This allows Class(), Class(param=value), and Class(param=None) in Python.
+    // This avoids complications trying to generate the #[args(...)] attribute.
     let field_params: Vec<_> = fields
         .iter()
         .map(|f| {
             let field_name = f.ident.as_ref().unwrap();
+            // Make the parameter Option<T> to support defaults.
+            let default = get_py_init_default_value(&f.attrs);
             let field_type = &f.ty;
+            let field_type = if default.is_some() {
+                quote! {Option<#field_type>}
+            } else {
+                quote! {#field_type}
+            };
             quote! {
                 #field_name: #field_type
             }
         })
         .collect();
 
-    let field_names: Vec<_> = fields.iter().map(|f| f.ident.as_ref()).collect();
-
-    // TODO: Investigate why quotes get removed from strings.
-    let arg_defaults: Vec<_> = fields
+    // The field is initialized as "field: field.unwrap_or(default)" or "field".
+    let field_names: Vec<_> = fields
         .iter()
-        .filter_map(|f| {
+        .map(|f| {
             let name = &f.ident;
-            get_py_init_default_value(&f.attrs).map(|default| quote! { #name = #default.into() })
+            let default = get_py_init_default_value(&f.attrs);
+            default
+                .map(|default| quote! { #name: #name.unwrap_or(#default) })
+                .unwrap_or(quote! {#name})
         })
         .collect();
 
-    // Generate a python class string to use for type stubs (.pyi) files.
+    // TODO: Generate a python class string to use for type stubs (.pyi) files.
     let expanded = quote! {
         #[pymethods]
         impl #name {
             #[new]
-            #[args(#(#arg_defaults),*)]
             fn new(
-                _py: Python,
+                py: Python,
                 #(#field_params),*
             ) -> PyResult<Self> {
                 Ok(Self {
@@ -321,7 +333,7 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
-fn get_py_init_default_value(attrs: &[Attribute]) -> Option<String> {
+fn get_py_init_default_value(attrs: &[Attribute]) -> Option<TokenStream2> {
     if let Ok(syn::Meta::List(l)) = attrs
         .iter()
         .find(|a| a.path.is_ident("pyinit"))?
@@ -333,7 +345,9 @@ fn get_py_init_default_value(attrs: &[Attribute]) -> Option<String> {
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
                 if v.path.get_ident().unwrap().to_string().as_str() == "default" {
                     if let syn::Lit::Str(s) = v.lit {
-                        return Some(s.value());
+                        // HACK: Use string literals to avoid parsing the default value tokens.
+                        // This allows using Rust syntax like "Default::default()".
+                        return Some(TokenStream2::from_str(&s.value()).unwrap());
                     }
                 }
             }

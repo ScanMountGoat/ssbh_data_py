@@ -117,7 +117,7 @@ impl PyiMethods for NodeData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::TrackData)]
 #[pyrepr("ssbh_data_py.anim_data")]
 #[pyi(has_methods = true)]
@@ -127,27 +127,14 @@ pub struct TrackData {
 
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
+    #[pyinit(default = "PyList::empty(py).into()")]
     #[pyi(python_type = "Union[list[UvTransform], list[Transform],
                   list[float], list[bool], list[int], list[list[float]]]")]
     pub values: Py<PyList>,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "ScaleOptions { inherit_scale: false, compensate_scale: false}")]
     pub scale_options: ScaleOptions,
-}
-
-#[pymethods]
-impl TrackData {
-    #[new]
-    fn new(py: Python, name: String) -> PyResult<Self> {
-        Ok(TrackData {
-            name,
-            values: PyList::empty(py).into(),
-            scale_options: ScaleOptions {
-                inherit_scale: false,
-                compensate_scale: false,
-            },
-        })
-    }
 }
 
 impl PyiMethods for TrackData {
