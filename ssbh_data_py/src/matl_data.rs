@@ -2,7 +2,7 @@ use crate::{python_enum, MapPy, PyRepr, PyTypeString, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
+use ssbh_data_py_derive::{MapPy, PyRepr, Pyi, PyInit};
 
 mod enums;
 
@@ -91,10 +91,9 @@ impl PyiMethods for MatlData {
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::matl_data::MatlEntryData)]
 #[pyrepr("ssbh_data_py.matl_data")]
-#[pyi(has_methods = true)]
 pub struct MatlEntryData {
     #[pyo3(get, set)]
     pub material_label: String,
@@ -103,61 +102,39 @@ pub struct MatlEntryData {
     pub shader_label: String,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[BlendStateParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[BlendStateParam]")]
     pub blend_states: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[FloatParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[FloatParam]")]
     pub floats: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[BooleanParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[BooleanParam]")]
     pub booleans: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[Vector4Param]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[Vector4Param]")]
     pub vectors: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[RasterizerStateParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[RasterizerStateParam]")]
     pub rasterizer_states: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[SamplerParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[SamplerParam]")]
     pub samplers: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[TextureParam]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[TextureParam]")]
     pub textures: Py<PyList>,
-}
-
-#[pymethods]
-impl MatlEntryData {
-    #[new]
-    fn new(py: Python, material_label: String, shader_label: String) -> PyResult<Self> {
-        Ok(MatlEntryData {
-            material_label,
-            shader_label,
-            blend_states: PyList::empty(py).into(),
-            floats: PyList::empty(py).into(),
-            booleans: PyList::empty(py).into(),
-            vectors: PyList::empty(py).into(),
-            rasterizer_states: PyList::empty(py).into(),
-            samplers: PyList::empty(py).into(),
-            textures: PyList::empty(py).into(),
-        })
-    }
-}
-
-impl PyiMethods for MatlEntryData {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        material_label: str,
-        shader_label: str,
-    ) -> None: ..."#
-            .to_string()
-    }
 }
 
 macro_rules! param_new_impl {
@@ -297,39 +274,24 @@ python_enum!(
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
-#[pyi(has_methods = true)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::matl_data::BlendStateData)]
 #[pyrepr("ssbh_data_py.matl_data")]
 pub struct BlendStateData {
     #[pyo3(get, set)]
+    #[pyinit(default = "BlendFactor::one()")]
+    #[pyi(default = "BlendFactor.One")]
     pub source_color: BlendFactor,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "BlendFactor::zero()")]
+    #[pyi(default = "BlendFactor.Zero")]
     pub destination_color: BlendFactor,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
     pub alpha_sample_to_coverage: bool,
-}
-
-// TODO: Is it worth having default parameterless constructors?
-// This will cause increased breaking changes and potentially unwanted default values.
-#[pymethods]
-impl BlendStateData {
-    #[new]
-    fn new(_py: Python) -> PyResult<Self> {
-        Ok(Self {
-            source_color: BlendFactor::one(),
-            destination_color: BlendFactor::zero(),
-            alpha_sample_to_coverage: false,
-        })
-    }
-}
-
-impl crate::PyiMethods for BlendStateData {
-    fn pyi_methods() -> String {
-        "    def __init__(self) -> None: ...".to_string()
-    }
 }
 
 python_enum!(

@@ -47,80 +47,37 @@ pub struct AnimData {
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::GroupData)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct GroupData {
     #[pyo3(get, set)]
     pub group_type: GroupType,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[NodeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[NodeData]")]
     pub nodes: Py<PyList>,
 }
 
-#[pymethods]
-impl GroupData {
-    #[new]
-    fn new(py: Python, group_type: GroupType) -> PyResult<Self> {
-        Ok(GroupData {
-            group_type,
-            nodes: PyList::empty(py).into(),
-        })
-    }
-}
-
-impl PyiMethods for GroupData {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        group_type: GroupType,
-    ) -> None: ..."
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::NodeData)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct NodeData {
     #[pyo3(get, set)]
     pub name: String,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[TrackData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[TrackData]")]
     pub tracks: Py<PyList>,
-}
-
-#[pymethods]
-impl NodeData {
-    #[new]
-    fn new(py: Python, name: String) -> PyResult<Self> {
-        Ok(NodeData {
-            name,
-            tracks: PyList::empty(py).into(),
-        })
-    }
-}
-
-impl PyiMethods for NodeData {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        name: str,
-    ) -> None: ..."
-            .to_string()
-    }
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
 #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::TrackData)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct TrackData {
     #[pyo3(get, set)]
     pub name: String,
@@ -128,53 +85,30 @@ pub struct TrackData {
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
     #[pyinit(default = "PyList::empty(py).into()")]
-    #[pyi(python_type = "Union[list[UvTransform], list[Transform],
+    #[pyi(default = "[]", python_type = "Union[list[UvTransform], list[Transform],
                   list[float], list[bool], list[int], list[list[float]]]")]
     pub values: Py<PyList>,
 
     #[pyo3(get, set)]
     #[pyinit(default = "ScaleOptions { inherit_scale: false, compensate_scale: false}")]
+    #[pyi(default = "ScaleOptions()")]
     pub scale_options: ScaleOptions,
 }
 
-impl PyiMethods for TrackData {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        name: str,
-    ) -> None: ..."
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::anim_data::ScaleOptions)]
 #[pyrepr("ssbh_data_py.anim_data")]
-#[pyi(has_methods = true)]
 pub struct ScaleOptions {
     #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
     pub inherit_scale: bool,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
     pub compensate_scale: bool,
-}
-
-#[pymethods]
-impl ScaleOptions {
-    #[new]
-    fn new(_py: Python) -> PyResult<Self> {
-        Ok(ScaleOptions {
-            inherit_scale: false,
-            compensate_scale: false,
-        })
-    }
-}
-
-impl PyiMethods for ScaleOptions {
-    fn pyi_methods() -> String {
-        "    def __init__(self) -> None: ...".to_string()
-    }
 }
 
 #[pymethods]

@@ -8,6 +8,7 @@ use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
+use ssbh_data_py_derive::PyInit;
 use ssbh_data_py_derive::PyRepr;
 use ssbh_data_py_derive::Pyi;
 
@@ -81,10 +82,9 @@ impl PyiMethods for MeshData {
 }
 
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::mesh_data::MeshObjectData)]
 #[pyrepr("ssbh_data_py.mesh_data")]
-#[pyi(has_methods = true)]
 pub struct MeshObjectData {
     #[pyo3(get, set)]
     pub name: String,
@@ -93,89 +93,70 @@ pub struct MeshObjectData {
     pub sub_index: u64,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "String::new()")]
+    #[pyi(default = "''")]
     pub parent_bone_name: String,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
     pub disable_depth_test: bool,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
     pub disable_depth_write: bool,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "0")]
+    #[pyi(default = "0")]
     pub sort_bias: i32,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[int]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[int]")]
     pub vertex_indices: PyObject,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub positions: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub normals: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub binormals: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub tangents: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub texture_coordinates: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[AttributeData]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[AttributeData]")]
     pub color_sets: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[BoneInfluence]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[BoneInfluence]")]
     pub bone_influences: Py<PyList>,
 }
 
-#[pymethods]
-impl MeshObjectData {
-    #[new]
-    fn new(py: Python, name: String, sub_index: u64) -> PyResult<Self> {
-        Ok(MeshObjectData {
-            name,
-            sub_index,
-            parent_bone_name: "".to_string(),
-            vertex_indices: PyList::empty(py).into(),
-            positions: PyList::empty(py).into(),
-            normals: PyList::empty(py).into(),
-            binormals: PyList::empty(py).into(),
-            tangents: PyList::empty(py).into(),
-            texture_coordinates: PyList::empty(py).into(),
-            color_sets: PyList::empty(py).into(),
-            bone_influences: PyList::empty(py).into(),
-            sort_bias: 0,
-            disable_depth_test: false,
-            disable_depth_write: false,
-        })
-    }
-}
-
-impl PyiMethods for MeshObjectData {
-    fn pyi_methods() -> String {
-        "    def __init__(
-        self,
-        name: str,
-        sub_index: int
-    ) -> None: ..."
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::mesh_data::BoneInfluence)]
 #[pyrepr("ssbh_data_py.mesh_data")]
-#[pyi(has_methods = true)]
 pub struct BoneInfluence {
     #[pyo3(get, set)]
     pub bone_name: String,
@@ -185,40 +166,10 @@ pub struct BoneInfluence {
     pub vertex_weights: Py<PyList>,
 }
 
-#[pymethods]
-impl BoneInfluence {
-    #[new]
-    fn new(py: Python, bone_name: String, vertex_weights: Vec<VertexWeight>) -> PyResult<Self> {
-        Ok(BoneInfluence {
-            bone_name,
-            vertex_weights: PyList::new(
-                py,
-                vertex_weights
-                    .into_iter()
-                    .map(|w| Py::new(py, w))
-                    .collect::<Result<Vec<Py<VertexWeight>>, _>>()?,
-            )
-            .into(),
-        })
-    }
-}
-
-impl PyiMethods for BoneInfluence {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        bone_name: str,
-        vertex_weights: list[VertexWeight]
-    ) -> None: ..."#
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::mesh_data::VertexWeight)]
 #[pyrepr("ssbh_data_py.mesh_data")]
-#[pyi(has_methods = true)]
 pub struct VertexWeight {
     #[pyo3(get, set)]
     pub vertex_index: u32,
@@ -227,61 +178,18 @@ pub struct VertexWeight {
     pub vertex_weight: f32,
 }
 
-#[pymethods]
-impl VertexWeight {
-    #[new]
-    fn new(vertex_index: u32, vertex_weight: f32) -> PyResult<Self> {
-        Ok(VertexWeight {
-            vertex_index,
-            vertex_weight,
-        })
-    }
-}
-
-impl PyiMethods for VertexWeight {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        vertex_index: int,
-        vertex_weight: float
-    ) -> None: ..."#
-            .to_string()
-    }
-}
-
 #[pyclass(module = "ssbh_data_py.mesh_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::mesh_data::AttributeData)]
 #[pyrepr("ssbh_data_py.mesh_data")]
-#[pyi(has_methods = true)]
 pub struct AttributeData {
     #[pyo3(get, set)]
     pub name: String,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[list[float]]")]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[list[float]]")]
     pub data: PyObject,
-}
-
-#[pymethods]
-impl AttributeData {
-    #[new]
-    fn new(py: Python, name: String) -> PyResult<Self> {
-        Ok(AttributeData {
-            name,
-            data: PyList::empty(py).into(),
-        })
-    }
-}
-
-impl PyiMethods for AttributeData {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        name: str,
-    ) -> None: ..."#
-            .to_string()
-    }
 }
 
 impl MapPy<PyObject> for VectorDataRs {

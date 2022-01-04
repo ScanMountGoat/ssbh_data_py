@@ -8,6 +8,7 @@ use quote::{quote, ToTokens};
 
 use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
 
+// TODO: Share this code?
 fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
     if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
         for nested in l.nested {
@@ -15,6 +16,24 @@ fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
             // ex: #[pyi(python_type = "list[float]")] or #[pyi(python_type("list[float]"))]
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
                 if v.path.get_ident().unwrap().to_string().as_str() == "python_type" {
+                    if let syn::Lit::Str(s) = v.lit {
+                        return Some(s.value());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn get_pyi_default(attrs: &[Attribute]) -> Option<String> {
+    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
+        for nested in l.nested {
+            // There may be multiple attributes, so just find the first matching attribute.
+            // ex: #[pyi(default = "[]")] or #[pyi(default("[]"))]
+            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
+                if v.path.get_ident().unwrap().to_string().as_str() == "default" {
                     if let syn::Lit::Str(s) = v.lit {
                         return Some(s.value());
                     }
@@ -58,7 +77,7 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
     };
 
     // We need extra indentation here for the methods within a class.
-    let formatted_fields = format_fields(&fields, 8);
+    let formatted_fields = format_fields(&fields, 8, true);
     let has_methods = get_has_pyi_methods(&input.attrs).unwrap_or(false);
     let impl_pyi_methods = if has_methods {
         quote! {}
@@ -75,7 +94,7 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
     let class_name = name.to_string();
 
     // Generate a python class string to use for type stubs (.pyi) files.
-    let formatted_fields = format_fields(&fields, 4);
+    let formatted_fields = format_fields(&fields, 4, false);
     let expanded = quote! {
         impl crate::PyiClass for #name {
             fn pyi_class() -> String {
@@ -95,7 +114,11 @@ pub fn pyi_derive(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
-fn format_fields(fields: &[&syn::Field], indent: usize) -> Vec<TokenStream2> {
+fn format_fields(
+    fields: &[&syn::Field],
+    indent: usize,
+    include_defaults: bool,
+) -> Vec<TokenStream2> {
     fields
         .iter()
         .map(|f| {
@@ -117,8 +140,18 @@ fn format_fields(fields: &[&syn::Field], indent: usize) -> Vec<TokenStream2> {
                     }
                 });
 
-            quote! {
-                format!("{}{}: {}", " ".repeat(#indent), #py_name, #py_type)
+            // We only want the default values for method parameters.
+            match (get_pyi_default(&f.attrs), include_defaults) {
+                (Some(default), true) => {
+                    quote! {
+                        format!("{}{}: {} = {}", " ".repeat(#indent), #py_name, #py_type, #default)
+                    }
+                }
+                _ => {
+                    quote! {
+                        format!("{}{}: {}", " ".repeat(#indent), #py_name, #py_type)
+                    }
+                }
             }
         })
         .collect()
@@ -314,7 +347,6 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         })
         .collect();
 
-    // TODO: Generate a python class string to use for type stubs (.pyi) files.
     let expanded = quote! {
         #[pymethods]
         impl #name {
