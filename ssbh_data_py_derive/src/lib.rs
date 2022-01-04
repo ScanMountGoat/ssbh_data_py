@@ -4,18 +4,17 @@ use std::str::FromStr;
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, ToTokens};
+use quote::quote;
 
 use syn::{parse_macro_input, Attribute, Data, DataStruct, DeriveInput, Fields, Ident};
 
-// TODO: Share this code?
-fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
-    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
+fn find_string_literal_attr(attrs: &[Attribute], outer: &str, inner: &str) -> Option<String> {
+    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident(outer))?.parse_meta() {
         for nested in l.nested {
             // There may be multiple attributes, so just find the first matching attribute.
-            // ex: #[pyi(python_type = "list[float]")] or #[pyi(python_type("list[float]"))]
+            // ex: #[outer(inner = "list[float]")] or #[outer(inner("list[float]"))]
             if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
-                if v.path.get_ident().unwrap().to_string().as_str() == "python_type" {
+                if v.path.get_ident().unwrap().to_string().as_str() == inner {
                     if let syn::Lit::Str(s) = v.lit {
                         return Some(s.value());
                     }
@@ -27,24 +26,7 @@ fn get_pyi_field_type(attrs: &[Attribute]) -> Option<String> {
     None
 }
 
-fn get_pyi_default(attrs: &[Attribute]) -> Option<String> {
-    if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
-        for nested in l.nested {
-            // There may be multiple attributes, so just find the first matching attribute.
-            // ex: #[pyi(default = "[]")] or #[pyi(default("[]"))]
-            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
-                if v.path.get_ident().unwrap().to_string().as_str() == "default" {
-                    if let syn::Lit::Str(s) = v.lit {
-                        return Some(s.value());
-                    }
-                }
-            }
-        }
-    }
-
-    None
-}
-
+// TODO: This won't be required once types like ModlData can have derived init methods.
 fn get_has_pyi_methods(attrs: &[Attribute]) -> Option<bool> {
     if let Ok(syn::Meta::List(l)) = attrs.iter().find(|a| a.path.is_ident("pyi"))?.parse_meta() {
         for nested in l.nested {
@@ -126,7 +108,7 @@ fn format_fields(
             let py_name = f.ident.as_ref().unwrap().to_string();
 
             // Use the attribute as an override for the type string if present.
-            let py_type = get_pyi_field_type(&f.attrs)
+            let py_type = find_string_literal_attr(&f.attrs, "pyi", "python_type")
                 .map(|ty| {
                     quote! {
                         #ty
@@ -141,7 +123,10 @@ fn format_fields(
                 });
 
             // We only want the default values for method parameters.
-            match (get_pyi_default(&f.attrs), include_defaults) {
+            match (
+                find_string_literal_attr(&f.attrs, "pyi", "default"),
+                include_defaults,
+            ) {
                 (Some(default), true) => {
                     quote! {
                         format!("{}{}: {} = {}", " ".repeat(#indent), #py_name, #py_type, #default)
@@ -322,7 +307,7 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         .map(|f| {
             let field_name = f.ident.as_ref().unwrap();
             // Make the parameter Option<T> to support defaults.
-            let default = get_py_init_default_value(&f.attrs);
+            let default = find_string_literal_attr(&f.attrs, "pyinit", "default");
             let field_type = &f.ty;
             let field_type = if default.is_some() {
                 quote! {Option<#field_type>}
@@ -336,11 +321,17 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         .collect();
 
     // The field is initialized as "field: field.unwrap_or(default)" or "field".
+    // TODO: This code is shared with above.
     let field_names: Vec<_> = fields
         .iter()
         .map(|f| {
             let name = &f.ident;
-            let default = get_py_init_default_value(&f.attrs);
+
+            // HACK: Use string literals to avoid parsing the default value tokens.
+            // This allows using Rust syntax like "Default::default()".
+            let default = find_string_literal_attr(&f.attrs, "pyinit", "default")
+                .map(|s| TokenStream2::from_str(&s).unwrap());
+                
             default
                 .map(|default| quote! { #name: #name.unwrap_or(#default) })
                 .unwrap_or(quote! {#name})
@@ -363,28 +354,4 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
     };
 
     expanded.into()
-}
-
-fn get_py_init_default_value(attrs: &[Attribute]) -> Option<TokenStream2> {
-    if let Ok(syn::Meta::List(l)) = attrs
-        .iter()
-        .find(|a| a.path.is_ident("pyinit"))?
-        .parse_meta()
-    {
-        for nested in l.nested {
-            // There may be multiple attributes, so just find the first matching attribute.
-            // ex: #[pyinit(default = "5")] or #[pyinit(default("5"))]
-            if let syn::NestedMeta::Meta(syn::Meta::NameValue(v)) = nested {
-                if v.path.get_ident().unwrap().to_string().as_str() == "default" {
-                    if let syn::Lit::Str(s) = v.lit {
-                        // HACK: Use string literals to avoid parsing the default value tokens.
-                        // This allows using Rust syntax like "Default::default()".
-                        return Some(TokenStream2::from_str(&s.value()).unwrap());
-                    }
-                }
-            }
-        }
-    }
-
-    None
 }
