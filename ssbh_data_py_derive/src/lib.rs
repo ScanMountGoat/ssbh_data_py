@@ -331,7 +331,7 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
             // This allows using Rust syntax like "Default::default()".
             let default = find_string_literal_attr(&f.attrs, "pyinit", "default")
                 .map(|s| TokenStream2::from_str(&s).unwrap());
-                
+
             default
                 .map(|default| quote! { #name: #name.unwrap_or(#default) })
                 .unwrap_or(quote! {#name})

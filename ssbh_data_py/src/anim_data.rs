@@ -85,8 +85,11 @@ pub struct TrackData {
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
     #[pyinit(default = "PyList::empty(py).into()")]
-    #[pyi(default = "[]", python_type = "Union[list[UvTransform], list[Transform],
-                  list[float], list[bool], list[int], list[list[float]]]")]
+    #[pyi(
+        default = "[]",
+        python_type = "Union[list[UvTransform], list[Transform],
+                  list[float], list[bool], list[int], list[list[float]]]"
+    )]
     pub values: Py<PyList>,
 
     #[pyo3(get, set)]

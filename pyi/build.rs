@@ -1,10 +1,10 @@
+use ssbh_data_py::adj_data::*;
 use ssbh_data_py::anim_data::*;
 use ssbh_data_py::matl_data::*;
 use ssbh_data_py::mesh_data::*;
+use ssbh_data_py::meshex_data::*;
 use ssbh_data_py::modl_data::*;
 use ssbh_data_py::skel_data::*;
-use ssbh_data_py::adj_data::*;
-use ssbh_data_py::meshex_data::*;
 
 use ssbh_data_py::Pyi;
 
@@ -127,10 +127,7 @@ fn main() {
     generate_pyi_file(
         "../ssbh_data_py/ssbh_data_py/adj_data.pyi",
         &["def read_adj(path: str) -> AdjData: ..."],
-        &[
-            AdjData::pyi(),
-            AdjEntryData::pyi(),
-        ],
+        &[AdjData::pyi(), AdjEntryData::pyi()],
     );
 
     generate_pyi_file(

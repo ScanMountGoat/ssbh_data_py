@@ -11,7 +11,7 @@ pub fn meshex_data(py: Python, module: &PyModule) -> PyResult<()> {
     meshex_data.add_class::<MeshExData>()?;
     meshex_data.add_class::<MeshObjectGroupData>()?;
     meshex_data.add_function(wrap_pyfunction!(read_meshex, meshex_data)?)?;
-    
+
     module.add_submodule(meshex_data)?;
     Ok(())
 }
