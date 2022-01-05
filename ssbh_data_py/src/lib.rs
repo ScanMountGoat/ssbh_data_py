@@ -84,6 +84,20 @@ macro_rules! python_enum {
                 stringify!($ty_py).to_string()
             }
         }
+
+        impl crate::PyRepr for $ty_py {
+            fn py_repr(&self) -> String {
+                // Match the behavior of Python's Enum class.
+                format!("<{}.{}: {}>", stringify!($ty_py), self.name, self.value)
+            }
+        }
+
+        #[pyproto]
+        impl pyo3::PyObjectProtocol for $ty_py {
+            fn __repr__(&self) -> String {
+                self.py_repr()
+            }
+        }
     };
 }
 
@@ -157,6 +171,16 @@ mod tests {
     use strum::{Display, FromRepr};
 
     use super::*;
+    
+    fn run_test_python(code: &str) -> PyResult<()> {
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let module = PyModule::new(py, "test_module").unwrap();
+            module.add_class::<TestEnumPy>().unwrap();
+            let ctx = [("test_module", module)].into_py_dict(py);
+            py.run(code, None, Some(ctx))
+        })
+    }
 
     create_exception!(ssbh_data_py, TestError, pyo3::exceptions::PyException);
 
@@ -206,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn python_enum_stuff() {
+    fn python_enum_name_value() {
         run_test_python(indoc! {r#"
             t = test_module.TestEnumPy.A
             assert t.name == 'A' and t.value == 2
@@ -220,13 +244,13 @@ mod tests {
         .unwrap();
     }
 
-    fn run_test_python(code: &str) -> PyResult<()> {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
-            let module = PyModule::new(py, "test_module").unwrap();
-            module.add_class::<TestEnumPy>().unwrap();
-            let ctx = [("test_module", module)].into_py_dict(py);
-            py.run(code, None, Some(ctx))
-        })
+    #[test]
+    fn python_enum_repr() {
+        run_test_python(indoc! {r#"
+            assert repr(test_module.TestEnumPy.A) == '<TestEnumPy.A: 2>'
+            assert repr(test_module.TestEnumPy.B) == '<TestEnumPy.B: 7>'
+            assert repr(test_module.TestEnumPy.C) == '<TestEnumPy.C: 4>'
+        "#})
+        .unwrap();
     }
 }

@@ -150,25 +150,5 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
 
         writeln!(&mut f, "    }}").unwrap();
         writeln!(&mut f, "}}").unwrap();
-
-        // We don't allow constructing enums directly, so just pick the appropriate class attribute.
-        writeln!(&mut f, "impl crate::PyRepr for {} {{", name).unwrap();
-        writeln!(&mut f, "    fn py_repr(&self) -> String {{").unwrap();
-        writeln!(
-            &mut f,
-            "        \"{}.{}\".to_string()",
-            enum_path.replace("ssbh_data::", "ssbh_data_py."),
-            name
-        )
-        .unwrap();
-        writeln!(&mut f, "    }}").unwrap();
-        writeln!(&mut f, "}}").unwrap();
-        writeln!(&mut f).unwrap();
-        writeln!(&mut f, "#[pyproto]").unwrap();
-        writeln!(&mut f, "impl pyo3::PyObjectProtocol for {} {{", name).unwrap();
-        writeln!(&mut f, "    fn __repr__(&self) -> String {{").unwrap();
-        writeln!(&mut f, "        self.py_repr()").unwrap();
-        writeln!(&mut f, "    }}").unwrap();
-        writeln!(&mut f, "}}").unwrap();
     }
 }
