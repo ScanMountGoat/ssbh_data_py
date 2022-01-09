@@ -23,7 +23,7 @@ Updating: `pip install ssbh_data_py --upgrade`
 The minimum supported pip version is 20.3. 
 
 ## Requirements
-The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, and 3.9 for the latest versions of Windows, Linux, and Mac OS. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, and 3.9 for the latest versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9. For other Python versions, build ssbh_data_py from source. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
 
 ## Getting Started
 Each supported SSBH type has an associated data struct that can be created reading from a file.
@@ -74,7 +74,7 @@ The Python API matches the underlying Rust types and functions as closely as pos
 ## Building
 The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin). Aftering succesfully installing Maturin, running `maturin develop` or `maturin develop --release` will build and install the module into the current virtual environment. 
 
-`cargo build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Depending on the platform, it may be necessary to rename the file. See the [PyO3 builds page](https://pyo3.rs/v0.14.2/building_and_distribution.html#manual-builds) for details.
+`maturin build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Depending on the platform, it may be necessary to rename the file. See the [PyO3 builds page](https://pyo3.rs/v0.14.2/building_and_distribution.html#manual-builds) for details.
 
-If the import fails, check that the `.pyd` or `.so` file exists in the appropriate location. Importing may also fail if `ssbh_data_py` was built from source for an operating system or 
+If the import fails, check that the `.pyd`, `.so`, or `.dylib` file exists in the appropriate location. Importing may also fail if `ssbh_data_py` was built from source for an operating system or 
 Python interpreter version that isn't compatible with the current Python environment.
