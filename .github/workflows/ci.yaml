@@ -1,5 +1,5 @@
 name: Package and Publish
-on: # credit for much of this build system goes to hyperjson https://github.com/mre/hyperjson/
+on:
   release:
     types: [created]
   workflow_dispatch:
@@ -12,7 +12,14 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9]
+        custom-target: ['false']
         os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+        # Add additional job for Apple Silicon.
+        - os: macos-latest
+          target: aarch64-apple-darwin
+          python-version: 3.9
+          custom-target: 'true'
     steps:
       - uses: actions/checkout@v1
 
@@ -21,6 +28,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install latest stable
+        if: matrix.custom-target == 'true'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{matrix.target}}
+
+      - name: Install latest stable
+        if: matrix.custom-target == 'false'
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -31,18 +46,14 @@ jobs:
           pip install maturin
       
       - name: Build wheel
+        if: matrix.custom-target == 'false'
         run: maturin build --release --no-sdist --strip --interpreter python${{matrix.python_version}}
         working-directory: ${{env.working-directory}}
 
-      # Note: Windows doesn't support glob
-      # https://stackoverflow.com/a/52481267/270334
-      - name: Install wheels
-        if:  matrix.os == 'windows-latest'
-        run: pip install --find-links=target\wheels ssbh_data_py
-
-      - name: Install wheels
-        if:  matrix.os != 'windows-latest'
-        run: pip install target/wheels/ssbh_data_py*.whl
+      - name: Build wheel
+        if: matrix.custom-target == 'true'
+        run: maturin build --release --no-sdist --strip --interpreter python${{matrix.python_version}} --target ${{matrix.target}}
+        working-directory: ${{env.working-directory}}
 
       - name: Release
         uses: softprops/action-gh-release@v1
