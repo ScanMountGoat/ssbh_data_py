@@ -1,5 +1,4 @@
 use crate::{mesh_data, MapPy, PyRepr, PyiMethods};
-use pyo3::types::PyType;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;

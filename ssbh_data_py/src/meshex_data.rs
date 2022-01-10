@@ -1,3 +1,4 @@
+use crate::mesh_data::MeshObjectData;
 use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
@@ -37,6 +38,17 @@ impl MeshExData {
         })
     }
 
+    #[staticmethod]
+    fn from_mesh_objects(py: Python, objects: Vec<MeshObjectData>) -> PyResult<Self> {
+        ssbh_data::meshex_data::MeshExData::from_mesh_objects(
+            &objects
+                .iter()
+                .map(|o| o.map_py(py, false))
+                .collect::<Result<Vec<_>, _>>()?,
+        )
+        .map_py(py, false)
+    }
+
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         self.map_py(py, false)?
             .write_to_file(path)
@@ -48,7 +60,10 @@ impl MeshExData {
 // Add the default to some sort of derive attribute?
 impl PyiMethods for MeshExData {
     fn pyi_methods() -> String {
-        "    def __init__(self,) -> None: ...
+        "    def __init__(self) -> None: ...
+
+    @staticmethod
+    def from_mesh_objects(objects: list[MeshObjectData]) -> MeshExData: ...
     
     def save(self, path: str) -> None: ..."
             .to_string()
@@ -116,6 +131,18 @@ mod tests {
             assert m.mesh_object_name == "a"
             assert m.mesh_object_full_name == "a_VIS"
             assert m.entry_flags == []
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn create_meshex_from_objects() {
+        run_python_code(indoc! {r#"
+            ssbh_data_py.meshex_data.MeshExData.from_mesh_objects([])
+            ssbh_data_py.meshex_data.MeshExData.from_mesh_objects([
+                ssbh_data_py.mesh_data.MeshObjectData('a', 0),
+                ssbh_data_py.mesh_data.MeshObjectData('a', 1)
+            ])
         "#})
         .unwrap();
     }
