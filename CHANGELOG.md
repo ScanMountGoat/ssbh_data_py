@@ -1,4 +1,4 @@
-### 0.6.0
+### 0.6.1
 Changes:
 - Added support for numshexb files with the `ssbh_data_py.meshex_data` submodule.
 - Improved type hints.
