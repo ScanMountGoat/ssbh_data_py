@@ -1,3 +1,14 @@
+### 0.6.0
+Changes:
+- Added support for numshexb files with the `ssbh_data_py.meshex_data` submodule.
+- Improved type hints.
+- Changed classes to support specifying all fields at construction with clear defaults for optional fields.
+- Added support for installing from PyPi for Apple M1 processors on Python 3.9.
+
+Breaking Changes:
+ssbh_data_py.mesh_data
+- Removed `ssbh_data_py.mesh_data.read_mesh_numpy`. Use `read_mesh(..., use_numpy=True)` instead.
+
 ### 0.5.3
 Changes:
 - Added `from_str` and `from_value` static methods to enum types.

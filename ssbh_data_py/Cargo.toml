@@ -1,6 +1,6 @@
 [package]
 name = "ssbh_data_py"
-version = "0.5.3"
+version = "0.6.0"
 authors = ["ScanMountGoat <>"]
 edition = "2018"
 
