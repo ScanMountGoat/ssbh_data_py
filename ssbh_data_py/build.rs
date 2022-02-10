@@ -11,21 +11,11 @@ fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, 
     writeln!(w, "#[pymethods]").unwrap();
     writeln!(w, "impl {} {{", class_name).unwrap();
     for variant in variants {
+        let function_name = variant.to_lowercase();
         writeln!(w, "    #[classattr]").unwrap();
-        writeln!(w, "    #[pyo3(name = {:?})]", variant).unwrap();
-        writeln!(
-            w,
-            "    pub fn {}() -> {} {{",
-            variant.to_lowercase(),
-            class_name
-        )
-        .unwrap();
-        writeln!(
-            w,
-            "        {}::{}::{}.into()",
-            enum_path, class_name, variant
-        )
-        .unwrap();
+        writeln!(w, "    #[pyo3(name = \"{variant}\")]").unwrap();
+        writeln!(w, "    pub fn {function_name}() -> {class_name} {{").unwrap();
+        writeln!(w, "        {enum_path}::{class_name}::{variant}.into()",).unwrap();
         writeln!(w, "    }}").unwrap();
         writeln!(w).unwrap();
     }
@@ -36,14 +26,12 @@ fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, 
     writeln!(w, "    #[staticmethod]").unwrap();
     writeln!(
         w,
-        "    pub fn from_value(value: usize) -> Option<{}> {{",
-        class_name
+        "    pub fn from_value(value: usize) -> Option<{class_name}> {{",
     )
     .unwrap();
     writeln!(
         w,
-        "        {}::{}::from_repr(value).map(Into::into)",
-        enum_path, class_name
+        "        {enum_path}::{class_name}::from_repr(value).map(Into::into)"
     )
     .unwrap();
     writeln!(w, "    }}").unwrap();
@@ -54,14 +42,12 @@ fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, 
     writeln!(w, "    #[staticmethod]").unwrap();
     writeln!(
         w,
-        "    pub fn from_str(value: &str) -> Option<{}> {{",
-        class_name
+        "    pub fn from_str(value: &str) -> Option<{class_name}> {{",
     )
     .unwrap();
     writeln!(
         w,
-        "        {}::{}::from_str(value).map(Into::into).ok()",
-        enum_path, class_name
+        "        {enum_path}::{class_name}::from_str(value).map(Into::into).ok()",
     )
     .unwrap();
     writeln!(w, "    }}").unwrap();
@@ -111,13 +97,12 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         write_enum_pymethods(&mut f, name, enum_path, variants);
 
         // Each enum uses the same class structure for now.
-        writeln!(&mut f, "impl crate::PyiClass for {} {{", name).unwrap();
+        writeln!(&mut f, "impl crate::PyiClass for {name} {{").unwrap();
 
         writeln!(&mut f, "    fn pyi_class() -> String {{").unwrap();
         writeln!(
             &mut f,
-            r#"        "class {}:\n    name: str\n    value: int".to_string()"#,
-            name
+            r#"        "class {name}:\n    name: str\n    value: int".to_string()"#,
         )
         .unwrap();
         writeln!(&mut f, "    }}").unwrap();
@@ -127,24 +112,23 @@ fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])
         // Add a class variable for each enum variant.
         // TODO: Is there a way to differentiate between class and instance variables?
         // HACK: Just use the methods trait to also optionally include class attributes.
-        writeln!(&mut f, "impl crate::PyiMethods for {} {{", name).unwrap();
+        writeln!(&mut f, "impl crate::PyiMethods for {name} {{").unwrap();
         writeln!(&mut f, "    fn pyi_methods() -> String {{").unwrap();
 
         let class_attributes = variants
             .iter()
-            .map(|v| format!("    {}: ClassVar[{}]", v, name))
+            .map(|v| format!("    {v}: ClassVar[{name}]"))
             .collect::<Vec<String>>()
             .join("\n");
         writeln!(
             &mut f,
-            r#"        "{}
+            r#"        "{class_attributes}
 
     @staticmethod
-    def from_value(value: int) -> Optional[{}]: ...
+    def from_value(value: int) -> Optional[{name}]: ...
 
     @staticmethod
-    def from_str(value: str) -> Optional[{}]: ...".to_string()"#,
-            class_attributes, name, name
+    def from_str(value: str) -> Optional[{name}]: ...".to_string()"#,
         )
         .unwrap();
 
