@@ -1,7 +1,8 @@
 # This script demonstrates how to combine two model.numshb files and two model.numdlb files into a single file.
+# This doesn't account for combining the matl files (.numatb).
 import ssbh_data_py
 
-modl_a = ssbh_data_py.modl_data.read_modl("model_a.numshb")
+modl_a = ssbh_data_py.modl_data.read_modl("model_a.numdlb")
 modl_b = ssbh_data_py.modl_data.read_modl("model_b.numdlb")
 
 mesh_a = ssbh_data_py.mesh_data.read_mesh("model_a.numshb")
