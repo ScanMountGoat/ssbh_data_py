@@ -97,6 +97,18 @@ macro_rules! python_enum {
             fn __repr__(&self) -> String {
                 self.py_repr()
             }
+
+            fn __richcmp__(&self, other: Self, op: pyo3::basic::CompareOp) -> PyResult<bool> {
+                // TODO: Check the name?
+                match op {
+                    pyo3::basic::CompareOp::Lt => Ok(self.value < other.value),
+                    pyo3::basic::CompareOp::Le => Ok(self.value <= other.value),
+                    pyo3::basic::CompareOp::Eq => Ok(self.value == other.value),
+                    pyo3::basic::CompareOp::Ne => Ok(self.value != other.value),
+                    pyo3::basic::CompareOp::Gt => Ok(self.value > other.value),
+                    pyo3::basic::CompareOp::Ge => Ok(self.value >= other.value),
+                }
+            }
         }
     };
 }
@@ -171,7 +183,7 @@ mod tests {
     use strum::{Display, FromRepr};
 
     use super::*;
-    
+
     fn run_test_python(code: &str) -> PyResult<()> {
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
@@ -250,6 +262,24 @@ mod tests {
             assert repr(test_module.TestEnumPy.A) == '<TestEnumPy.A: 2>'
             assert repr(test_module.TestEnumPy.B) == '<TestEnumPy.B: 7>'
             assert repr(test_module.TestEnumPy.C) == '<TestEnumPy.C: 4>'
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn python_enum_richcmp() {
+        // The ordering should be defined over the values.
+        run_test_python(indoc! {r#"
+            assert test_module.TestEnumPy.A == test_module.TestEnumPy.A
+            assert test_module.TestEnumPy.A != test_module.TestEnumPy.B
+
+            assert test_module.TestEnumPy.B >= test_module.TestEnumPy.B
+            assert test_module.TestEnumPy.B >= test_module.TestEnumPy.C
+            assert test_module.TestEnumPy.B > test_module.TestEnumPy.C
+
+            assert test_module.TestEnumPy.A <= test_module.TestEnumPy.A
+            assert test_module.TestEnumPy.A <= test_module.TestEnumPy.B
+            assert test_module.TestEnumPy.A < test_module.TestEnumPy.B
         "#})
         .unwrap();
     }
