@@ -84,7 +84,7 @@ fn main() {
     world_transform: list[list[float]],
     parent_world_transform: list[list[float]]) -> list[list[float]]: ...",
         ],
-        &[SkelData::pyi(), BoneData::pyi()],
+        &[SkelData::pyi(), BoneData::pyi(), BillboardType::pyi()],
     );
 
     generate_pyi_file(

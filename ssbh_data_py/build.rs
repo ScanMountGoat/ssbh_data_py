@@ -2,6 +2,7 @@ use ssbh_data::anim_data::GroupType;
 use ssbh_data::matl_data::{
     BlendFactor, CullMode, FillMode, MagFilter, MaxAnisotropy, MinFilter, ParamId, WrapMode,
 };
+use ssbh_data::skel_data::BillboardType;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -78,6 +79,12 @@ fn main() {
         "src/anim_data/enums.rs",
         "ssbh_data::anim_data",
         &[("GroupType", GroupType::VARIANTS)],
+    );
+
+    generate_enum_file(
+        "src/skel_data/enums.rs",
+        "ssbh_data::skel_data",
+        &[("BillboardType", BillboardType::VARIANTS)],
     );
 }
 

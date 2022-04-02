@@ -1,10 +1,12 @@
-use crate::{MapPy, PyRepr, PyiMethods};
+use crate::{python_enum, MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
-use ssbh_data_py_derive::{MapPy, PyRepr, Pyi};
+use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 use crate::create_py_list_from_slice;
+
+mod enums;
 
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
 
@@ -12,6 +14,8 @@ pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
     let skel_data = PyModule::new(py, "skel_data")?;
     skel_data.add_class::<SkelData>()?;
     skel_data.add_class::<BoneData>()?;
+    skel_data.add_class::<BillboardType>()?;
+
     skel_data.add_function(wrap_pyfunction!(read_skel, skel_data)?)?;
     skel_data.add_function(wrap_pyfunction!(calculate_relative_transform, skel_data)?)?;
 
@@ -37,10 +41,9 @@ pub struct SkelData {
 }
 
 #[pyclass(module = "ssbh_data_py.skel_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
 #[map(ssbh_data::skel_data::BoneData)]
 #[pyrepr("ssbh_data_py.skel_data")]
-#[pyi(has_methods = true)]
 pub struct BoneData {
     #[pyo3(get, set)]
     pub name: String,
@@ -50,36 +53,14 @@ pub struct BoneData {
     pub transform: PyObject,
 
     #[pyo3(get, set)]
+    #[pyinit(default = "None")]
+    #[pyi(default = "None")]
     pub parent_index: Option<usize>,
-}
 
-#[pymethods]
-impl BoneData {
-    #[new]
-    fn new(
-        py: Python,
-        name: String,
-        transform: [[f32; 4]; 4],
-        parent_index: Option<usize>,
-    ) -> PyResult<Self> {
-        Ok(BoneData {
-            name,
-            transform: transform.map_py(py, false)?,
-            parent_index,
-        })
-    }
-}
-
-impl PyiMethods for BoneData {
-    fn pyi_methods() -> String {
-        r#"    def __init__(
-        self,
-        name: str,
-        transform: list[list[float]],
-        parent_index: Optional[int]
-    ) -> None: ..."#
-            .to_string()
-    }
+    #[pyo3(get, set)]
+    #[pyinit(default = "ssbh_data::skel_data::BillboardType::None.into()")]
+    #[pyi(default = "BillboardType.None")]
+    pub billboard_type: BillboardType,
 }
 
 impl PyiMethods for SkelData {
@@ -126,6 +107,13 @@ impl SkelData {
     }
 }
 
+python_enum!(
+    BillboardType,
+    ssbh_data::skel_data::BillboardType,
+    SkelDataError,
+    "ssbh_data_py.skel_data"
+);
+
 #[pyfunction]
 fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
     ssbh_data::skel_data::SkelData::from_file(path)
@@ -168,16 +156,21 @@ mod tests {
 
     #[test]
     fn create_bone_data() {
+        // TODO: Fix assertions to compare enums.
+        // TODO: None doesn't work as a variant in Python.
         run_python_code(indoc! {r#"
-            b = ssbh_data_py.skel_data.BoneData("abc", [[0,0,0,0]]*4, 5)
+            b = ssbh_data_py.skel_data.BoneData("abc", [[0,0,0,0]]*4, 5, ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned)
             assert b.name == "abc"
             assert b.transform == [[0,0,0,0]]*4
             assert b.parent_index == 5
+            #assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned
 
             b = ssbh_data_py.skel_data.BoneData("abc", [[1,1,1,1]]*4, None)
             assert b.name == "abc"
             assert b.transform == [[1,1,1,1]]*4
             assert b.parent_index == None
+            #assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.None
+            # Test mutability.
             b.transform[1][2] = 3
             assert b.transform[1] == [1,1,3,1]
         "#})
@@ -187,15 +180,17 @@ mod tests {
     #[test]
     fn create_bone_data_tuples() {
         run_python_code(indoc! {r#"
-            b = ssbh_data_py.skel_data.BoneData("abc", [(0,0,0,0)]*4, 5)
+            billboard = ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned
+            b = ssbh_data_py.skel_data.BoneData("abc", [(0,0,0,0)]*4, 5, billboard)
             assert b.name == "abc"
             assert b.transform == [[0,0,0,0]]*4
             assert b.parent_index == 5
 
-            b = ssbh_data_py.skel_data.BoneData("abc", [(1,1,1,1)]*4, None)
+            b = ssbh_data_py.skel_data.BoneData("abc", [(1,1,1,1)]*4)
             assert b.name == "abc"
             assert b.transform == [[1,1,1,1]]*4
             assert b.parent_index == None
+            # Test mutability.
             b.transform[1][2] = 3
             assert b.transform[1] == [1,1,3,1]
         "#})
@@ -207,15 +202,16 @@ mod tests {
         run_python_code_numpy(indoc! {r#"
             b = ssbh_data_py.skel_data.BoneData("abc", numpy.zeros((4,4)), 5)
             assert b.name == "abc"
-            assert b.transform == [[0,0,0,0]]*4
+            assert b.transform.tolist() == [[0,0,0,0]]*4
             assert b.parent_index == 5
 
             b = ssbh_data_py.skel_data.BoneData("abc", numpy.ones((4,4)), None)
             assert b.name == "abc"
-            assert b.transform == [[1,1,1,1]]*4
+            assert b.transform.tolist() == [[1,1,1,1]]*4
             assert b.parent_index == None
+            # Test mutability.
             b.transform[1][2] = 3
-            assert b.transform[1] == [1,1,3,1]
+            assert b.transform[1].tolist() == [1,1,3,1]
         "#})
         .unwrap();
     }

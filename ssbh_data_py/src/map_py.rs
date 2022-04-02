@@ -132,8 +132,12 @@ mod tests {
     fn map_bools() {
         // We shouldn't need to evaluate with numpy for these conversions.
         eval_python_code("True", |py, x| {
-            assert_eq!(true, PyObject::from(x).map_py(py, true).unwrap());
-            assert_eq!(true, PyObject::from(x).map_py(py, false).unwrap());
+            // TODO: Why are type annotations needed here?
+            let t: bool = PyObject::from(x).map_py(py, true).unwrap();
+            assert_eq!(true, t);
+
+            let f: bool = PyObject::from(x).map_py(py, false).unwrap();
+            assert_eq!(true, f);
         });
     }
 }
