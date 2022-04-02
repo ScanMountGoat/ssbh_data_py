@@ -58,8 +58,8 @@ pub struct BoneData {
     pub parent_index: Option<usize>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "ssbh_data::skel_data::BillboardType::None.into()")]
-    #[pyi(default = "BillboardType.None")]
+    #[pyinit(default = "ssbh_data::skel_data::BillboardType::Disabled.into()")]
+    #[pyi(default = "BillboardType.Disabled")]
     pub billboard_type: BillboardType,
 }
 
@@ -157,19 +157,19 @@ mod tests {
     #[test]
     fn create_bone_data() {
         // TODO: Fix assertions to compare enums.
-        // TODO: None doesn't work as a variant in Python.
+        // This may require implementing __richcmp__.
         run_python_code(indoc! {r#"
             b = ssbh_data_py.skel_data.BoneData("abc", [[0,0,0,0]]*4, 5, ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned)
             assert b.name == "abc"
             assert b.transform == [[0,0,0,0]]*4
             assert b.parent_index == 5
-            #assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned
+            assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned
 
             b = ssbh_data_py.skel_data.BoneData("abc", [[1,1,1,1]]*4, None)
             assert b.name == "abc"
             assert b.transform == [[1,1,1,1]]*4
             assert b.parent_index == None
-            #assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.None
+            assert b.billboard_type == ssbh_data_py.skel_data.BillboardType.Disabled
             # Test mutability.
             b.transform[1][2] = 3
             assert b.transform[1] == [1,1,3,1]

@@ -39,7 +39,7 @@ class BoneData:
         name: str,
         transform: list[list[float]],
         parent_index: Optional[int] = None,
-        billboard_type: BillboardType = BillboardType.None
+        billboard_type: BillboardType = BillboardType.Disabled
     ) -> None: ...
 
 
@@ -47,7 +47,7 @@ class BillboardType:
     name: str
     value: int
 
-    None: ClassVar[BillboardType]
+    Disabled: ClassVar[BillboardType]
     XAxisViewPointAligned: ClassVar[BillboardType]
     YAxisViewPointAligned: ClassVar[BillboardType]
     Unk3: ClassVar[BillboardType]
