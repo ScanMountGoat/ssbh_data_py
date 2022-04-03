@@ -183,16 +183,13 @@ mod tests {
             billboard = ssbh_data_py.skel_data.BillboardType.YAxisViewPlaneAligned
             b = ssbh_data_py.skel_data.BoneData("abc", [(0,0,0,0)]*4, 5, billboard)
             assert b.name == "abc"
-            assert b.transform == [[0,0,0,0]]*4
+            assert b.transform == [(0,0,0,0)]*4
             assert b.parent_index == 5
 
             b = ssbh_data_py.skel_data.BoneData("abc", [(1,1,1,1)]*4)
             assert b.name == "abc"
-            assert b.transform == [[1,1,1,1]]*4
+            assert b.transform == [(1,1,1,1)]*4
             assert b.parent_index == None
-            # Test mutability.
-            b.transform[1][2] = 3
-            assert b.transform[1] == [1,1,3,1]
         "#})
         .unwrap();
     }
