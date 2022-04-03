@@ -11,6 +11,29 @@ use strum::VariantNames;
 fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, variants: &[&str]) {
     writeln!(w, "#[pymethods]").unwrap();
     writeln!(w, "impl {} {{", class_name).unwrap();
+
+    // TODO: Refactor this code to be cleaner.
+    let t = "    ";
+    let cmp = "pyo3::basic::CompareOp";
+    writeln!(w, "fn __repr__(&self) -> String {{").unwrap();
+    writeln!(w, "    self.py_repr()").unwrap();
+    writeln!(w, "}}").unwrap();
+    writeln!(
+        w,
+        "fn __richcmp__(&self, other: Self, op: {cmp}) -> PyResult<bool> {{"
+    )
+    .unwrap();
+    writeln!(w, "{t}// TODO: Check the name?").unwrap();
+    writeln!(w, "{t}match op {{").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Lt => Ok(self.value < other.value),").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Le => Ok(self.value <= other.value),").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Eq => Ok(self.value == other.value),").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Ne => Ok(self.value != other.value),").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Gt => Ok(self.value > other.value),").unwrap();
+    writeln!(w, "{t}{t}{cmp}::Ge => Ok(self.value >= other.value),").unwrap();
+    writeln!(w, "{t}}}").unwrap();
+    writeln!(w, "}}").unwrap();
+
     for variant in variants {
         let function_name = variant.to_lowercase();
         writeln!(w, "    #[classattr]").unwrap();

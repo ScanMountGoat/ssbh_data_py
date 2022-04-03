@@ -342,7 +342,6 @@ python_enum!(
     "ssbh_data_py.matl_data"
 );
 
-// TODO: "None" doesn't work as a variant?
 python_enum!(
     CullMode,
     ssbh_data::matl_data::CullMode,
@@ -492,6 +491,35 @@ mod tests {
             assert m.rasterizer_states == []
             assert m.samplers == []
             assert m.textures == []
+        "#})
+        .unwrap();
+    }
+
+    // Test the enum implementations here since methods are generated in the build script.
+    #[test]
+    fn cull_mode_enum_repr() {
+        run_python_code(indoc! {r#"
+            assert repr(ssbh_data_py.matl_data.CullMode.Back) == '<CullMode.Back: 0>'
+            assert repr(ssbh_data_py.matl_data.CullMode.Front) == '<CullMode.Front: 1>'
+            assert repr(ssbh_data_py.matl_data.CullMode.Disabled) == '<CullMode.Disabled: 2>'
+        "#})
+        .unwrap();
+    }
+
+    #[test]
+    fn cull_mode_enum_richcmp() {
+        // The ordering should be defined over the values.
+        run_python_code(indoc! {r#"
+            assert ssbh_data_py.matl_data.CullMode.Back == ssbh_data_py.matl_data.CullMode.Back
+            assert ssbh_data_py.matl_data.CullMode.Back != ssbh_data_py.matl_data.CullMode.Front
+
+            assert ssbh_data_py.matl_data.CullMode.Disabled >= ssbh_data_py.matl_data.CullMode.Disabled
+            assert ssbh_data_py.matl_data.CullMode.Disabled >= ssbh_data_py.matl_data.CullMode.Front
+            assert ssbh_data_py.matl_data.CullMode.Disabled > ssbh_data_py.matl_data.CullMode.Front
+
+            assert ssbh_data_py.matl_data.CullMode.Back <= ssbh_data_py.matl_data.CullMode.Back
+            assert ssbh_data_py.matl_data.CullMode.Back <= ssbh_data_py.matl_data.CullMode.Front
+            assert ssbh_data_py.matl_data.CullMode.Back < ssbh_data_py.matl_data.CullMode.Front
         "#})
         .unwrap();
     }

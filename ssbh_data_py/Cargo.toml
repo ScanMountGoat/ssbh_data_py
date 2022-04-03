@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", features=["strum1"] }
-pyo3 = { version = "0.15.0", features = ["extension-module"] }
-numpy = "0.15.0"
+pyo3 = { version = "0.16.2", features = ["extension-module"] }
+numpy = "0.16.2"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
 
 [lib]
