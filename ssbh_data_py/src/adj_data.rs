@@ -122,6 +122,18 @@ mod tests {
     use indoc::indoc;
 
     #[test]
+    fn read_adj() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.adj_data.read_adj("invalid")
+            except ssbh_data_py.AdjDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_adj() {
         run_python_code(indoc! {r#"
             a = ssbh_data_py.adj_data.AdjData()

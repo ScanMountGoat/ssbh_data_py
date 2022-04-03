@@ -339,6 +339,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn read_anim() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.anim_data.read_anim("invalid")
+            except ssbh_data_py.AnimDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_anim_data() {
         run_python_code(indoc! {r#"
             a = ssbh_data_py.anim_data.AnimData()

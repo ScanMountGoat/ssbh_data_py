@@ -116,6 +116,18 @@ mod tests {
     use indoc::indoc;
 
     #[test]
+    fn read_modl() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.modl_data.read_modl("invalid")
+            except ssbh_data_py.ModlDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_modl() {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.modl_data.ModlData(3, 4)

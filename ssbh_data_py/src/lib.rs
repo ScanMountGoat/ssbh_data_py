@@ -30,6 +30,19 @@ fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::adj_data::adj_data(py, module)?;
     crate::matl_data::matl_data(py, module)?;
     crate::meshex_data::meshex_data(py, module)?;
+
+    // Add error types.
+    module.add("MeshDataError", py.get_type::<mesh_data::MeshDataError>())?;
+    module.add("ModlDataError", py.get_type::<modl_data::ModlDataError>())?;
+    module.add("SkelDataError", py.get_type::<skel_data::SkelDataError>())?;
+    module.add("AnimDataError", py.get_type::<anim_data::AnimDataError>())?;
+    module.add("AdjDataError", py.get_type::<adj_data::AdjDataError>())?;
+    module.add("MatlDataError", py.get_type::<matl_data::MatlDataError>())?;
+    module.add(
+        "MeshExDataError",
+        py.get_type::<meshex_data::MeshExDataError>(),
+    )?;
+
     Ok(())
 }
 

@@ -5,7 +5,7 @@ use pyo3::{prelude::*, types::PyList};
 use ssbh_data::SsbhData;
 use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
-create_exception!(ssbh_data_py, MeshExError, pyo3::exceptions::PyException);
+create_exception!(ssbh_data_py, MeshExDataError, pyo3::exceptions::PyException);
 
 pub fn meshex_data(py: Python, module: &PyModule) -> PyResult<()> {
     let meshex_data = PyModule::new(py, "meshex_data")?;
@@ -105,7 +105,7 @@ pub struct EntryFlags {
 #[pyfunction]
 fn read_meshex(py: Python, path: &str) -> PyResult<MeshExData> {
     ssbh_data::meshex_data::MeshExData::from_file(path)
-        .map_err(|e| MeshExError::new_err(format!("{}", e)))?
+        .map_err(|e| MeshExDataError::new_err(format!("{}", e)))?
         .map_py(py, false)
 }
 
@@ -113,6 +113,18 @@ fn read_meshex(py: Python, path: &str) -> PyResult<MeshExData> {
 mod tests {
     use crate::run_python_code;
     use indoc::indoc;
+
+    #[test]
+    fn read_meshex() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.meshex_data.read_meshex("invalid")
+            except ssbh_data_py.MeshExDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
 
     #[test]
     fn create_meshex() {

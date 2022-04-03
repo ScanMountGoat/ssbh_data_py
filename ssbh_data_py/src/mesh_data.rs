@@ -309,6 +309,18 @@ mod tests {
     use ssbh_data::mesh_data::VectorData;
 
     #[test]
+    fn read_mesh() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.mesh_data.read_mesh("invalid")
+            except ssbh_data_py.MeshDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_mesh() {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.mesh_data.MeshData(3, 4)

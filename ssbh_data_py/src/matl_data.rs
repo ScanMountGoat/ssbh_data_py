@@ -460,6 +460,18 @@ mod tests {
     use indoc::indoc;
 
     #[test]
+    fn read_matl() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.matl_data.read_matl("invalid")
+            except ssbh_data_py.MatlDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_matl() {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.matl_data.MatlData(3, 4)

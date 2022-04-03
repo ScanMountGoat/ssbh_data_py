@@ -144,6 +144,18 @@ mod tests {
     use indoc::indoc;
 
     #[test]
+    fn read_skel() {
+        // Test exceptions.
+        run_python_code(indoc! {r#"
+            try:
+                ssbh_data_py.skel_data.read_skel("invalid")
+            except ssbh_data_py.SkelDataError as e:
+                assert True
+        "#})
+        .unwrap();
+    }
+
+    #[test]
     fn create_skel() {
         run_python_code(indoc! {r#"
             s = ssbh_data_py.skel_data.SkelData()
