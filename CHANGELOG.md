@@ -1,4 +1,4 @@
-### 0.7.2
+### 0.7.0
 Changes:
 - Fixed comparison operators not working as expected for enum types. Enum variants are equal if their `value` field is equal.
 - Fixed an issue where error types couldn't be matched on in in exception handling like `except ssbh_data_py.MeshDataError as e:`.
