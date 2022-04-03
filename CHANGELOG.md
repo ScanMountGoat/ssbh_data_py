@@ -1,3 +1,13 @@
+### 0.7.2
+Changes:
+- Fixed comparison operators not working as expected for enum types. Enum variants are equal if their `value` field is equal.
+- Fixed an issue where error types couldn't be matched on in in exception handling like `except ssbh_data_py.MeshDataError as e:`.
+- Added field `ssbh_data_py.skel_data.BoneData.billboard_type` of type `BillboardType`.
+- Added field `ssbh_data_py.anim_data.TrackData.transform_flags` of type `TransformFlags`.
+
+Breaking Changes:
+- Renamed `ssbh_data_py.MeshExError` to `ssbh_data_py.MeshExDataError`
+
 ### 0.6.2
 Changes:
 - Added support for numshexb files with the `ssbh_data_py.meshex_data` submodule.
