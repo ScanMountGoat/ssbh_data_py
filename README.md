@@ -13,6 +13,7 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :heavy_check_mark: (2.0 only) |
 | Matl (`.numatb`) | 1.6 | :heavy_check_mark: | :heavy_check_mark: |
 | Adj (`.adjb`) |  | :heavy_check_mark: | :heavy_check_mark: |
+| MeshEx (`.numshexb`) |  | :heavy_check_mark: | :heavy_check_mark: |
 
 ## Installing
 The package can be installed for a supported python version using `pip` on the latest version of Windows, Linux, or MacOS. The prebuilt wheels (`.whl` files) are included only for situations where `pip` might not be available such as for plugin development for applications. 
