@@ -73,7 +73,7 @@ skel.save("model_new.nusktb")
 The Python API matches the underlying Rust types and functions as closely as possible. The Rust documentation can be found at https://docs.rs/ssbh_data. For additional documentation and more advanced sample scripts, see the [examples](https://github.com/ScanMountGoat/ssbh_data_py/tree/main/examples).
 
 ## Building
-The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin). Aftering succesfully installing Maturin, running `maturin develop` or `maturin develop --release` will build and install the module into the current virtual environment. 
+Requires Rust 1.60 or later. The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin). Aftering succesfully installing Maturin, running `maturin develop` or `maturin develop --release` will build and install the module into the current virtual environment. 
 
 `maturin build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Depending on the platform, it may be necessary to rename the file. See the [PyO3 builds page](https://pyo3.rs/v0.14.2/building_and_distribution.html#manual-builds) for details.
 
