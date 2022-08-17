@@ -1,5 +1,5 @@
-# This script creates a new mesh with all single bound mesh objects converted to use regular vertex weights.
-# Usage: python single_bind_to_rigged.py input.numshb input.nusktb output.numshb
+# This script creates a new mesh with parent bones converted to vertex skinning.
+# Usage: python parent_bone_to_weights.py input.numshb input.nusktb output.numshb
 
 import sys
 import ssbh_data_py
@@ -13,7 +13,7 @@ mesh = ssbh_data_py.mesh_data.read_mesh(mesh_path)
 skel = ssbh_data_py.skel_data.read_skel(skel_path)
 
 for mesh_object in mesh.objects:
-    # There are no influences, so the object is bound to a parent bone.
+    # There are no influences, so the object uses a parent bone.
     if len(mesh_object.bone_influences) == 0:
         # Use the parent bone to create vertex weights.
         vertex_count = len(mesh_object.positions[0].data)
