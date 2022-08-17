@@ -20,7 +20,7 @@ for mesh_object in mesh.objects:
         vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(i, 1.0) for i in range(vertex_count)]
         influence = ssbh_data_py.mesh_data.BoneInfluence(mesh_object.parent_bone_name, vertex_weights)
 
-        # Adding an influence means the mesh object is no longer single bound to the parent.
+        # Adding an influence enables vertex skinning.
         # This means that the mesh object will no longer appear at the same location as the parent bone.
         mesh_object.bone_influences.append(influence)
 
