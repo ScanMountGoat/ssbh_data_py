@@ -90,7 +90,7 @@ pub struct MeshObjectData {
     pub name: String,
 
     #[pyo3(get, set)]
-    pub sub_index: u64,
+    pub subindex: u64,
 
     #[pyo3(get, set)]
     #[pyinit(default = "String::new()")]
@@ -343,7 +343,7 @@ mod tests {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
             assert m.name == "abc"
-            assert m.sub_index == 1
+            assert m.subindex == 1
             assert m.parent_bone_name == ""
             assert m.vertex_indices == []
             assert m.positions == []

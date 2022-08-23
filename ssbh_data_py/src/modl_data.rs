@@ -97,7 +97,7 @@ pub struct ModlEntryData {
     pub mesh_object_name: String,
 
     #[pyo3(get, set)]
-    pub mesh_object_sub_index: u64,
+    pub mesh_object_subindex: u64,
 
     #[pyo3(get, set)]
     pub material_label: String,
@@ -156,7 +156,7 @@ mod tests {
         run_python_code(indoc! {r#"
             m = ssbh_data_py.modl_data.ModlEntryData("a", 7, "b")
             assert m.mesh_object_name == "a"
-            assert m.mesh_object_sub_index == 7
+            assert m.mesh_object_subindex == 7
             assert m.material_label == "b"
         "#})
         .unwrap();

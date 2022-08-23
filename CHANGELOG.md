@@ -1,3 +1,12 @@
+### unreleased
+Changes:
+- Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
+
+Breaking Changes:
+- Renamed `ssbh_data_py.mesh_data.MeshObjectData.subindex` to `ssbh_data_py.mesh_data.MeshObjectData.subindex`
+- Renamed `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex` to `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex`
+- Adjusted matrices to use column-major order instead of row-major order.
+
 ### 0.7.0
 Changes:
 - Fixed comparison operators not working as expected for enum types. Enum variants are equal if their `value` field is equal.

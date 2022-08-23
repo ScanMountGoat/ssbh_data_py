@@ -6,6 +6,7 @@ use pyo3::types::IntoPyDict;
 // External crates won't depend on ssbh_data_py, so just make everything public for convenience.
 pub mod adj_data;
 pub mod anim_data;
+pub mod hlpb_data;
 pub mod matl_data;
 pub mod mesh_data;
 pub mod meshex_data;
@@ -23,25 +24,26 @@ pub use repr::*;
 
 #[pymodule]
 fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
+    crate::adj_data::adj_data(py, module)?;
+    crate::anim_data::anim_data(py, module)?;
+    crate::hlpb_data::hlpb_data(py, module)?;
+    crate::matl_data::matl_data(py, module)?;
     crate::mesh_data::mesh_data(py, module)?;
+    crate::meshex_data::meshex_data(py, module)?;
     crate::modl_data::modl_data(py, module)?;
     crate::skel_data::skel_data(py, module)?;
-    crate::anim_data::anim_data(py, module)?;
-    crate::adj_data::adj_data(py, module)?;
-    crate::matl_data::matl_data(py, module)?;
-    crate::meshex_data::meshex_data(py, module)?;
 
-    // Add error types.
-    module.add("MeshDataError", py.get_type::<mesh_data::MeshDataError>())?;
-    module.add("ModlDataError", py.get_type::<modl_data::ModlDataError>())?;
-    module.add("SkelDataError", py.get_type::<skel_data::SkelDataError>())?;
-    module.add("AnimDataError", py.get_type::<anim_data::AnimDataError>())?;
     module.add("AdjDataError", py.get_type::<adj_data::AdjDataError>())?;
+    module.add("AnimDataError", py.get_type::<anim_data::AnimDataError>())?;
+    module.add("HlpbDataError", py.get_type::<hlpb_data::HlpbDataError>())?;
     module.add("MatlDataError", py.get_type::<matl_data::MatlDataError>())?;
+    module.add("MeshDataError", py.get_type::<mesh_data::MeshDataError>())?;
     module.add(
         "MeshExDataError",
         py.get_type::<meshex_data::MeshExDataError>(),
     )?;
+    module.add("ModlDataError", py.get_type::<modl_data::ModlDataError>())?;
+    module.add("SkelDataError", py.get_type::<skel_data::SkelDataError>())?;
 
     Ok(())
 }

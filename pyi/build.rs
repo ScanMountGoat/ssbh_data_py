@@ -1,13 +1,12 @@
 use ssbh_data_py::adj_data::*;
 use ssbh_data_py::anim_data::*;
+use ssbh_data_py::hlpb_data::*;
 use ssbh_data_py::matl_data::*;
 use ssbh_data_py::mesh_data::*;
 use ssbh_data_py::meshex_data::*;
 use ssbh_data_py::modl_data::*;
 use ssbh_data_py::skel_data::*;
-
 use ssbh_data_py::Pyi;
-
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -137,6 +136,16 @@ fn main() {
             MeshExData::pyi(),
             MeshObjectGroupData::pyi(),
             EntryFlags::pyi(),
+        ],
+    );
+
+    generate_pyi_file(
+        "../ssbh_data_py/ssbh_data_py/hlpb_data.pyi",
+        &["def read_hlpb(path: str) -> HlpbData: ..."],
+        &[
+            HlpbData::pyi(),
+            AimConstraintData::pyi(),
+            OrientConstraintData::pyi(),
         ],
     );
 }

@@ -5,7 +5,7 @@ mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
 for o in mesh.objects:
     # Print the mesh object's name (ex: 'bodyShape0' or 'bodyShape1')
     # Mesh objects with different names should have a different sub index.
-    print(f'{o.name}{o.sub_index}')
+    print(f'{o.name}{o.subindex}')
 
     # The name of the bone used for single binding or '' otherwise.
     print(f'Parent Bone: "{o.parent_bone_name}"')

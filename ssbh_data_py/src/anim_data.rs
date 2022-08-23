@@ -230,46 +230,6 @@ pub struct UvTransform {
     pub translate_v: f32,
 }
 
-// TODO: This is shared with other modules?
-impl MapPy<ssbh_data::anim_data::Vector4> for Py<PyList> {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
-        let values: [f32; 4] = self.extract(py)?;
-        Ok(values.into())
-    }
-}
-
-impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(py, self.to_array()).into())
-    }
-}
-
-impl MapPy<PyObject> for ssbh_data::anim_data::Vector4 {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
-        Ok(self.to_array().into_py(py))
-    }
-}
-
-impl MapPy<ssbh_data::anim_data::Vector4> for PyObject {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector4> {
-        let values: [f32; 4] = self.extract(py)?;
-        Ok(values.into())
-    }
-}
-
-impl MapPy<ssbh_data::anim_data::Vector3> for Py<PyList> {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::anim_data::Vector3> {
-        let values: [f32; 3] = self.extract(py)?;
-        Ok(values.into())
-    }
-}
-
-impl MapPy<Py<PyList>> for ssbh_data::anim_data::Vector3 {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(py, self.to_array()).into())
-    }
-}
-
 impl MapPy<Py<PyList>> for TrackValuesRs {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
         match self {
@@ -305,11 +265,7 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
         .or_else(|_| values.extract::<Vec<f32>>().map(TrackValuesRs::Float))
         .or_else(|_| {
             values.extract::<Vec<[f32; 4]>>().map(|v| {
-                TrackValuesRs::Vector4(
-                    v.into_iter()
-                        .map(ssbh_data::anim_data::Vector4::from)
-                        .collect(),
-                )
+                TrackValuesRs::Vector4(v.into_iter().map(ssbh_data::Vector4::from).collect())
             })
         })
         .or_else(|_| {
@@ -334,7 +290,7 @@ fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs
 mod tests {
     use crate::{eval_python_code, run_python_code};
     use indoc::indoc;
-    use ssbh_data::anim_data::{Vector3, Vector4};
+    use ssbh_data::{Vector3, Vector4};
 
     use super::*;
 

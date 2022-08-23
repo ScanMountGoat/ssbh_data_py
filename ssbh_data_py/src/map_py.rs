@@ -113,6 +113,58 @@ impl<T: MapPy<U>, U> MapPy<Option<U>> for Option<T> {
     }
 }
 
+impl MapPy<ssbh_data::Color4f> for PyObject {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::Color4f> {
+        let [r, g, b, a] = self.extract::<[f32; 4]>(py)?;
+        Ok(ssbh_data::Color4f { r, g, b, a })
+    }
+}
+
+impl MapPy<PyObject> for ssbh_data::Color4f {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
+        Ok(PyList::new(py, [self.r, self.g, self.b, self.a]).into())
+    }
+}
+
+impl MapPy<ssbh_data::Vector4> for Py<PyList> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::Vector4> {
+        let values: [f32; 4] = self.extract(py)?;
+        Ok(values.into())
+    }
+}
+
+impl MapPy<Py<PyList>> for ssbh_data::Vector4 {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, self.to_array()).into())
+    }
+}
+
+impl MapPy<PyObject> for ssbh_data::Vector4 {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
+        Ok(self.to_array().into_py(py))
+    }
+}
+
+impl MapPy<ssbh_data::Vector4> for PyObject {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::Vector4> {
+        let values: [f32; 4] = self.extract(py)?;
+        Ok(values.into())
+    }
+}
+
+impl MapPy<ssbh_data::Vector3> for Py<PyList> {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<ssbh_data::Vector3> {
+        let values: [f32; 3] = self.extract(py)?;
+        Ok(values.into())
+    }
+}
+
+impl MapPy<Py<PyList>> for ssbh_data::Vector3 {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, self.to_array()).into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use pyo3::PyObject;
