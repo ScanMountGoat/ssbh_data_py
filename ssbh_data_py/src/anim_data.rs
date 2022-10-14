@@ -161,6 +161,10 @@ impl AnimData {
             .write_to_file(path)
             .map_err(|e| AnimDataError::new_err(format!("{}", e)))
     }
+
+    fn __repr__(&self) -> String {
+        self.py_repr()
+    }
 }
 
 impl PyiMethods for AnimData {

@@ -71,6 +71,10 @@ impl ModlData {
             .write_to_file(path)
             .map_err(PyErr::from)
     }
+
+    fn __repr__(&self) -> String {
+        self.py_repr()
+    }
 }
 
 // TODO: Can we document the actual default value here?

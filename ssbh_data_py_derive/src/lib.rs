@@ -275,13 +275,6 @@ pub fn py_repr_derive(input: TokenStream) -> TokenStream {
                 format!(#format_string, #(#field_reprs),*)
             }
         }
-
-        #[pyproto]
-        impl pyo3::PyObjectProtocol for #name {
-            fn __repr__(&self) -> String {
-                self.py_repr()
-            }
-        }
     };
     result.into()
 }
@@ -349,6 +342,10 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
                 Ok(Self {
                     #(#field_names),*
                 })
+            }
+
+            fn __repr__(&self) -> String {
+                self.py_repr()
             }
         }
     };

@@ -111,6 +111,10 @@ mod tests {
         fn new(_py: Python, a: usize, b: bool) -> PyResult<Self> {
             Ok(Self { a, b })
         }
+
+        fn __repr__(&self) -> String {
+            self.py_repr()
+        }
     }
 
     #[pymethods]
@@ -118,6 +122,10 @@ mod tests {
         #[new]
         fn new(_py: Python, a: f32, b: Py<PyList>, c: PyObject, d: String) -> PyResult<Self> {
             Ok(Self { a, b, c, d })
+        }
+
+        fn __repr__(&self) -> String {
+            self.py_repr()
         }
     }
 

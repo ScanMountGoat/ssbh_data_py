@@ -1,13 +1,13 @@
 [package]
 name = "ssbh_data_py"
 version = "0.6.2"
-authors = ["ScanMountGoat <>"]
+authors = ["ScanMountGoat"]
 edition = "2021"
 
 [dependencies]
-ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", features=["strum"] }
-pyo3 = { version = "0.16.5", features = ["extension-module"] }
-numpy = "0.16.2"
+ssbh_data = { version = "0.15.0", features=["strum"] }
+pyo3 = { version = "0.17.2", features = ["extension-module"] }
+numpy = "0.17.2"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
 
 [lib]
@@ -19,6 +19,6 @@ indoc = "1.0"
 strum = "0.24.1"
 
 [build-dependencies]
-ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", features=["strum"] }
+ssbh_data = { version = "0.15.0", features=["strum"] }
 strum = "0.24.1"
 indoc = "1.0"

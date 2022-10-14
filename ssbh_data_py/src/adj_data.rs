@@ -41,6 +41,10 @@ impl AdjData {
             .write_to_file(path)
             .map_err(|e| AdjDataError::new_err(format!("{}", e)))
     }
+
+    fn __repr__(&self) -> String {
+        self.py_repr()
+    }
 }
 
 impl PyiMethods for AdjData {
@@ -92,6 +96,10 @@ impl AdjEntryData {
             &vertex_indices,
         );
         entry.map_py(py, false)
+    }
+
+    fn __repr__(&self) -> String {
+        self.py_repr()
     }
 }
 

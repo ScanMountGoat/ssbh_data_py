@@ -66,6 +66,10 @@ impl MeshData {
             .write_to_file(path)
             .map_err(|e| MeshDataError::new_err(format!("{}", e)))
     }
+
+    fn __repr__(&self) -> String {
+        self.py_repr()
+    }
 }
 
 impl PyiMethods for MeshData {
