@@ -71,13 +71,11 @@ for bone in skel.bones:
     bone.transform = np.eye((4))
 
 # Convert the positions to a numpy array.
-# Ideally the data should already be a numpy array to avoid conversion costs.
-# Converting lists to numpy arrays before saving may or may not improve performance.
 for o in mesh.objects:
     o.positions[0].data = np.array(o.positions[0].data)
 ```
 
-After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms. Numpy arrays will be converted automatically if present. Using numpy arrays will reduce export time especially for larger lists like mesh vertex attributes.
+After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms. Numpy arrays use a faster exporting code path compared to Python lists or tuples. Using numpy arrays mainly benefits export time for larger lists like mesh vertex attributes. This works the best when the data is already a numpy array since converting from lists may be slow.
 ```python
 mesh.save("model_new.numshb")
 modl.save("model_new.numdlb")
