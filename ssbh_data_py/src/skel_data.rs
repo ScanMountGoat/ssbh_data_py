@@ -124,14 +124,14 @@ fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
 #[pyfunction]
 fn calculate_relative_transform(
     py: Python,
-    world_transform: &PyAny,
-    parent_world_transform: Option<&PyAny>,
+    world_transform: PyObject,
+    parent_world_transform: Option<PyObject>,
 ) -> PyResult<Py<PyList>> {
-    let world_transform = world_transform.extract()?;
+    let world_transform = world_transform.map_py(py, false)?;
     let transform = match parent_world_transform {
         Some(m) => ssbh_data::skel_data::calculate_relative_transform(
             &world_transform,
-            Some(&m.extract()?),
+            Some(&m.map_py(py, false)?),
         ),
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };
@@ -209,12 +209,12 @@ mod tests {
     #[test]
     fn create_bone_data_numpy() {
         run_python_code_numpy(indoc! {r#"
-            b = ssbh_data_py.skel_data.BoneData("abc", numpy.zeros((4,4)), 5)
+            b = ssbh_data_py.skel_data.BoneData("abc", np.zeros((4,4)), 5)
             assert b.name == "abc"
             assert b.transform.tolist() == [[0,0,0,0]]*4
             assert b.parent_index == 5
 
-            b = ssbh_data_py.skel_data.BoneData("abc", numpy.ones((4,4)), None)
+            b = ssbh_data_py.skel_data.BoneData("abc", np.ones((4,4)), None)
             assert b.name == "abc"
             assert b.transform.tolist() == [[1,1,1,1]]*4
             assert b.parent_index == None
@@ -256,8 +256,8 @@ mod tests {
         // TODO: This can also return a numpy array in the future.
         run_python_code_numpy(indoc! {r#"
             s = ssbh_data_py.skel_data.SkelData()
-            b0 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4)), None)
-            b1 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4))*2, 0)
+            b0 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4)), None)
+            b1 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4))*2, 0)
             s.bones = [b0, b1]
 
             assert s.calculate_world_transform(b1) == [[8,8,8,8]]*4
@@ -309,7 +309,7 @@ mod tests {
     fn calculate_relative_transform_no_parent_ndarray() {
         // TODO: This can also return a numpy array in the future.
         run_python_code_numpy(indoc! {r#"
-            world_transform = numpy.array([
+            world_transform = np.array([
                 [0, 1, 2, 3],
                 [4, 5, 6, 7],
                 [8, 9, 10, 11],

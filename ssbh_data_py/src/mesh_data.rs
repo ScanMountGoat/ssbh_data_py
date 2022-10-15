@@ -2,7 +2,11 @@ use crate::create_py_list_from_slice;
 use crate::MapPy;
 use crate::PyRepr;
 use crate::PyiMethods;
+use num_traits::AsPrimitive;
+use numpy::ndarray::Dim;
 use numpy::IntoPyArray;
+use numpy::PyArray;
+use numpy::PyArray2;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -235,19 +239,58 @@ impl MapPy<PyObject> for VectorDataRs {
     }
 }
 
+// TODO: Add a module for these conversions?
+fn vector_data<T: AsPrimitive<f32> + numpy::Element>(
+    arr: &PyArray<T, Dim<[usize; 2]>>,
+) -> VectorDataRs {
+    // Use AsPrimitive to allow truncating types like f64.
+    // TODO: Avoid unwrap?
+    match arr.dims()[1] {
+        2 => VectorDataRs::Vector2(
+            arr.readonly()
+                .as_slice()
+                .unwrap()
+                .chunks_exact(2)
+                .map(|v| [v[0].as_(), v[1].as_()])
+                .collect(),
+        ),
+        3 => VectorDataRs::Vector3(
+            arr.readonly()
+                .as_slice()
+                .unwrap()
+                .chunks_exact(3)
+                .map(|v| [v[0].as_(), v[1].as_(), v[2].as_()])
+                .collect(),
+        ),
+        4 => VectorDataRs::Vector4(
+            arr.readonly()
+                .as_slice()
+                .unwrap()
+                .chunks_exact(4)
+                .map(|v| [v[0].as_(), v[1].as_(), v[2].as_(), v[3].as_()])
+                .collect(),
+        ),
+        _ => todo!(),
+    }
+}
+
 impl MapPy<VectorDataRs> for PyObject {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<VectorDataRs> {
         // We don't know the type from Python at this point.
         // Try all the supported types and fail if all conversions fail.
-        // TODO: This still works with numpy arrays but might not be the most efficient.
+        // TODO: Is there an easy way to convert f64 to f32 for the entire array?
         self.extract::<Vec<[f32; 2]>>(py)
             .map(VectorDataRs::Vector2)
             .or_else(|_| self.extract::<Vec<[f32; 3]>>(py).map(VectorDataRs::Vector3))
             .or_else(|_| self.extract::<Vec<[f32; 4]>>(py).map(VectorDataRs::Vector4))
+            .or_else(|_| self.extract::<&PyArray2<f32>>(py).map(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<f64>>(py).map(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i8>>(py).map(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i16>>(py).map(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i32>>(py).map(vector_data))
     }
 }
 
-// TODO: How to test conversions with/without numpy?
 #[pyfunction]
 fn read_mesh(py: Python, path: &str, use_numpy: Option<bool>) -> PyResult<MeshData> {
     ssbh_data::mesh_data::MeshData::from_file(path)
@@ -255,11 +298,10 @@ fn read_mesh(py: Python, path: &str, use_numpy: Option<bool>) -> PyResult<MeshDa
         .map_py(py, use_numpy.unwrap_or(false))
 }
 
-// TODO: Should these also take a numpy parameter?
 #[pyfunction]
 fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
     let points = points.map_py(py, false)?;
-    let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
+    let transform = transform.map_py(py, false)?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
     transformed_points.map_py(py, false)
 }
@@ -267,7 +309,7 @@ fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResu
 #[pyfunction]
 fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
     let points = points.map_py(py, false)?;
-    let transform = transform.extract::<[[f32; 4]; 4]>(py)?;
+    let transform = transform.map_py(py, false)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
     transformed_points.map_py(py, false)
 }
@@ -368,7 +410,7 @@ mod tests {
     fn mesh_object_vertex_indices_ndarray() {
         run_python_code_numpy(indoc! {r#"
             m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
-            m.vertex_indices = numpy.array([1, 2, 3])
+            m.vertex_indices = np.array([1, 2, 3])
             assert m.vertex_indices.tolist() == [1,2,3]
         "#})
         .unwrap();
@@ -456,7 +498,7 @@ mod tests {
 
     #[test]
     fn vector2_from_ndarray_ints() {
-        eval_python_code_numpy("numpy.array([[0, 1], [2, 3]],dtype=numpy.int8)", |py, x| {
+        eval_python_code_numpy("np.array([[0, 1], [2, 3]],dtype=np.int8)", |py, x| {
             let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
@@ -480,7 +522,7 @@ mod tests {
 
     #[test]
     fn vector2_from_ndarray() {
-        eval_python_code_numpy("numpy.array([[0.0, 1.0], [2.0, 3.0]])", |py, x| {
+        eval_python_code_numpy("np.array([[0.0, 1.0], [2.0, 3.0]])", |py, x| {
             let value = PyObject::from(x).map_py(py, false).unwrap();
             assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
         });
@@ -510,16 +552,13 @@ mod tests {
 
     #[test]
     fn vector3_from_ndarray() {
-        eval_python_code_numpy(
-            "numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])",
-            |py, x| {
-                let value = PyObject::from(x).map_py(py, false).unwrap();
-                assert_eq!(
-                    VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
-                    value
-                );
-            },
-        );
+        eval_python_code_numpy("np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])", |py, x| {
+            let value = PyObject::from(x).map_py(py, false).unwrap();
+            assert_eq!(
+                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
+                value
+            );
+        });
     }
 
     #[test]
@@ -547,7 +586,7 @@ mod tests {
     #[test]
     fn vector4_from_ndarray() {
         eval_python_code_numpy(
-            "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
+            "np.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
             |py, x| {
                 let value = PyObject::from(x).map_py(py, false).unwrap();
                 assert_eq!(
@@ -571,7 +610,7 @@ mod tests {
     #[should_panic]
     fn vector_from_5x5_ndarray() {
         // Vector5 is not a valid variant.
-        eval_python_code_numpy("numpy.zeros((5,5))", |py, x| {
+        eval_python_code_numpy("np.zeros((5,5))", |py, x| {
             let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
@@ -591,7 +630,7 @@ mod tests {
     #[should_panic]
     fn vector_from_empty_ndarray() {
         // TODO: How to infer the type when there are no elements?
-        eval_python_code_numpy("numpy.array()", |py, x| {
+        eval_python_code_numpy("np.array()", |py, x| {
             let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
         });
     }
@@ -631,8 +670,8 @@ mod tests {
     #[test]
     fn transform_points_ndarray() {
         run_python_code_numpy(indoc! {r#"
-            points = numpy.array([[1,2,3],[4,5,6]])
-            transform = numpy.array([
+            points = np.array([[1,2,3],[4,5,6]])
+            transform = np.array([
                 [1,0,0,0],
                 [0,1,0,0],
                 [0,0,1,0],
@@ -679,8 +718,8 @@ mod tests {
     #[test]
     fn transform_vectors_ndarray() {
         run_python_code_numpy(indoc! {r#"
-            points = numpy.array([[1,2,3],[4,5,6]])
-            transform = numpy.array([
+            points = np.array([[1,2,3],[4,5,6]])
+            transform = np.array([
                 [1,0,0,0],
                 [0,1,0,0],
                 [0,0,1,0],
@@ -711,7 +750,7 @@ mod tests {
     #[test]
     fn calculate_smooth_normals_ndarray() {
         run_python_code_numpy(indoc! {r#"
-            ssbh_data_py.mesh_data.calculate_smooth_normals(numpy.zeros((12,4)), numpy.arange(12))
+            ssbh_data_py.mesh_data.calculate_smooth_normals(np.zeros((12,4)), np.arange(12))
         "#})
         .unwrap();
     }
@@ -735,7 +774,7 @@ mod tests {
     #[test]
     fn calculate_tangents_vec4_ndarray() {
         run_python_code_numpy(indoc! {r#"
-            ssbh_data_py.mesh_data.calculate_tangents_vec4(numpy.zeros((12,4)), numpy.zeros((12,4)), numpy.zeros((12,2)), numpy.arange(12))
+            ssbh_data_py.mesh_data.calculate_tangents_vec4(np.zeros((12,4)), np.zeros((12,4)), np.zeros((12,2)), np.arange(12))
         "#})
         .unwrap();
     }

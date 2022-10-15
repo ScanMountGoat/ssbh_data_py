@@ -94,13 +94,13 @@ macro_rules! python_enum {
             }
         }
 
-        impl crate::PyTypeString for $ty_py {
+        impl $crate::PyTypeString for $ty_py {
             fn py_type_string() -> String {
                 stringify!($ty_py).to_string()
             }
         }
 
-        impl crate::PyRepr for $ty_py {
+        impl $crate::PyRepr for $ty_py {
             fn py_repr(&self) -> String {
                 // Match the behavior of Python's Enum class.
                 format!("<{}.{}: {}>", stringify!($ty_py), self.name, self.value)
@@ -131,7 +131,7 @@ fn run_python_code_numpy(code: &str) -> PyResult<()> {
         // This may require some configuration to run tests with github actions.
         let ctx = [
             ("ssbh_data_py", module),
-            ("numpy", PyModule::import(py, "numpy").unwrap()),
+            ("np", PyModule::import(py, "numpy").unwrap()),
         ]
         .into_py_dict(py);
 
@@ -163,7 +163,7 @@ fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
         // This may require some configuration to run tests with github actions.
         let ctx = [
             ("ssbh_data_py", module),
-            ("numpy", PyModule::import(py, "numpy").unwrap()),
+            ("np", PyModule::import(py, "numpy").unwrap()),
         ]
         .into_py_dict(py);
 

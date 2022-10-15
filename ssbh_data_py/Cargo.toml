@@ -9,6 +9,7 @@ ssbh_data = { version = "0.15.0", features=["strum"] }
 pyo3 = { version = "0.17.2", features = ["extension-module"] }
 numpy = "0.17.2"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
+num-traits = "0.2.15"
 
 [lib]
 name = "ssbh_data_py"

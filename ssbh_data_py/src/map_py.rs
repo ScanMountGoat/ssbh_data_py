@@ -1,4 +1,6 @@
 use crate::create_py_list_from_slice;
+use num_traits::AsPrimitive;
+use numpy::{ndarray::Dim, PyArray, PyArray2};
 use pyo3::{prelude::*, types::PyList};
 
 // Define a mapping between types.
@@ -82,7 +84,36 @@ macro_rules! map_py_pyobject_impl {
 }
 
 // TODO: Derive this?
-map_py_pyobject_impl!([[f32; 4]; 4]);
+// TODO: Add an option to use numpy for this.
+// TODO: Create helper functions for this conversion.
+fn mat4x4<T: AsPrimitive<f32> + numpy::Element>(
+    arr: &PyArray<T, Dim<[usize; 2]>>,
+) -> [[f32; 4]; 4] {
+    // Use AsPrimitive to allow truncating types like f64.
+    // TODO: Is there a cleaner way of doing this?
+    // TODO: Check the length.
+    let a = arr.readonly();
+    let a = a.as_slice().unwrap();
+    [
+        [a[0].as_(), a[1].as_(), a[2].as_(), a[3].as_()],
+        [a[4].as_(), a[5].as_(), a[6].as_(), a[7].as_()],
+        [a[8].as_(), a[9].as_(), a[10].as_(), a[11].as_()],
+        [a[12].as_(), a[13].as_(), a[14].as_(), a[15].as_()],
+    ]
+}
+
+// map_py_pyobject_impl!([[f32; 4]; 4]);
+impl MapPy<[[f32; 4]; 4]> for PyObject {
+    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<[[f32; 4]; 4]> {
+        self.extract::<[[f32; 4]; 4]>(py)
+            .or_else(|_| self.extract::<&PyArray2<f32>>(py).map(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<f64>>(py).map(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i8>>(py).map(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i16>>(py).map(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i32>>(py).map(mat4x4))
+    }
+}
+
 impl MapPy<PyObject> for [[f32; 4]; 4] {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         Ok(create_py_list_from_slice(py, self).into())
