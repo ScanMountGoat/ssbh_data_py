@@ -28,10 +28,11 @@ The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for P
 
 ## Getting Started
 Each supported SSBH type has an associated data struct that can be created reading from a file.
+Some files like meshes support reading the data as numpy arrays. Enabling numpy support in the read functions substantially reduces the overhead of converting the file data to Python. This requires the `numpy` package to be installed in the current Python environment when enabled.
 ```python
 import ssbh_data_py
 
-mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
+mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb", use_numpy=True)
 modl = ssbh_data_py.modl_data.read_modl("model.numdlb")
 skel = ssbh_data_py.skel_data.read_skel("model.nusktb")
 ```
@@ -61,8 +62,22 @@ for bone in skel.bones:
 # ssbh_data_py found an unexpected type, so this line will fail.
 skel.save("skel.nustkb")
 ```
+Numpy's `ndarray` type is supported for fields and arguments that expect matrices or lists of floats or integers.
+```python
+import numpy as np
 
-After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms.
+# Assign the identity transform to each bone.
+for bone in skel.bones:
+    bone.transform = np.eye((4))
+
+# Convert the positions to a numpy array.
+# Ideally the data should already be a numpy array to avoid conversion costs.
+# Converting lists to numpy arrays before saving may or may not improve performance.
+for o in mesh.objects:
+    o.positions[0].data = np.array(o.positions[0].data)
+```
+
+After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms. Numpy arrays will be converted automatically if present. Using numpy arrays will reduce export time especially for larger lists like mesh vertex attributes.
 ```python
 mesh.save("model_new.numshb")
 modl.save("model_new.numdlb")
