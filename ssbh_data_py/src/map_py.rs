@@ -1,7 +1,7 @@
 use crate::create_py_list_from_slice;
 use num_traits::AsPrimitive;
 use numpy::{ndarray::Dim, PyArray, PyArray2};
-use pyo3::{prelude::*, types::PyList};
+use pyo3::{exceptions::PyValueError, prelude::*, types::PyList};
 
 // Define a mapping between types.
 // This allows for deriving the Python <-> Rust conversion.
@@ -83,34 +83,36 @@ macro_rules! map_py_pyobject_impl {
     }
 }
 
-// TODO: Derive this?
-// TODO: Add an option to use numpy for this.
-// TODO: Create helper functions for this conversion.
 fn mat4x4<T: AsPrimitive<f32> + numpy::Element>(
     arr: &PyArray<T, Dim<[usize; 2]>>,
-) -> [[f32; 4]; 4] {
-    // Use AsPrimitive to allow truncating types like f64.
-    // TODO: Is there a cleaner way of doing this?
-    // TODO: Check the length.
+) -> PyResult<[[f32; 4]; 4]> {
     let a = arr.readonly();
-    let a = a.as_slice().unwrap();
-    [
-        [a[0].as_(), a[1].as_(), a[2].as_(), a[3].as_()],
-        [a[4].as_(), a[5].as_(), a[6].as_(), a[7].as_()],
-        [a[8].as_(), a[9].as_(), a[10].as_(), a[11].as_()],
-        [a[12].as_(), a[13].as_(), a[14].as_(), a[15].as_()],
-    ]
+    if let [4, 4] = a.shape() {
+        let a = a.as_slice().unwrap();
+        // Use AsPrimitive to allow truncating types like f64.
+        // TODO: Is there a cleaner way of doing this?
+        Ok([
+            [a[0].as_(), a[1].as_(), a[2].as_(), a[3].as_()],
+            [a[4].as_(), a[5].as_(), a[6].as_(), a[7].as_()],
+            [a[8].as_(), a[9].as_(), a[10].as_(), a[11].as_()],
+            [a[12].as_(), a[13].as_(), a[14].as_(), a[15].as_()],
+        ])
+    } else {
+        Err(PyValueError::new_err(format!(
+            "Expected shape [4, 4] but found {:?}",
+            a.shape()
+        )))
+    }
 }
 
-// map_py_pyobject_impl!([[f32; 4]; 4]);
 impl MapPy<[[f32; 4]; 4]> for PyObject {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<[[f32; 4]; 4]> {
         self.extract::<[[f32; 4]; 4]>(py)
-            .or_else(|_| self.extract::<&PyArray2<f32>>(py).map(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<f64>>(py).map(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i8>>(py).map(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i16>>(py).map(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i32>>(py).map(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(mat4x4))
+            .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(mat4x4))
     }
 }
 
@@ -200,7 +202,7 @@ impl MapPy<Py<PyList>> for ssbh_data::Vector3 {
 mod tests {
     use pyo3::PyObject;
 
-    use crate::{eval_python_code, MapPy};
+    use crate::{eval_python_code, eval_python_code_numpy, MapPy};
 
     #[test]
     fn map_integers() {
@@ -208,6 +210,22 @@ mod tests {
         eval_python_code("1", |py, x| {
             assert_eq!(1u32, PyObject::from(x).map_py(py, true).unwrap());
             assert_eq!(1u32, PyObject::from(x).map_py(py, false).unwrap());
+        });
+    }
+
+    #[test]
+    fn map_mat4x4_ndarray() {
+        eval_python_code_numpy("np.eye(4)", |py, x| {
+            let a: [[f32; 4]; 4] = PyObject::from(x).map_py(py, false).unwrap();
+            assert_eq!(
+                [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0]
+                ],
+                a
+            );
         });
     }
 

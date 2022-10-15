@@ -7,6 +7,7 @@ use numpy::ndarray::Dim;
 use numpy::IntoPyArray;
 use numpy::PyArray;
 use numpy::PyArray2;
+use pyo3::exceptions::PyValueError;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -239,38 +240,40 @@ impl MapPy<PyObject> for VectorDataRs {
     }
 }
 
-// TODO: Add a module for these conversions?
 fn vector_data<T: AsPrimitive<f32> + numpy::Element>(
     arr: &PyArray<T, Dim<[usize; 2]>>,
-) -> VectorDataRs {
+) -> PyResult<VectorDataRs> {
     // Use AsPrimitive to allow truncating types like f64.
     // TODO: Avoid unwrap?
     match arr.dims()[1] {
-        2 => VectorDataRs::Vector2(
+        2 => Ok(VectorDataRs::Vector2(
             arr.readonly()
                 .as_slice()
                 .unwrap()
                 .chunks_exact(2)
                 .map(|v| [v[0].as_(), v[1].as_()])
                 .collect(),
-        ),
-        3 => VectorDataRs::Vector3(
+        )),
+        3 => Ok(VectorDataRs::Vector3(
             arr.readonly()
                 .as_slice()
                 .unwrap()
                 .chunks_exact(3)
                 .map(|v| [v[0].as_(), v[1].as_(), v[2].as_()])
                 .collect(),
-        ),
-        4 => VectorDataRs::Vector4(
+        )),
+        4 => Ok(VectorDataRs::Vector4(
             arr.readonly()
                 .as_slice()
                 .unwrap()
                 .chunks_exact(4)
                 .map(|v| [v[0].as_(), v[1].as_(), v[2].as_(), v[3].as_()])
                 .collect(),
-        ),
-        _ => todo!(),
+        )),
+        _ => Err(PyValueError::new_err(format!(
+            "Cannot create VectorData from an array of shape {:?}.",
+            arr.shape()
+        ))),
     }
 }
 
@@ -283,11 +286,11 @@ impl MapPy<VectorDataRs> for PyObject {
             .map(VectorDataRs::Vector2)
             .or_else(|_| self.extract::<Vec<[f32; 3]>>(py).map(VectorDataRs::Vector3))
             .or_else(|_| self.extract::<Vec<[f32; 4]>>(py).map(VectorDataRs::Vector4))
-            .or_else(|_| self.extract::<&PyArray2<f32>>(py).map(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<f64>>(py).map(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i8>>(py).map(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i16>>(py).map(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i32>>(py).map(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(vector_data))
+            .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(vector_data))
     }
 }
 
