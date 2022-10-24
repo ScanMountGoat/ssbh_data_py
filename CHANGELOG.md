@@ -9,8 +9,8 @@ Changes:
 
 Breaking Changes:
 - Renamed `ssbh_data_py.MeshExError` to `ssbh_data_py.MeshExDataError`
-- Renamed `ssbh_data_py.mesh_data.MeshObjectData.subindex` to `ssbh_data_py.mesh_data.MeshObjectData.subindex`
-- Renamed `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex` to `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex`
+- Renamed `ssbh_data_py.mesh_data.MeshObjectData.sub_index` to `ssbh_data_py.mesh_data.MeshObjectData.subindex`
+- Renamed `ssbh_data_py.modl_data.ModlEntryData.mesh_object_sub_index` to `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex`
 - Adjusted matrices to use column-major order instead of row-major order.
 - Renamed enum variant `ssbh_data_py.matl_data.CullMode.None` to `ssbh_data_py.matl_data.CullMode.Disabled`.
 
