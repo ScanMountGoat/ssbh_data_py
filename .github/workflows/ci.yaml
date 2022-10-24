@@ -51,12 +51,12 @@ jobs:
       
       - name: Build wheel
         if: matrix.custom-target == 'false'
-        run: maturin build --release --no-sdist --strip --interpreter python${{matrix.python_version}}
+        run: maturin build --release --strip --interpreter python${{matrix.python_version}}
         working-directory: ${{env.working-directory}}
 
       - name: Build wheel
         if: matrix.custom-target == 'true'
-        run: maturin build --release --no-sdist --strip --interpreter python${{matrix.python_version}} --target ${{matrix.target}}
+        run: maturin build --release --strip --interpreter python${{matrix.python_version}} --target ${{matrix.target}}
         working-directory: ${{env.working-directory}}
 
       - name: Release
