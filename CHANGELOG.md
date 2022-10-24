@@ -1,4 +1,4 @@
-### 0.7.0
+### 0.7.1
 Changes:
 - Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
 - Improved export times when using numpy arrays for mesh attribute data.
