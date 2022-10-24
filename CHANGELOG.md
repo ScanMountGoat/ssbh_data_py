@@ -1,14 +1,7 @@
-### unreleased
-Changes:
-- Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
-
-Breaking Changes:
-- Renamed `ssbh_data_py.mesh_data.MeshObjectData.subindex` to `ssbh_data_py.mesh_data.MeshObjectData.subindex`
-- Renamed `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex` to `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex`
-- Adjusted matrices to use column-major order instead of row-major order.
-
 ### 0.7.0
 Changes:
+- Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
+- Improved export times when using numpy arrays for mesh attribute data.
 - Fixed comparison operators not working as expected for enum types. Enum variants are equal if their `value` field is equal.
 - Fixed an issue where error types couldn't be matched on in in exception handling like `except ssbh_data_py.MeshDataError as e:`.
 - Added field `ssbh_data_py.skel_data.BoneData.billboard_type` of type `BillboardType`.
@@ -16,6 +9,10 @@ Changes:
 
 Breaking Changes:
 - Renamed `ssbh_data_py.MeshExError` to `ssbh_data_py.MeshExDataError`
+- Renamed `ssbh_data_py.mesh_data.MeshObjectData.subindex` to `ssbh_data_py.mesh_data.MeshObjectData.subindex`
+- Renamed `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex` to `ssbh_data_py.modl_data.ModlEntryData.mesh_object_subindex`
+- Adjusted matrices to use column-major order instead of row-major order.
+- Renamed enum variant `ssbh_data_py.matl_data.CullMode.None` to `ssbh_data_py.matl_data.CullMode.Disabled`.
 
 ### 0.6.2
 Changes:
