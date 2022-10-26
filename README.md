@@ -1,4 +1,4 @@
-# ssbh_data_py ![PyPI](https://img.shields.io/pypi/v/ssbh_data_py)
+# ssbh_data_py [![PyPI](https://img.shields.io/pypi/v/ssbh_data_py)](https://pypi.org/project/ssbh-data-py/)
 Python bindings to the [ssbh_data](https://github.com/ultimate-research/ssbh_lib) Rust library. ssbh_data_py provides a higher level abstraction over 
 the binary data stored in SSBH files such as a "model.numshb". SSBH files can be created from scratch or modified from existing files entirely in Python.  
 
