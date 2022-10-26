@@ -24,7 +24,7 @@ Updating: `pip install ssbh_data_py --upgrade`
 The minimum supported pip version is 20.3. 
 
 ## Requirements
-The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, and 3.9 for the latest versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9. For other Python versions, build ssbh_data_py from source. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, 3.9, and 3.10 for the latest versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9. For other Python versions, build ssbh_data_py from source. The supported Linux distributions are Debian 11+, Fedora 34+, Mageia 8+, Photon OS 3.0 with updates, and Ubuntu 21.04+. See the [manylinux](https://github.com/pypa/manylinux) repo under the `many_linux_x_y` section for details on supported Linux distributions.
 
 ## Getting Started
 Each supported SSBH type has an associated data struct that can be created reading from a file.
