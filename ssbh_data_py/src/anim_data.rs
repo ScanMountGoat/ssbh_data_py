@@ -94,7 +94,7 @@ pub struct TrackData {
     pub values: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "ScaleOptions { inherit_scale: false, compensate_scale: false}")]
+    #[pyinit(default = "ScaleOptions { inherit_scale: true, compensate_scale: false}")]
     #[pyi(default = "ScaleOptions()")]
     pub scale_options: ScaleOptions,
 
@@ -112,8 +112,8 @@ pub struct TrackData {
 #[pyrepr("ssbh_data_py.anim_data")]
 pub struct ScaleOptions {
     #[pyo3(get, set)]
-    #[pyinit(default = "false")]
-    #[pyi(default = "False")]
+    #[pyinit(default = "true")]
+    #[pyi(default = "True")]
     pub inherit_scale: bool,
 
     #[pyo3(get, set)]
@@ -347,9 +347,7 @@ mod tests {
             a = ssbh_data_py.anim_data.TrackData('abc')
             assert a.name == 'abc'
             assert a.values == []
-            assert a.scale_options.inherit_scale == False
-            assert a.scale_options.compensate_scale == False
-            assert a.scale_options.inherit_scale == False
+            assert a.scale_options.inherit_scale == True
             assert a.scale_options.compensate_scale == False
         "#})
         .unwrap();
@@ -359,7 +357,7 @@ mod tests {
     fn create_scale_options() {
         run_python_code(indoc! {r#"
             o = ssbh_data_py.anim_data.ScaleOptions()
-            assert o.inherit_scale == False
+            assert o.inherit_scale == True
             assert o.compensate_scale == False
         "#})
         .unwrap();

@@ -82,7 +82,7 @@ class ScaleOptions:
 
     def __init__(
         self,
-        inherit_scale: bool = False,
+        inherit_scale: bool = True,
         compensate_scale: bool = False
     ) -> None: ...
 
