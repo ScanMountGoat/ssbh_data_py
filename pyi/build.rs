@@ -120,6 +120,7 @@ fn main() {
             ScaleOptions::pyi(),
             Transform::pyi(),
             UvTransform::pyi(),
+            TransformFlags::pyi(),
         ],
     );
 
