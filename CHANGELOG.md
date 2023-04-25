@@ -1,3 +1,12 @@
+### unreleased
+Changes:
+- Added field `ssbh_data_py.anim_data.TransformFlags.override_compensate_scale`
+
+Breaking Changes:
+- Removed `ssbh_data_py.anim_data.ScaleOptions`
+- Moved field `ssbh_data_py.anim_data.ScaleOptions.compensate_scale` to `ssbh_data_py.anim_data.TrackData.compensate_scale`
+- Changed the type of `ssbh_data_py.meshex_data.MeshObjectGroupData.bounding_sphere` to `ssbh_data_py.meshex_data.BoundingSphere`
+
 ### 0.7.1
 Changes:
 - Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
