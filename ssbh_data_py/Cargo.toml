@@ -6,8 +6,8 @@ edition = "2021"
 
 [dependencies]
 ssbh_data = { version = "0.16.0", features=["strum"] }
-pyo3 = { version = "0.17.2", features = ["extension-module"] }
-numpy = "0.17.2"
+pyo3 = { version = "0.18.3", features = ["extension-module"] }
+numpy = "0.18.0"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
 num-traits = "0.2.15"
 

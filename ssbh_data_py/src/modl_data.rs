@@ -52,7 +52,7 @@ pub struct ModlData {
 #[pymethods]
 impl ModlData {
     #[new]
-    #[args(major_version = 1, minor_version = 7)]
+    #[pyo3(signature = (major_version = 1, minor_version = 7))]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(ModlData {
             major_version,

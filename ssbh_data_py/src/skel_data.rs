@@ -82,7 +82,7 @@ impl PyiMethods for SkelData {
 #[pymethods]
 impl SkelData {
     #[new]
-    #[args(major_version = 1, minor_version = 0)]
+    #[pyo3(signature = (major_version = 1, minor_version = 0))]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(SkelData {
             major_version,

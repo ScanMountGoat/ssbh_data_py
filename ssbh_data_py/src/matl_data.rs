@@ -61,7 +61,7 @@ pub struct MatlData {
 #[pymethods]
 impl MatlData {
     #[new]
-    #[args(major_version = 1, minor_version = 6)]
+    #[pyo3(signature = (major_version = 1, minor_version = 6))]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(MatlData {
             major_version,

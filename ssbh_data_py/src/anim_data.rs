@@ -134,7 +134,7 @@ pub struct TransformFlags {
 #[pymethods]
 impl AnimData {
     #[new]
-    #[args(major_version = 2, minor_version = 0)]
+    #[pyo3(signature = (major_version = 2, minor_version = 0))]
     fn new(py: Python, major_version: u16, minor_version: u16) -> PyResult<Self> {
         Ok(Self {
             major_version,
