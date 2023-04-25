@@ -117,7 +117,6 @@ fn main() {
             GroupType::pyi(),
             NodeData::pyi(),
             TrackData::pyi(),
-            ScaleOptions::pyi(),
             Transform::pyi(),
             UvTransform::pyi(),
             TransformFlags::pyi(),

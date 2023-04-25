@@ -18,7 +18,6 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     anim_data.add_class::<Transform>()?;
     anim_data.add_class::<UvTransform>()?;
     anim_data.add_class::<GroupType>()?;
-    anim_data.add_class::<ScaleOptions>()?;
     anim_data.add_class::<TransformFlags>()?;
 
     anim_data.add_function(wrap_pyfunction!(read_anim, anim_data)?)?;
@@ -83,43 +82,27 @@ pub struct TrackData {
     #[pyo3(get, set)]
     pub name: String,
 
+    #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
+    pub compensate_scale: bool,
+
+    #[pyo3(get, set)]
+    #[pyinit(
+        default = "TransformFlags { override_translation: false, override_rotation: false, override_scale: false, override_compensate_scale: false}"
+    )]
+    #[pyi(default = "TransformFlags()")]
+    pub transform_flags: TransformFlags,
+
     // TODO: Does it make sense to use numpy here?
     #[pyo3(get, set)]
     #[pyinit(default = "PyList::empty(py).into()")]
     #[pyi(
         default = "[]",
         python_type = "Union[list[UvTransform], list[Transform],
-                  list[float], list[bool], list[int], list[list[float]]]"
+                      list[float], list[bool], list[int], list[list[float]]]"
     )]
     pub values: Py<PyList>,
-
-    #[pyo3(get, set)]
-    #[pyinit(default = "ScaleOptions { inherit_scale: true, compensate_scale: false}")]
-    #[pyi(default = "ScaleOptions()")]
-    pub scale_options: ScaleOptions,
-
-    #[pyo3(get, set)]
-    #[pyinit(
-        default = "TransformFlags { override_translation: false, override_rotation: false, override_scale: false,}"
-    )]
-    #[pyi(default = "TransformFlags()")]
-    pub transform_flags: TransformFlags,
-}
-
-#[pyclass(module = "ssbh_data_py.anim_data")]
-#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
-#[map(ssbh_data::anim_data::ScaleOptions)]
-#[pyrepr("ssbh_data_py.anim_data")]
-pub struct ScaleOptions {
-    #[pyo3(get, set)]
-    #[pyinit(default = "true")]
-    #[pyi(default = "True")]
-    pub inherit_scale: bool,
-
-    #[pyo3(get, set)]
-    #[pyinit(default = "false")]
-    #[pyi(default = "False")]
-    pub compensate_scale: bool,
 }
 
 #[pyclass(module = "ssbh_data_py.anim_data")]
@@ -141,6 +124,11 @@ pub struct TransformFlags {
     #[pyinit(default = "false")]
     #[pyi(default = "False")]
     pub override_scale: bool,
+
+    #[pyo3(get, set)]
+    #[pyinit(default = "false")]
+    #[pyi(default = "False")]
+    pub override_compensate_scale: bool,
 }
 
 #[pymethods]
@@ -347,18 +335,7 @@ mod tests {
             a = ssbh_data_py.anim_data.TrackData('abc')
             assert a.name == 'abc'
             assert a.values == []
-            assert a.scale_options.inherit_scale == True
-            assert a.scale_options.compensate_scale == False
-        "#})
-        .unwrap();
-    }
-
-    #[test]
-    fn create_scale_options() {
-        run_python_code(indoc! {r#"
-            o = ssbh_data_py.anim_data.ScaleOptions()
-            assert o.inherit_scale == True
-            assert o.compensate_scale == False
+            assert a.compensate_scale == False
         "#})
         .unwrap();
     }
@@ -370,6 +347,7 @@ mod tests {
             assert f.override_translation == False
             assert f.override_rotation == False
             assert f.override_scale == False
+            assert f.override_compensate_scale == False
         "#})
         .unwrap();
     }

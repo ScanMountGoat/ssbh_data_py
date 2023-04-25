@@ -5,7 +5,7 @@ authors = ["ScanMountGoat"]
 edition = "2021"
 
 [dependencies]
-ssbh_data = { version = "0.15.0", features=["strum"] }
+ssbh_data = { version = "0.16.0", features=["strum"] }
 pyo3 = { version = "0.17.2", features = ["extension-module"] }
 numpy = "0.17.2"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
@@ -20,6 +20,6 @@ indoc = "1.0"
 strum = "0.24.1"
 
 [build-dependencies]
-ssbh_data = { version = "0.15.0", features=["strum"] }
+ssbh_data = { version = "0.16.0", features=["strum"] }
 strum = "0.24.1"
 indoc = "1.0"

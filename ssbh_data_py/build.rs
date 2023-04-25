@@ -7,9 +7,17 @@ use ssbh_data::skel_data::BillboardType;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use strum::VariantNames;
 
-fn write_enum_pymethods<W: Write>(w: &mut W, class_name: &str, enum_path: &str, variants: &[&str]) {
+fn variants<T: strum::IntoEnumIterator + std::fmt::Display>() -> Vec<String> {
+    T::iter().map(|v| v.to_string()).collect()
+}
+
+fn write_enum_pymethods<W: Write>(
+    w: &mut W,
+    class_name: &str,
+    enum_path: &str,
+    variants: &[String],
+) {
     writeln!(w, "#[pymethods]").unwrap();
     writeln!(w, "impl {} {{", class_name).unwrap();
 
@@ -97,31 +105,31 @@ fn main() {
         "src/matl_data/enums.rs",
         "ssbh_data::matl_data",
         &[
-            ("ParamId", ParamId::VARIANTS),
-            ("BlendFactor", BlendFactor::VARIANTS),
-            ("FillMode", FillMode::VARIANTS),
-            ("CullMode", CullMode::VARIANTS),
-            ("WrapMode", WrapMode::VARIANTS),
-            ("MinFilter", MinFilter::VARIANTS),
-            ("MagFilter", MagFilter::VARIANTS),
-            ("MaxAnisotropy", MaxAnisotropy::VARIANTS),
+            ("ParamId", variants::<ParamId>()),
+            ("BlendFactor", variants::<BlendFactor>()),
+            ("FillMode", variants::<FillMode>()),
+            ("CullMode", variants::<CullMode>()),
+            ("WrapMode", variants::<WrapMode>()),
+            ("MinFilter", variants::<MinFilter>()),
+            ("MagFilter", variants::<MagFilter>()),
+            ("MaxAnisotropy", variants::<MaxAnisotropy>()),
         ],
     );
 
     generate_enum_file(
         "src/anim_data/enums.rs",
         "ssbh_data::anim_data",
-        &[("GroupType", GroupType::VARIANTS)],
+        &[("GroupType", variants::<GroupType>())],
     );
 
     generate_enum_file(
         "src/skel_data/enums.rs",
         "ssbh_data::skel_data",
-        &[("BillboardType", BillboardType::VARIANTS)],
+        &[("BillboardType", variants::<BillboardType>())],
     );
 }
 
-fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, &[&str])]) {
+fn generate_enum_file(file_path: &str, enum_path: &str, enums: &[(&str, Vec<String>)]) {
     // Make sure the folder exists first.
     let file_path = Path::new(file_path);
     std::fs::create_dir_all(file_path.parent().unwrap()).unwrap();

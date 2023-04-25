@@ -11,6 +11,7 @@ pub fn meshex_data(py: Python, module: &PyModule) -> PyResult<()> {
     let meshex_data = PyModule::new(py, "meshex_data")?;
     meshex_data.add_class::<MeshExData>()?;
     meshex_data.add_class::<MeshObjectGroupData>()?;
+    meshex_data.add_class::<BoundingSphere>()?;
     meshex_data.add_function(wrap_pyfunction!(read_meshex, meshex_data)?)?;
 
     module.add_submodule(meshex_data)?;
@@ -80,8 +81,7 @@ impl PyiMethods for MeshExData {
 #[pyrepr("ssbh_data_py.meshex_data")]
 pub struct MeshObjectGroupData {
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[float]")]
-    pub bounding_sphere: Py<PyList>,
+    pub bounding_sphere: BoundingSphere,
 
     #[pyo3(get, set)]
     pub mesh_object_name: String,
@@ -104,6 +104,19 @@ pub struct EntryFlags {
 
     #[pyo3(get, set)]
     pub cast_shadow: bool,
+}
+
+#[pyclass(module = "ssbh_data_py.meshex_data")]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
+#[map(ssbh_data::meshex_data::BoundingSphere)]
+#[pyrepr("ssbh_data_py.meshex_data")]
+pub struct BoundingSphere {
+    #[pyo3(get, set)]
+    #[pyi(python_type = "list[float]")]
+    pub center: Py<PyList>,
+
+    #[pyo3(get, set)]
+    pub radius: f32,
 }
 
 #[pyfunction]
@@ -142,8 +155,10 @@ mod tests {
     #[test]
     fn create_mesh_object_group() {
         run_python_code(indoc! {r#"
-            m = ssbh_data_py.meshex_data.MeshObjectGroupData([1, 2, 3, 4], "a", "a_VIS", [])
-            assert m.bounding_sphere == [1.0, 2.0, 3.0, 4.0]
+            sphere = ssbh_data_py.meshex_data.BoundingSphere([1, 2, 3], 4)
+            m = ssbh_data_py.meshex_data.MeshObjectGroupData(sphere, "a", "a_VIS", [])
+            assert m.bounding_sphere.center == [1.0, 2.0, 3.0]
+            assert m.bounding_sphere.radius == 4.0
             assert m.mesh_object_name == "a"
             assert m.mesh_object_full_name == "a_VIS"
             assert m.entry_flags == []
