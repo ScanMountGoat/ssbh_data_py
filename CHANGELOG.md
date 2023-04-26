@@ -1,4 +1,4 @@
-### unreleased
+### 0.8.0
 Changes:
 - Added field `ssbh_data_py.anim_data.TransformFlags.override_compensate_scale`
 
