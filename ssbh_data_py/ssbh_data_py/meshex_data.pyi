@@ -41,3 +41,14 @@ class EntryFlags:
         draw_model: bool,
         cast_shadow: bool
     ) -> None: ...
+
+
+class BoundingSphere:
+    center: list[float]
+    radius: float
+
+    def __init__(
+        self,
+        center: list[float],
+        radius: float
+    ) -> None: ...

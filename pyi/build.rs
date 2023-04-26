@@ -136,6 +136,7 @@ fn main() {
             MeshExData::pyi(),
             MeshObjectGroupData::pyi(),
             EntryFlags::pyi(),
+            BoundingSphere::pyi(),
         ],
     );
 
