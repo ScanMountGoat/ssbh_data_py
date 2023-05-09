@@ -1,3 +1,7 @@
+### 0.8.1
+Changes
+- Updated ssbh_data to fix an issue where some compressed anims would not import/export correctly.
+
 ### 0.8.0
 Changes:
 - Added field `ssbh_data_py.anim_data.TransformFlags.override_compensate_scale`
