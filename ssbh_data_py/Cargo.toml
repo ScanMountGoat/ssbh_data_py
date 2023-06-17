@@ -20,6 +20,7 @@ indoc = "1.0"
 strum = "0.24.1"
 
 [build-dependencies]
+pyo3-build-config = "0.18"
 ssbh_data = { version = "0.17.0", features=["strum"] }
 strum = "0.24.1"
 indoc = "1.0"

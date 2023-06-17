@@ -97,6 +97,8 @@ fn write_enum_pymethods<W: Write>(
 }
 
 fn main() {
+    pyo3_build_config::add_extension_module_link_args();
+
     // TODO: When will this be rerun?
     // println!("cargo:rerun-if-changed=src/matl_data.rs");
 
