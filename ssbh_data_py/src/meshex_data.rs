@@ -2,7 +2,6 @@ use crate::mesh_data::MeshObjectData;
 use crate::{MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
-use ssbh_data::SsbhData;
 use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 create_exception!(ssbh_data_py, MeshExDataError, pyo3::exceptions::PyException);

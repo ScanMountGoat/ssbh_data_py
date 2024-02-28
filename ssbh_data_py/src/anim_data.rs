@@ -2,7 +2,6 @@ use crate::{python_enum, MapPy, PyRepr, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
-use ssbh_data::SsbhData;
 use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 mod enums;

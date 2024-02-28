@@ -11,7 +11,6 @@ use pyo3::exceptions::PyValueError;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
-use ssbh_data::SsbhData;
 use ssbh_data_py_derive::MapPy;
 use ssbh_data_py_derive::PyInit;
 use ssbh_data_py_derive::PyRepr;
