@@ -1,7 +1,6 @@
-use crate::{MapPy, PyRepr, PyiMethods};
+use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
-use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
@@ -111,57 +110,4 @@ fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
     ssbh_data::modl_data::ModlData::from_file(path)
         .map_err(|e| ModlDataError::new_err(format!("{}", e)))?
         .map_py(py, false)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::run_python_code;
-    use indoc::indoc;
-
-    #[test]
-    fn read_modl() {
-        // Test exceptions.
-        run_python_code(indoc! {r#"
-            try:
-                ssbh_data_py.modl_data.read_modl("invalid")
-            except ssbh_data_py.ModlDataError as e:
-                assert True
-        "#})
-        .unwrap();
-    }
-
-    #[test]
-    fn create_modl() {
-        run_python_code(indoc! {r#"
-            m = ssbh_data_py.modl_data.ModlData(3, 4)
-            assert m.major_version == 3
-            assert m.minor_version == 4
-            assert m.model_name == ""
-            assert m.skeleton_file_name == ""
-            assert m.material_file_names == []
-            assert m.animation_file_name == None
-            assert m.mesh_file_name == ""
-            assert m.entries == []
-
-            m = ssbh_data_py.modl_data.ModlData(3)
-            assert m.major_version == 3
-            assert m.minor_version == 7
-
-            m = ssbh_data_py.modl_data.ModlData()
-            assert m.major_version == 1
-            assert m.minor_version == 7
-        "#})
-        .unwrap();
-    }
-
-    #[test]
-    fn create_modl_entry() {
-        run_python_code(indoc! {r#"
-            m = ssbh_data_py.modl_data.ModlEntryData("a", 7, "b")
-            assert m.mesh_object_name == "a"
-            assert m.mesh_object_subindex == 7
-            assert m.material_label == "b"
-        "#})
-        .unwrap();
-    }
 }

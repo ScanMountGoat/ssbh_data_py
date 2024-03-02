@@ -8,6 +8,11 @@ edition = "2021"
 pyo3 = { version = "0.20.3", features = ["extension-module"] }
 ssbh_data_py_types = { path = "../ssbh_data_py_types" }
 
+[dev-dependencies]
+indoc = "2.0"
+strum = "0.24.1"
+ssbh_data = { version = "0.18.0", features=["strum"] }
+
 [lib]
 name = "ssbh_data_py"
 crate-type = ["cdylib"]

@@ -332,6 +332,7 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         .collect();
 
     let expanded = quote! {
+        #[allow(clippy::too_many_arguments)]
         #[pymethods]
         impl #name {
             #[new]

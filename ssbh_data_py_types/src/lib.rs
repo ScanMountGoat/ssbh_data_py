@@ -1,7 +1,7 @@
-use pyo3::{prelude::*, types::PyList};
-
-#[cfg(test)]
-use pyo3::types::IntoPyDict;
+use pyo3::{
+    prelude::*,
+    types::{IntoPyDict, PyList},
+};
 
 // External crates won't depend on ssbh_data_py, so just make everything public for convenience.
 pub mod adj_data;
@@ -21,6 +21,7 @@ pub use map_py::*;
 
 mod repr;
 pub use repr::*;
+pub use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
 
 pub fn ssbh_data_py(py: Python, module: &PyModule) -> PyResult<()> {
     crate::adj_data::adj_data(py, module)?;
@@ -108,8 +109,7 @@ macro_rules! python_enum {
     };
 }
 
-#[cfg(test)]
-fn run_python_code(code: &str) -> PyResult<()> {
+pub fn run_python_code(code: &str) -> PyResult<()> {
     pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();
@@ -119,8 +119,7 @@ fn run_python_code(code: &str) -> PyResult<()> {
     })
 }
 
-#[cfg(test)]
-fn run_python_code_numpy(code: &str) -> PyResult<()> {
+pub fn run_python_code_numpy(code: &str) -> PyResult<()> {
     pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();
@@ -138,8 +137,7 @@ fn run_python_code_numpy(code: &str) -> PyResult<()> {
     })
 }
 
-#[cfg(test)]
-fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
+pub fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();
@@ -151,8 +149,7 @@ fn eval_python_code<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     })
 }
 
-#[cfg(test)]
-fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
+pub fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
     pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();
@@ -169,85 +166,4 @@ fn eval_python_code_numpy<F: Fn(Python, &PyAny)>(code: &str, f: F) {
         let result = py.eval(code, None, Some(ctx)).unwrap();
         f(py, result);
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use indoc::indoc;
-    use pyo3::create_exception;
-    use strum::{Display, FromRepr};
-
-    use super::*;
-
-    fn run_test_python(code: &str) -> PyResult<()> {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
-            let module = PyModule::new(py, "test_module").unwrap();
-            module.add_class::<TestEnumPy>().unwrap();
-            let ctx = [("test_module", module)].into_py_dict(py);
-            py.run(code, None, Some(ctx))
-        })
-    }
-
-    create_exception!(ssbh_data_py, TestError, pyo3::exceptions::PyException);
-
-    #[derive(Display, FromRepr, Clone, Copy)]
-    enum TestEnumRs {
-        A = 2,
-        B = 7,
-        C = 4,
-    }
-
-    python_enum!(TestEnumPy, TestEnumRs, TestError, "module_name");
-
-    #[pymethods]
-    impl TestEnumPy {
-        #[classattr]
-        #[pyo3(name = "A")]
-        fn a() -> TestEnumPy {
-            TestEnumRs::A.into()
-        }
-
-        #[classattr]
-        #[pyo3(name = "B")]
-        fn b() -> TestEnumPy {
-            TestEnumRs::B.into()
-        }
-
-        #[classattr]
-        #[pyo3(name = "C")]
-        fn c() -> TestEnumPy {
-            TestEnumRs::C.into()
-        }
-    }
-
-    #[test]
-    fn python_enum_conversions() {
-        let e: TestEnumPy = TestEnumRs::A.into();
-        assert_eq!("A", e.name);
-        assert_eq!(2, e.value);
-
-        let e: TestEnumPy = TestEnumRs::B.into();
-        assert_eq!("B", e.name);
-        assert_eq!(7, e.value);
-
-        let e: TestEnumPy = TestEnumRs::C.into();
-        assert_eq!("C", e.name);
-        assert_eq!(4, e.value);
-    }
-
-    #[test]
-    fn python_enum_name_value() {
-        run_test_python(indoc! {r#"
-            t = test_module.TestEnumPy.A
-            assert t.name == 'A' and t.value == 2
-
-            t = test_module.TestEnumPy.B
-            assert t.name == 'B' and t.value == 7
-
-            t = test_module.TestEnumPy.C
-            assert t.name == 'C' and t.value == 4
-        "#})
-        .unwrap();
-    }
 }
