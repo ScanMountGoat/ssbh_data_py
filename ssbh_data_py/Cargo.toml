@@ -5,7 +5,7 @@ authors = ["ScanMountGoat"]
 edition = "2021"
 
 [dependencies]
-pyo3 = { version = "0.20.3", features = ["extension-module"] }
+pyo3 = "0.20.3"
 ssbh_data_py_types = { path = "../ssbh_data_py_types" }
 
 [dev-dependencies]
@@ -15,7 +15,7 @@ ssbh_data = { version = "0.18.0", features=["strum"] }
 
 [lib]
 name = "ssbh_data_py"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
 pyo3-build-config = "0.20.3"
@@ -23,3 +23,7 @@ ssbh_data = { version = "0.18.0", features=["strum"] }
 ssbh_data_py_types = { path = "../ssbh_data_py_types" }
 strum = "0.24.1"
 indoc = "2.0"
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
