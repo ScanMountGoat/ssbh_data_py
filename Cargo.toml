@@ -1,3 +1,3 @@
 [workspace]
-members = ["ssbh_data_py", "ssbh_data_py_derive", "pyi"]
+members = ["ssbh_data_py", "ssbh_data_py_derive", "ssbh_data_py_types"]
 resolver = "2"
