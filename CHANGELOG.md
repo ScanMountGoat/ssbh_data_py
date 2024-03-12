@@ -1,3 +1,8 @@
+### 0.8.2
+Changes
+- Updated ssbh_data.
+- Added support for Python 3.11 and Python 3.12 for PyPi builds.
+
 ### 0.8.1
 Changes
 - Updated ssbh_data to fix an issue where some compressed anims would not import/export correctly.
