@@ -88,6 +88,6 @@ The Python API is best summarized by the type stub (.pyi) files, which can be fo
 ## Building
 Requires a recent version of Rust. The builds published to PyPi are built using [Maturin](https://github.com/PyO3/maturin). Aftering succesfully installing Maturin, running `maturin develop` or `maturin develop --release` will build and install the module into the current virtual environment. 
 
-`maturin build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Depending on the platform, it may be necessary to rename the file. See the [PyO3 builds page](https://pyo3.rs/v0.14.2/building_and_distribution.html#manual-builds) for details.
+`maturin build --release` builds the `ssbh_data_py` module that can be imported into Python. The resulting binary can only be used with the current Python version, processor type, and operating system. Rename the `.dll` to `.pyd` on Windows and the `.dylib` to `.so` on Linux or MacOS.
 
-If the import fails, check that the `.pyd`, `.so`, or `.dylib` file exists in the appropriate location. Importing may also fail if `ssbh_data_py` was built from source for an operating system or Python interpreter version that isn't compatible with the current Python environment.
+If the import fails, check that the `.pyd` or `.so` file exists in the appropriate location. Importing may also fail if `ssbh_data_py` was built from source for an operating system or Python interpreter version that isn't compatible with the current Python environment.
