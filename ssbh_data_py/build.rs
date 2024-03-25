@@ -57,6 +57,8 @@ fn main() {
             RasterizerStateParam::pyi(),
             SamplerParam::pyi(),
             TextureParam::pyi(),
+            UvTransformParam::pyi(),
+            ssbh_data_py_types::matl_data::UvTransform::pyi(),
             BlendStateData::pyi(),
             RasterizerStateData::pyi(),
             SamplerData::pyi(),
@@ -120,7 +122,7 @@ fn main() {
             NodeData::pyi(),
             TrackData::pyi(),
             Transform::pyi(),
-            UvTransform::pyi(),
+            ssbh_data_py_types::anim_data::UvTransform::pyi(),
             TransformFlags::pyi(),
         ],
     );

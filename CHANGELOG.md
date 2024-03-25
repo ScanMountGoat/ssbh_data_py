@@ -1,13 +1,22 @@
-### 0.8.2
+# Changelog
+
+## unreleased
+Changes
+- Added field `ssbh_data_py.matl_data.MatlEntryData.uv_transforms`.
+- Added type `ssbh_data_py.matl_data.UvTransformParam`.
+- Added type `ssbh_data_py.matl_data.UvTransform`.
+- Updated ssbh_data to add read and save support for version 1.5 for `ssbh_data_py.matl_data.MatlData`.
+
+## 0.8.2
 Changes
 - Updated ssbh_data.
 - Added support for Python 3.11 and Python 3.12 for PyPi builds.
 
-### 0.8.1
+## 0.8.1
 Changes
 - Updated ssbh_data to fix an issue where some compressed anims would not import/export correctly.
 
-### 0.8.0
+## 0.8.0
 Changes:
 - Added field `ssbh_data_py.anim_data.TransformFlags.override_compensate_scale`
 
@@ -16,7 +25,7 @@ Breaking Changes:
 - Moved field `ssbh_data_py.anim_data.ScaleOptions.compensate_scale` to `ssbh_data_py.anim_data.TrackData.compensate_scale`
 - Changed the type of `ssbh_data_py.meshex_data.MeshObjectGroupData.bounding_sphere` to `ssbh_data_py.meshex_data.BoundingSphere`
 
-### 0.7.1
+## 0.7.1
 Changes:
 - Added support for nuhlpb files with the `ssbh_data_py.hlpb_data` submodule.
 - Improved export times when using numpy arrays for mesh attribute data.
@@ -32,7 +41,7 @@ Breaking Changes:
 - Adjusted matrices to use column-major order instead of row-major order.
 - Renamed enum variant `ssbh_data_py.matl_data.CullMode.None` to `ssbh_data_py.matl_data.CullMode.Disabled`.
 
-### 0.6.2
+## 0.6.2
 Changes:
 - Added support for numshexb files with the `ssbh_data_py.meshex_data` submodule.
 - Improved type hints.
@@ -43,19 +52,19 @@ Breaking Changes:
 ssbh_data_py.mesh_data
 - Removed `ssbh_data_py.mesh_data.read_mesh_numpy`. Use `read_mesh(..., use_numpy=True)` instead.
 
-### 0.5.3
+## 0.5.3
 Changes:
 - Added `from_str` and `from_value` static methods to enum types.
 - Improved type hints.
 - Added `ssbh_data_py.mesh_data.read_mesh_numpy`. This is an experimental API and may change in future releases. 
 
-### 0.5.2
+## 0.5.2
 Changes:
 - Added support for numatb files with the `ssbh_data_py.matl_data` submodule.
 - Improved the printed output of ssbh_data_py classes when calling `repr()`, `str()`, or `print()`.
 - Removed support for Python 3.6.
 
-### 0.5.1
+## 0.5.1
 Changes:
 - Added the `sort_bias`, `disable_depth_write`, and `disable_depth_test` fields to to `MeshObjectData`. These default to `0`, `False`, and `False`.
 - Types will now display as being a member of their respective module rather than a member of "builtins" when debugging objects.
@@ -67,7 +76,7 @@ Breaking Changes:
 ssbh_data_py.anim_data
 - Moved the compensate_scale field to `TrackData`. This now applies to all frames in the track.
 
-### 0.4.0
+## 0.4.0
 Changes:
 - Fields and function parameters that used to only accept lists of floats or ints now accept sequences such as tuples or numpy arrays. For example, `bone.transform = numpy.zeros((4,4))`, `mesh_object_data.vertex_indices = numpy.arange(12)`, and `attribute_data.data = [(1,0,0), (0,1,0)]` now work as expected without requiring any conversions.
 - Improved the printed representation of `ssbh_data_py.anim_data.Transform` and `ssbh_data_py.anim_data.UvTransform`
@@ -81,16 +90,16 @@ ssbh_data_py.anim_data
 - Changed the expected type from float to integer for Transform.compensate_scale
 - Added the final_frame_index field to AnimData. This should be set to `frame_count - 1` or `0` for empty animations.
 
-### 0.3.4
+## 0.3.4
 Changes:
 - Added type stub files (.pyi). This enables type hints and autocompletion in supported IDEs.
 
-### 0.3.2
+## 0.3.2
 Changes:
 - Added read only anim support in `ssbh_data_py.anim_data`. Exporting is planned for a future release.  
 - Fixed import and export of version 1.8 and 1.9 mesh files. This mostly applies to games other than Smash Ultimate.  
 
-### 0.3.0
+## 0.3.0
 Breaking Changes:
 - Renamed `ssbh_data_py.mesh_data.Mesh` to `ssbh_data_py.mesh_data.MeshData` 
 - Removed `ssbh_data_py.skel_data.calculate_single_bind_transform`.  

@@ -30,6 +30,7 @@ class MatlEntryData:
     rasterizer_states: list[RasterizerStateParam]
     samplers: list[SamplerParam]
     textures: list[TextureParam]
+    uv_transforms: list[UvTransformParam]
 
     def __init__(
         self,
@@ -41,7 +42,8 @@ class MatlEntryData:
         vectors: list[Vector4Param] = [],
         rasterizer_states: list[RasterizerStateParam] = [],
         samplers: list[SamplerParam] = [],
-        textures: list[TextureParam] = []
+        textures: list[TextureParam] = [],
+        uv_transforms: list[UvTransformParam] = []
     ) -> None: ...
 
 
@@ -119,6 +121,34 @@ class TextureParam:
         self,
         param_id: ParamId,
         data: str,
+    ) -> None: ...
+
+
+class UvTransformParam:
+    param_id: ParamId
+    data: UvTransform
+
+    def __init__(
+        self,
+        param_id: ParamId,
+        data: UvTransform,
+    ) -> None: ...
+
+
+class UvTransform:
+    scale_u: float
+    scale_v: float
+    rotation: float
+    translate_u: float
+    translate_v: float
+
+    def __init__(
+        self,
+        scale_u: float,
+        scale_v: float,
+        rotation: float,
+        translate_u: float,
+        translate_v: float
     ) -> None: ...
 
 

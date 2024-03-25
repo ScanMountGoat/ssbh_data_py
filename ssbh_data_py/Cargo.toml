@@ -11,7 +11,7 @@ ssbh_data_py_types = { path = "../ssbh_data_py_types" }
 [dev-dependencies]
 indoc = "2.0"
 strum = "0.24.1"
-ssbh_data = { version = "0.18.0", features=["strum"] }
+ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", rev = "936808c", features=["strum"] }
 
 [lib]
 name = "ssbh_data_py"
@@ -19,7 +19,7 @@ crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
 pyo3-build-config = "0.20.3"
-ssbh_data = { version = "0.18.0", features=["strum"] }
+ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", rev = "936808c", features=["strum"] }
 ssbh_data_py_types = { path = "../ssbh_data_py_types" }
 strum = "0.24.1"
 indoc = "2.0"

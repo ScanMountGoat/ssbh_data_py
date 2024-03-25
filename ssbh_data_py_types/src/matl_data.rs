@@ -28,6 +28,8 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     matl_data.add_class::<RasterizerStateParam>()?;
     matl_data.add_class::<SamplerParam>()?;
     matl_data.add_class::<TextureParam>()?;
+    matl_data.add_class::<UvTransformParam>()?;
+    matl_data.add_class::<UvTransform>()?;
 
     matl_data.add_class::<RasterizerStateData>()?;
     matl_data.add_class::<SamplerData>()?;
@@ -133,6 +135,11 @@ pub struct MatlEntryData {
     #[pyinit(default = "PyList::empty(py).into()")]
     #[pyi(default = "[]", python_type = "list[TextureParam]")]
     pub textures: Py<PyList>,
+
+    #[pyo3(get, set)]
+    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyi(default = "[]", python_type = "list[UvTransformParam]")]
+    pub uv_transforms: Py<PyList>,
 }
 
 macro_rules! param_new_impl {
@@ -169,7 +176,8 @@ param_new_impl!(
     (Vector4Param, PyObject),
     (RasterizerStateParam, RasterizerStateData),
     (SamplerParam, SamplerData),
-    (TextureParam, String)
+    (TextureParam, String),
+    (UvTransformParam, UvTransform)
 );
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
@@ -262,6 +270,40 @@ pub struct TextureParam {
 
     #[pyo3(get, set)]
     pub data: String,
+}
+
+#[pyclass(module = "ssbh_data_py.matl_data")]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
+#[map(ssbh_data::matl_data::UvTransformParam)]
+#[pyrepr("ssbh_data_py.matl_data")]
+#[pyi(has_methods = true)]
+pub struct UvTransformParam {
+    #[pyo3(get, set)]
+    pub param_id: ParamId,
+
+    #[pyo3(get, set)]
+    pub data: UvTransform,
+}
+
+#[pyclass(module = "ssbh_data_py.matl_data")]
+#[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
+#[map(ssbh_data::matl_data::UvTransform)]
+#[pyrepr("ssbh_data_py.matl_data")]
+pub struct UvTransform {
+    #[pyo3(get, set)]
+    pub scale_u: f32,
+
+    #[pyo3(get, set)]
+    pub scale_v: f32,
+
+    #[pyo3(get, set)]
+    pub rotation: f32,
+
+    #[pyo3(get, set)]
+    pub translate_u: f32,
+
+    #[pyo3(get, set)]
+    pub translate_v: f32,
 }
 
 python_enum!(
