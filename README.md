@@ -12,6 +12,7 @@ Report bugs and request new features in [issues](https://github.com/ScanMountGoa
 | Skel (`.nusktb`) | 1.0 | :heavy_check_mark: | :heavy_check_mark: |
 | Anim (`.nuanmb`) | 2.0, 2.1 | :heavy_check_mark: | :heavy_check_mark: (2.0 only) |
 | Matl (`.numatb`) | 1.6 | :heavy_check_mark: | :heavy_check_mark: |
+| Hlpb (`.nuhlpb`) | 1.1 | :heavy_check_mark: | :heavy_check_mark: |
 | Adj (`.adjb`) |  | :heavy_check_mark: | :heavy_check_mark: |
 | MeshEx (`.numshexb`) |  | :heavy_check_mark: | :heavy_check_mark: |
 
