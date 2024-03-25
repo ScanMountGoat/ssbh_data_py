@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 0.8.3
 Changes
 - Added field `ssbh_data_py.matl_data.MatlEntryData.uv_transforms`.
 - Added type `ssbh_data_py.matl_data.UvTransformParam`.
