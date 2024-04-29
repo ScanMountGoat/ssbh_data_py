@@ -6,6 +6,8 @@ on:
 jobs:
   build-windows-linux:
     runs-on: ${{ matrix.os }}
+    env:
+      working-directory: ./ssbh_data_py
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +46,8 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    env:
+      working-directory: ./ssbh_data_py
     strategy:
       fail-fast: false
       matrix:
