@@ -25,6 +25,7 @@ jobs:
         with:
           command: build
           args: --release --strip --interpreter python${{matrix.python-version}}
+          working-directory: ${{env.working-directory}}
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -43,6 +44,7 @@ jobs:
           command: publish
           container: off
           args: --username __token__  --interpreter python${{matrix.python-version}}
+          working-directory: ${{env.working-directory}}
 
   build-macos:
     runs-on: macos-latest
@@ -70,6 +72,7 @@ jobs:
         with:
           command: build
           args: --release --strip --interpreter python${{matrix.python-version}} --target ${{matrix.target}}
+          working-directory: ${{env.working-directory}}
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -88,4 +91,4 @@ jobs:
           command: publish
           container: off
           args: --username __token__  --interpreter python${{matrix.python-version}} --target ${{matrix.target}}
-        
+          working-directory: ${{env.working-directory}}
