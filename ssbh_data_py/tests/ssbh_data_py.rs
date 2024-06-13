@@ -22,28 +22,7 @@ enum TestEnumRs {
     C = 4,
 }
 
-python_enum!(TestEnumPy, TestEnumRs, TestError, "module_name");
-
-#[pymethods]
-impl TestEnumPy {
-    #[classattr]
-    #[pyo3(name = "A")]
-    fn a() -> TestEnumPy {
-        TestEnumRs::A.into()
-    }
-
-    #[classattr]
-    #[pyo3(name = "B")]
-    fn b() -> TestEnumPy {
-        TestEnumRs::B.into()
-    }
-
-    #[classattr]
-    #[pyo3(name = "C")]
-    fn c() -> TestEnumPy {
-        TestEnumRs::C.into()
-    }
-}
+python_enum!(TestEnumPy, TestEnumRs, TestError, "module_name", A, B, C);
 
 #[test]
 fn python_enum_conversions() {

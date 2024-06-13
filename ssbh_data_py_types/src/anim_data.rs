@@ -3,8 +3,6 @@ use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 
-mod enums;
-
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 
 pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
@@ -177,7 +175,11 @@ python_enum!(
     GroupType,
     ssbh_data::anim_data::GroupType,
     AnimDataError,
-    "ssbh_data_py.anim_data"
+    "ssbh_data_py.anim_data",
+    Transform,
+    Visibility,
+    Material,
+    Camera
 );
 
 // TODO: Document what component counts are expected.

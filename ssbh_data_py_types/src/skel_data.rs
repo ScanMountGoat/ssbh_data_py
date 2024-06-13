@@ -4,8 +4,6 @@ use pyo3::{prelude::*, types::PyList};
 
 use crate::create_py_list_from_slice;
 
-mod enums;
-
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
 
 pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
@@ -109,7 +107,14 @@ python_enum!(
     BillboardType,
     ssbh_data::skel_data::BillboardType,
     SkelDataError,
-    "ssbh_data_py.skel_data"
+    "ssbh_data_py.skel_data",
+    Disabled,
+    XAxisViewPointAligned,
+    YAxisViewPointAligned,
+    Unk3,
+    XYAxisViewPointAligned,
+    YAxisViewPlaneAligned,
+    XYAxisViewPlaneAligned
 );
 
 #[pyfunction]

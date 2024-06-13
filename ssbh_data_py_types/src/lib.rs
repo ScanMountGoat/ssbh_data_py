@@ -57,7 +57,7 @@ pub(crate) fn create_py_list_from_slice<T: IntoPy<U> + Copy, U: ToPyObject>(
 
 #[macro_export]
 macro_rules! python_enum {
-    ($ty_py:ident, $ty_rs:ty, $ty_err:ty, $module:literal) => {
+    ($ty_py:ident, $ty_rs:ty, $ty_err:ty, $module:literal, $( $i:ident ),+) => {
         // TODO: Change this to be a proper Python enum once supported by PyO3.
         // Try to match the interface from here: https://docs.python.org/3/library/enum.html
         #[pyclass(module = $module)]
@@ -70,11 +70,12 @@ macro_rules! python_enum {
             pub value: u64,
         }
 
+        // TODO: match the variants instead?
         impl From<$ty_rs> for $ty_py {
-            fn from(group_type: $ty_rs) -> Self {
+            fn from(value: $ty_rs) -> Self {
                 Self {
-                    name: group_type.to_string(),
-                    value: group_type as u64,
+                    name: value.to_string(),
+                    value: value as u64,
                 }
             }
         }
@@ -104,6 +105,58 @@ macro_rules! python_enum {
             fn py_repr(&self) -> String {
                 // Match the behavior of Python's Enum class.
                 format!("<{}.{}: {}>", stringify!($ty_py), self.name, self.value)
+            }
+        }
+
+        #[pymethods]
+        impl $ty_py {
+            fn __repr__(&self) -> String {
+                <Self as $crate::PyRepr>::py_repr(self)
+            }
+
+            fn __richcmp__(&self, other: Self, op: pyo3::basic::CompareOp) -> PyResult<bool> {
+                match op {
+                    pyo3::basic::CompareOp::Lt => Ok(self.value < other.value),
+                    pyo3::basic::CompareOp::Le => Ok(self.value <= other.value),
+                    pyo3::basic::CompareOp::Eq => Ok(self.value == other.value),
+                    pyo3::basic::CompareOp::Ne => Ok(self.value != other.value),
+                    pyo3::basic::CompareOp::Gt => Ok(self.value > other.value),
+                    pyo3::basic::CompareOp::Ge => Ok(self.value >= other.value),
+                }
+            }
+
+            // The function name casing should match the variant name.
+            $(
+                #[allow(non_snake_case)]
+                #[classattr]
+                pub fn $i() -> $ty_py {
+                    <$ty_rs>::$i.into()
+                }
+            )*
+        }
+
+        impl $crate::PyiClass for $ty_py {
+            fn pyi_class() -> String {
+                format!("class {}:\n    name: str\n    value: int", stringify!($ty_py))
+            }
+        }
+
+        impl $crate::PyiMethods for $ty_py {
+            fn pyi_methods() -> String {
+                let mut out = String::new();
+
+                $(
+                    out += &format!("    {}: ClassVar[{}]\n", stringify!($i), stringify!($ty_py));
+                )*
+                out += "\n";
+
+                out += "    @staticmethod\n";
+                out += &format!("    def from_value(value: int) -> Optional[{}]: ...\n\n", stringify!($ty_py));
+
+                out += "    @staticmethod\n";
+                out += &format!("    def from_str(value: str) -> Optional[{}]: ...", stringify!($ty_py));
+
+                out
             }
         }
     };
