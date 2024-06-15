@@ -3,6 +3,7 @@ name = "ssbh_data_py"
 version = "0.8.3"
 authors = ["ScanMountGoat"]
 edition = "2021"
+readme = "../README.md"
 
 [dependencies]
 pyo3 = "0.20.3"
