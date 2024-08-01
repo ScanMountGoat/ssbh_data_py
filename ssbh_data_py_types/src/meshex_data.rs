@@ -10,6 +10,7 @@ pub fn meshex_data(py: Python, module: &PyModule) -> PyResult<()> {
     meshex_data.add_class::<MeshExData>()?;
     meshex_data.add_class::<MeshObjectGroupData>()?;
     meshex_data.add_class::<BoundingSphere>()?;
+    meshex_data.add_class::<EntryFlags>()?;
     meshex_data.add_function(wrap_pyfunction!(read_meshex, meshex_data)?)?;
 
     module.add_submodule(meshex_data)?;
@@ -88,7 +89,7 @@ pub struct MeshObjectGroupData {
     pub mesh_object_full_name: String,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[MeshObjectGroupData]")]
+    #[pyi(python_type = "list[EntryFlags]")]
     pub entry_flags: Py<PyList>,
 }
 
