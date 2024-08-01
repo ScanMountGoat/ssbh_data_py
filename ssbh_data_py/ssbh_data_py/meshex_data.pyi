@@ -21,14 +21,14 @@ class MeshObjectGroupData:
     bounding_sphere: BoundingSphere
     mesh_object_name: str
     mesh_object_full_name: str
-    entry_flags: list[MeshObjectGroupData]
+    entry_flags: list[EntryFlags]
 
     def __init__(
         self,
         bounding_sphere: BoundingSphere,
         mesh_object_name: str,
         mesh_object_full_name: str,
-        entry_flags: list[MeshObjectGroupData]
+        entry_flags: list[EntryFlags]
     ) -> None: ...
 
 

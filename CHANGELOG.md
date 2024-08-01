@@ -1,4 +1,7 @@
 # Changelog
+## 0.8.4
+Changes
+- Fixed an issue where `ssbh_data_py.mesh_ex_data.EntryFlags` could not be instantiated from Python.
 
 ## 0.8.3
 Changes
