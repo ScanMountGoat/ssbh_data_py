@@ -11,8 +11,8 @@ fn run_test_python(code: &str) -> PyResult<()> {
         let module = PyModule::new(py, "test_module").unwrap();
         module.add_class::<TestClass>().unwrap();
         module.add_class::<TestClassInner>().unwrap();
-        let ctx = [("test_module", module)].into_py_dict(py);
-        py.run(code, None, Some(ctx))
+        let ctx = [("test_module", module)].into_py_dict(py).unwrap();
+        py.run(&std::ffi::CString::new(code).unwrap(), None, Some(&ctx))
     })
 }
 

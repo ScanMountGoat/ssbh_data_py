@@ -15,13 +15,13 @@ pub trait MapPy<T> {
 // Use MapPy<PyObject> instead to utilize the ssbh_data -> ssbh_data_py conversion.
 impl<T: MapPy<PyObject>> MapPy<Py<PyList>> for Vec<T> {
     fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(
+        PyList::new(
             py,
             self.iter()
                 .map(|e| e.map_py(py, use_numpy))
                 .collect::<Result<Vec<_>, _>>()?,
         )
-        .into())
+        .map(Into::into)
     }
 }
 
@@ -32,7 +32,7 @@ where
     PyObject: MapPy<T>,
 {
     fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<Vec<T>> {
-        self.as_ref(py)
+        self.bind(py)
             .iter()
             .map(|e| PyObject::from(e).map_py(py, use_numpy))
             .collect::<Result<Vec<_>, _>>()
@@ -86,39 +86,41 @@ macro_rules! map_py_pyobject_impl {
 fn mat4x4<T: AsPrimitive<f32> + numpy::Element>(
     arr: &PyArray<T, Dim<[usize; 2]>>,
 ) -> PyResult<[[f32; 4]; 4]> {
-    let a = arr.readonly();
-    if let [4, 4] = a.shape() {
-        let a = a.as_slice().unwrap();
-        // Use AsPrimitive to allow truncating types like f64.
-        // TODO: Is there a cleaner way of doing this?
-        Ok([
-            [a[0].as_(), a[1].as_(), a[2].as_(), a[3].as_()],
-            [a[4].as_(), a[5].as_(), a[6].as_(), a[7].as_()],
-            [a[8].as_(), a[9].as_(), a[10].as_(), a[11].as_()],
-            [a[12].as_(), a[13].as_(), a[14].as_(), a[15].as_()],
-        ])
-    } else {
-        Err(PyValueError::new_err(format!(
-            "Expected shape [4, 4] but found {:?}",
-            a.shape()
-        )))
-    }
+    todo!()
+    // let a = arr;
+    // if let [4, 4] = a.shape() {
+    //     let a = a.as_slice().unwrap();
+    //     // Use AsPrimitive to allow truncating types like f64.
+    //     // TODO: Is there a cleaner way of doing this?
+    //     Ok([
+    //         [a[0].as_(), a[1].as_(), a[2].as_(), a[3].as_()],
+    //         [a[4].as_(), a[5].as_(), a[6].as_(), a[7].as_()],
+    //         [a[8].as_(), a[9].as_(), a[10].as_(), a[11].as_()],
+    //         [a[12].as_(), a[13].as_(), a[14].as_(), a[15].as_()],
+    //     ])
+    // } else {
+    //     Err(PyValueError::new_err(format!(
+    //         "Expected shape [4, 4] but found {:?}",
+    //         a.shape()
+    //     )))
+    // }
 }
 
 impl MapPy<[[f32; 4]; 4]> for PyObject {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<[[f32; 4]; 4]> {
         self.extract::<[[f32; 4]; 4]>(py)
-            .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(mat4x4))
-            .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(mat4x4))
+        // TODO: Are these even necessary?
+        // .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(mat4x4))
+        // .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(mat4x4))
+        // .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(mat4x4))
+        // .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(mat4x4))
+        // .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(mat4x4))
     }
 }
 
 impl MapPy<PyObject> for [[f32; 4]; 4] {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
-        Ok(create_py_list_from_slice(py, self).into())
+        create_py_list_from_slice(py, self).map(Into::into)
     }
 }
 
@@ -126,14 +128,14 @@ map_py_pyobject_impl!(Vec<u32>);
 impl MapPy<PyObject> for Vec<u32> {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
         // TODO: Use numpy?
-        Ok(create_py_list_from_slice(py, self).into())
+        create_py_list_from_slice(py, self).map(Into::into)
     }
 }
 
 map_py_pyobject_impl!(Vec<i16>);
 impl MapPy<PyObject> for Vec<i16> {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
-        Ok(create_py_list_from_slice(py, self).into())
+        create_py_list_from_slice(py, self).map(Into::into)
     }
 }
 
@@ -155,7 +157,7 @@ impl MapPy<ssbh_data::Color4f> for PyObject {
 
 impl MapPy<PyObject> for ssbh_data::Color4f {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<PyObject> {
-        Ok(PyList::new(py, [self.r, self.g, self.b, self.a]).into())
+        PyList::new(py, [self.r, self.g, self.b, self.a]).map(Into::into)
     }
 }
 
@@ -168,7 +170,7 @@ impl MapPy<ssbh_data::Vector4> for Py<PyList> {
 
 impl MapPy<Py<PyList>> for ssbh_data::Vector4 {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(py, self.to_array()).into())
+        PyList::new(py, self.to_array()).map(Into::into)
     }
 }
 
@@ -194,6 +196,6 @@ impl MapPy<ssbh_data::Vector3> for Py<PyList> {
 
 impl MapPy<Py<PyList>> for ssbh_data::Vector3 {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
-        Ok(PyList::new(py, self.to_array()).into())
+        PyList::new(py, self.to_array()).map(Into::into)
     }
 }

@@ -4,15 +4,15 @@ use pyo3::{prelude::*, types::PyList};
 
 create_exception!(ssbh_data_py, HlpbDataError, pyo3::exceptions::PyException);
 
-pub fn hlpb_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn hlpb_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let hlpb_data = PyModule::new(py, "hlpb_data")?;
     hlpb_data.add_class::<HlpbData>()?;
     hlpb_data.add_class::<AimConstraintData>()?;
     hlpb_data.add_class::<OrientConstraintData>()?;
 
-    hlpb_data.add_function(wrap_pyfunction!(read_hlpb, hlpb_data)?)?;
+    hlpb_data.add_function(wrap_pyfunction!(read_hlpb, &hlpb_data)?)?;
 
-    module.add_submodule(hlpb_data)?;
+    module.add_submodule(&hlpb_data)?;
     Ok(())
 }
 
@@ -117,22 +117,22 @@ pub struct AimConstraintData {
     pub unk2: u32,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [1.0, 0.0, 0.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [1.0, 0.0, 0.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[1.0, 0.0, 0.0]")]
     pub aim: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [0.0, 1.0, 0.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [0.0, 1.0, 0.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[0.0, 1.0, 0.0]")]
     pub up: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
     pub quat1: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
     pub quat2: Py<PyList>,
 }
@@ -165,22 +165,22 @@ pub struct OrientConstraintData {
     pub constraint_axes: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
     pub quat1: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
     pub quat2: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [-180.0, -180.0, -180.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [-180.0, -180.0, -180.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[-180.0, -180.0, -180.0]")]
     pub range_min: Py<PyList>,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::new(py, [180.0, 180.0, 180.0]).into()")]
+    #[pyinit(default = "PyList::new(py, [180.0, 180.0, 180.0])?.into()")]
     #[pyi(python_type = "list[float]", default = "[180.0, 180.0, 180.0]")]
     pub range_max: Py<PyList>,
 }

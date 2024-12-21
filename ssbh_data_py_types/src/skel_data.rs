@@ -6,16 +6,16 @@ use crate::create_py_list_from_slice;
 
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
 
-pub fn skel_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn skel_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let skel_data = PyModule::new(py, "skel_data")?;
     skel_data.add_class::<SkelData>()?;
     skel_data.add_class::<BoneData>()?;
     skel_data.add_class::<BillboardType>()?;
 
-    skel_data.add_function(wrap_pyfunction!(read_skel, skel_data)?)?;
-    skel_data.add_function(wrap_pyfunction!(calculate_relative_transform, skel_data)?)?;
+    skel_data.add_function(wrap_pyfunction!(read_skel, &skel_data)?)?;
+    skel_data.add_function(wrap_pyfunction!(calculate_relative_transform, &skel_data)?)?;
 
-    module.add_submodule(skel_data)?;
+    module.add_submodule(&skel_data)?;
     Ok(())
 }
 
@@ -99,7 +99,7 @@ impl SkelData {
         let transform = data
             .calculate_world_transform(&bone_data)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
-        Ok(create_py_list_from_slice(py, &transform))
+        create_py_list_from_slice(py, &transform)
     }
 }
 
@@ -138,5 +138,5 @@ fn calculate_relative_transform(
         ),
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };
-    Ok(create_py_list_from_slice(py, &transform))
+    create_py_list_from_slice(py, &transform)
 }

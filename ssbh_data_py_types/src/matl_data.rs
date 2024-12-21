@@ -4,7 +4,7 @@ use pyo3::{prelude::*, types::PyList};
 
 create_exception!(ssbh_data_py, MatlDataError, pyo3::exceptions::PyException);
 
-pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn matl_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let matl_data = PyModule::new(py, "matl_data")?;
     // TODO: Automatically register classes?
     matl_data.add_class::<MatlData>()?;
@@ -33,9 +33,9 @@ pub fn matl_data(py: Python, module: &PyModule) -> PyResult<()> {
     matl_data.add_class::<SamplerData>()?;
     matl_data.add_class::<BlendStateData>()?;
 
-    matl_data.add_function(wrap_pyfunction!(read_matl, matl_data)?)?;
+    matl_data.add_function(wrap_pyfunction!(read_matl, &matl_data)?)?;
 
-    module.add_submodule(matl_data)?;
+    module.add_submodule(&matl_data)?;
     Ok(())
 }
 
@@ -813,7 +813,7 @@ impl SamplerData {
             wrapr: ssbh_data::matl_data::WrapMode::ClampToEdge.into(),
             min_filter: ssbh_data::matl_data::MinFilter::LinearMipmapLinear.into(),
             mag_filter: ssbh_data::matl_data::MagFilter::Linear.into(),
-            border_color: PyList::new(py, [0.0; 4]).into(),
+            border_color: PyList::new(py, [0.0; 4])?.into(),
             lod_bias: 0.0,
             max_anisotropy: Some(ssbh_data::matl_data::MaxAnisotropy::Two.into()),
         })

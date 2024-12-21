@@ -5,7 +5,7 @@ use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 
 create_exception!(ssbh_data_py, AnimDataError, pyo3::exceptions::PyException);
 
-pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn anim_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let anim_data = PyModule::new(py, "anim_data")?;
     anim_data.add_class::<AnimData>()?;
     anim_data.add_class::<GroupData>()?;
@@ -16,9 +16,9 @@ pub fn anim_data(py: Python, module: &PyModule) -> PyResult<()> {
     anim_data.add_class::<GroupType>()?;
     anim_data.add_class::<TransformFlags>()?;
 
-    anim_data.add_function(wrap_pyfunction!(read_anim, anim_data)?)?;
+    anim_data.add_function(wrap_pyfunction!(read_anim, &anim_data)?)?;
 
-    module.add_submodule(anim_data)?;
+    module.add_submodule(&anim_data)?;
     Ok(())
 }
 
@@ -237,31 +237,31 @@ impl MapPy<Py<PyList>> for TrackValuesRs {
 
 impl MapPy<TrackValuesRs> for Py<PyList> {
     fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<TrackValuesRs> {
-        create_track_values_rs(py, self.as_ref(py))
+        create_track_values_rs(py, self)
     }
 }
 
-pub fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValuesRs> {
+pub fn create_track_values_rs(py: Python, values: &Py<PyList>) -> PyResult<TrackValuesRs> {
     // We don't know the type, so just try one until it works.
     // TODO: Clean up this code.
     values
-        .extract::<Vec<bool>>()
+        .extract::<Vec<bool>>(py)
         .map(TrackValuesRs::Boolean)
         .or_else(|_| {
             // Pattern index needs to come before float.
             // This avoids conflicts with integer literals being interpreted as floats.
             values
-                .extract::<Vec<u32>>()
+                .extract::<Vec<u32>>(py)
                 .map(TrackValuesRs::PatternIndex)
         })
-        .or_else(|_| values.extract::<Vec<f32>>().map(TrackValuesRs::Float))
+        .or_else(|_| values.extract::<Vec<f32>>(py).map(TrackValuesRs::Float))
         .or_else(|_| {
-            values.extract::<Vec<[f32; 4]>>().map(|v| {
+            values.extract::<Vec<[f32; 4]>>(py).map(|v| {
                 TrackValuesRs::Vector4(v.into_iter().map(ssbh_data::Vector4::from).collect())
             })
         })
         .or_else(|_| {
-            let v = values.extract::<Vec<UvTransform>>()?;
+            let v = values.extract::<Vec<UvTransform>>(py)?;
             Ok(TrackValuesRs::UvTransform(
                 v.into_iter()
                     .map(|t| t.map_py(py, false))
@@ -269,7 +269,7 @@ pub fn create_track_values_rs(py: Python, values: &PyList) -> PyResult<TrackValu
             ))
         })
         .or_else(|_: PyErr| {
-            let v = values.extract::<Vec<Transform>>()?;
+            let v = values.extract::<Vec<Transform>>(py)?;
             Ok(TrackValuesRs::Transform(
                 v.into_iter()
                     .map(|t| t.map_py(py, false))

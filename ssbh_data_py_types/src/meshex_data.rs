@@ -5,15 +5,15 @@ use pyo3::{prelude::*, types::PyList};
 
 create_exception!(ssbh_data_py, MeshExDataError, pyo3::exceptions::PyException);
 
-pub fn meshex_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn meshex_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let meshex_data = PyModule::new(py, "meshex_data")?;
     meshex_data.add_class::<MeshExData>()?;
     meshex_data.add_class::<MeshObjectGroupData>()?;
     meshex_data.add_class::<BoundingSphere>()?;
     meshex_data.add_class::<EntryFlags>()?;
-    meshex_data.add_function(wrap_pyfunction!(read_meshex, meshex_data)?)?;
+    meshex_data.add_function(wrap_pyfunction!(read_meshex, &meshex_data)?)?;
 
-    module.add_submodule(meshex_data)?;
+    module.add_submodule(&meshex_data)?;
     Ok(())
 }
 

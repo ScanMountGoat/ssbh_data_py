@@ -1,5 +1,5 @@
 use indoc::indoc;
-use pyo3::types::PyList;
+use pyo3::{prelude::*, types::PyList};
 use ssbh_data::{Vector3, Vector4};
 use ssbh_data_py_types::{
     anim_data::{create_track_values_rs, GroupType},
@@ -179,7 +179,7 @@ fn create_group_types_py() {
 #[test]
 fn create_track_values_rs_floats() {
     eval_python_code("[0.5, 1, 3.4]", |py, x| {
-        let data: &PyList = x.downcast().unwrap();
+        let data = x.downcast::<PyList>().unwrap().as_unbound();
         assert_eq!(
             ssbh_data::anim_data::TrackValues::Float(vec![0.5, 1.0, 3.4]),
             create_track_values_rs(py, data).unwrap()
@@ -190,7 +190,7 @@ fn create_track_values_rs_floats() {
 #[test]
 fn create_track_values_rs_pattern_index() {
     eval_python_code("[0, 1, 2, 3]", |py, x| {
-        let data: &PyList = x.downcast().unwrap();
+        let data = x.downcast::<PyList>().unwrap().as_unbound();
         assert_eq!(
             ssbh_data::anim_data::TrackValues::PatternIndex(vec![0, 1, 2, 3]),
             create_track_values_rs(py, data).unwrap()
@@ -201,7 +201,7 @@ fn create_track_values_rs_pattern_index() {
 #[test]
 fn create_track_values_rs_bool() {
     eval_python_code("[True, False, True]", |py, x| {
-        let data: &PyList = x.downcast().unwrap();
+        let data = x.downcast::<PyList>().unwrap().as_unbound();
         assert_eq!(
             ssbh_data::anim_data::TrackValues::Boolean(vec![true, false, true]),
             create_track_values_rs(py, data).unwrap()
@@ -212,7 +212,7 @@ fn create_track_values_rs_bool() {
 #[test]
 fn create_track_values_rs_vector4() {
     eval_python_code("[[1, 2, 3, 4], [0.5, 0.25, 0.3, 0.1]]", |py, x| {
-        let data: &PyList = x.downcast().unwrap();
+        let data = x.downcast::<PyList>().unwrap().as_unbound();
         assert_eq!(
             ssbh_data::anim_data::TrackValues::Vector4(vec![
                 Vector4::new(1.0, 2.0, 3.0, 4.0),
@@ -234,7 +234,7 @@ fn create_track_values_rs_transform() {
                     translation=[9, 8, 0.4])]
             "#},
         |py, x| {
-            let data: &PyList = x.downcast().unwrap();
+            let data = x.downcast::<PyList>().unwrap().as_unbound();
             assert_eq!(
                 ssbh_data::anim_data::TrackValues::Transform(vec![
                     ssbh_data::anim_data::Transform {

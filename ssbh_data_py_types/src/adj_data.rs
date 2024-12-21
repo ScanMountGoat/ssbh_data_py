@@ -4,13 +4,13 @@ use pyo3::{prelude::*, types::PyList};
 
 create_exception!(ssbh_data_py, AdjDataError, pyo3::exceptions::PyException);
 
-pub fn adj_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn adj_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let adj_data = PyModule::new(py, "adj_data")?;
     adj_data.add_class::<AdjData>()?;
     adj_data.add_class::<AdjEntryData>()?;
-    adj_data.add_function(wrap_pyfunction!(read_adj, adj_data)?)?;
+    adj_data.add_function(wrap_pyfunction!(read_adj, &adj_data)?)?;
 
-    module.add_submodule(adj_data)?;
+    module.add_submodule(&adj_data)?;
     Ok(())
 }
 

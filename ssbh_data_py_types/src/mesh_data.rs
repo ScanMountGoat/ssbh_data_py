@@ -9,7 +9,7 @@ use ssbh_data::mesh_data::VectorData as VectorDataRs;
 
 create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
 
-pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn mesh_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let mesh_data = PyModule::new(py, "mesh_data")?;
     mesh_data.add_class::<MeshData>()?;
     mesh_data.add_class::<MeshObjectData>()?;
@@ -17,13 +17,13 @@ pub fn mesh_data(py: Python, module: &PyModule) -> PyResult<()> {
     mesh_data.add_class::<BoneInfluence>()?;
     mesh_data.add_class::<VertexWeight>()?;
 
-    mesh_data.add_function(wrap_pyfunction!(read_mesh, mesh_data)?)?;
-    mesh_data.add_function(wrap_pyfunction!(transform_points, mesh_data)?)?;
-    mesh_data.add_function(wrap_pyfunction!(transform_vectors, mesh_data)?)?;
-    mesh_data.add_function(wrap_pyfunction!(calculate_smooth_normals, mesh_data)?)?;
-    mesh_data.add_function(wrap_pyfunction!(calculate_tangents_vec4, mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(read_mesh, &mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(transform_points, &mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(transform_vectors, &mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(calculate_smooth_normals, &mesh_data)?)?;
+    mesh_data.add_function(wrap_pyfunction!(calculate_tangents_vec4, &mesh_data)?)?;
 
-    module.add_submodule(mesh_data)?;
+    module.add_submodule(&mesh_data)?;
     Ok(())
 }
 
@@ -194,38 +194,39 @@ pub struct AttributeData {
 impl MapPy<PyObject> for VectorDataRs {
     fn map_py(&self, py: Python, use_numpy: bool) -> PyResult<PyObject> {
         if !use_numpy {
-            Ok(match self {
-                VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v).into(),
-                VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v).into(),
-                VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v).into(),
-            })
+            match self {
+                VectorDataRs::Vector2(v) => create_py_list_from_slice(py, v).map(Into::into),
+                VectorDataRs::Vector3(v) => create_py_list_from_slice(py, v).map(Into::into),
+                VectorDataRs::Vector4(v) => create_py_list_from_slice(py, v).map(Into::into),
+            }
         } else {
             // This gives a roughly 4.7x speedup for reading a 25 MB mesh (gamewatch).
             // TODO: Can we avoid flattening and then reshaping?
             // TODO: Handle errors?
-            Ok(match self {
-                VectorDataRs::Vector2(v) => numpy::ndarray::ArrayBase::from_shape_vec(
-                    (v.len(), 2),
-                    v.iter().copied().flatten().collect::<Vec<f32>>(),
-                )
-                .unwrap()
-                .into_pyarray(py)
-                .into(),
-                VectorDataRs::Vector3(v) => numpy::ndarray::ArrayBase::from_shape_vec(
-                    (v.len(), 3),
-                    v.iter().copied().flatten().collect::<Vec<f32>>(),
-                )
-                .unwrap()
-                .into_pyarray(py)
-                .into(),
-                VectorDataRs::Vector4(v) => numpy::ndarray::ArrayBase::from_shape_vec(
-                    (v.len(), 4),
-                    v.iter().copied().flatten().collect::<Vec<f32>>(),
-                )
-                .unwrap()
-                .into_pyarray(py)
-                .into(),
-            })
+            // Ok(match self {
+            //     VectorDataRs::Vector2(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+            //         (v.len(), 2),
+            //         v.iter().copied().flatten().collect::<Vec<f32>>(),
+            //     )
+            //     .unwrap()
+            //     .into_pyarray(py)
+            //     .into(),
+            //     VectorDataRs::Vector3(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+            //         (v.len(), 3),
+            //         v.iter().copied().flatten().collect::<Vec<f32>>(),
+            //     )
+            //     .unwrap()
+            //     .into_pyarray(py)
+            //     .into(),
+            //     VectorDataRs::Vector4(v) => numpy::ndarray::ArrayBase::from_shape_vec(
+            //         (v.len(), 4),
+            //         v.iter().copied().flatten().collect::<Vec<f32>>(),
+            //     )
+            //     .unwrap()
+            //     .into_pyarray(py)
+            //     .into(),
+            // })
+            todo!()
         }
     }
 }
@@ -235,36 +236,37 @@ fn vector_data<T: AsPrimitive<f32> + numpy::Element>(
 ) -> PyResult<VectorDataRs> {
     // Use AsPrimitive to allow truncating types like f64.
     // TODO: Avoid unwrap?
-    match arr.dims()[1] {
-        2 => Ok(VectorDataRs::Vector2(
-            arr.readonly()
-                .as_slice()
-                .unwrap()
-                .chunks_exact(2)
-                .map(|v| [v[0].as_(), v[1].as_()])
-                .collect(),
-        )),
-        3 => Ok(VectorDataRs::Vector3(
-            arr.readonly()
-                .as_slice()
-                .unwrap()
-                .chunks_exact(3)
-                .map(|v| [v[0].as_(), v[1].as_(), v[2].as_()])
-                .collect(),
-        )),
-        4 => Ok(VectorDataRs::Vector4(
-            arr.readonly()
-                .as_slice()
-                .unwrap()
-                .chunks_exact(4)
-                .map(|v| [v[0].as_(), v[1].as_(), v[2].as_(), v[3].as_()])
-                .collect(),
-        )),
-        _ => Err(PyValueError::new_err(format!(
-            "Cannot create VectorData from an array of shape {:?}.",
-            arr.shape()
-        ))),
-    }
+    todo!()
+    // match arr.dims()[1] {
+    //     2 => Ok(VectorDataRs::Vector2(
+    //         arr.readonly()
+    //             .as_slice()
+    //             .unwrap()
+    //             .chunks_exact(2)
+    //             .map(|v| [v[0].as_(), v[1].as_()])
+    //             .collect(),
+    //     )),
+    //     3 => Ok(VectorDataRs::Vector3(
+    //         arr.readonly()
+    //             .as_slice()
+    //             .unwrap()
+    //             .chunks_exact(3)
+    //             .map(|v| [v[0].as_(), v[1].as_(), v[2].as_()])
+    //             .collect(),
+    //     )),
+    //     4 => Ok(VectorDataRs::Vector4(
+    //         arr.readonly()
+    //             .as_slice()
+    //             .unwrap()
+    //             .chunks_exact(4)
+    //             .map(|v| [v[0].as_(), v[1].as_(), v[2].as_(), v[3].as_()])
+    //             .collect(),
+    //     )),
+    //     _ => Err(PyValueError::new_err(format!(
+    //         "Cannot create VectorData from an array of shape {:?}.",
+    //         arr.shape()
+    //     ))),
+    // }
 }
 
 impl MapPy<VectorDataRs> for PyObject {
@@ -276,11 +278,11 @@ impl MapPy<VectorDataRs> for PyObject {
             .map(VectorDataRs::Vector2)
             .or_else(|_| self.extract::<Vec<[f32; 3]>>(py).map(VectorDataRs::Vector3))
             .or_else(|_| self.extract::<Vec<[f32; 4]>>(py).map(VectorDataRs::Vector4))
-            .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(vector_data))
-            .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(vector_data))
+        // .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(vector_data))
+        // .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(vector_data))
+        // .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(vector_data))
+        // .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(vector_data))
+        // .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(vector_data))
     }
 }
 
@@ -316,7 +318,7 @@ fn calculate_smooth_normals(
     let positions = positions.map_py(py, false)?;
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
-    Ok(create_py_list_from_slice(py, &normals))
+    create_py_list_from_slice(py, &normals)
 }
 
 #[pyfunction]
@@ -336,5 +338,5 @@ fn calculate_tangents_vec4(
         ssbh_data::mesh_data::calculate_tangents_vec4(&positions, &normals, &uvs, &vertex_indices)
             .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
 
-    Ok(create_py_list_from_slice(py, &tangents))
+    create_py_list_from_slice(py, &tangents)
 }

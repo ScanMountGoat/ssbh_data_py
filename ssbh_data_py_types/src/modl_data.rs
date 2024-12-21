@@ -4,13 +4,13 @@ use pyo3::{prelude::*, types::PyList};
 
 create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 
-pub fn modl_data(py: Python, module: &PyModule) -> PyResult<()> {
+pub fn modl_data(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let modl_data = PyModule::new(py, "modl_data")?;
     modl_data.add_class::<ModlData>()?;
     modl_data.add_class::<ModlEntryData>()?;
-    modl_data.add_function(wrap_pyfunction!(read_modl, modl_data)?)?;
+    modl_data.add_function(wrap_pyfunction!(read_modl, &modl_data)?)?;
 
-    module.add_submodule(modl_data)?;
+    module.add_submodule(&modl_data)?;
     Ok(())
 }
 
