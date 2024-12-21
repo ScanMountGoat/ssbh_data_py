@@ -17,8 +17,12 @@ for mesh_object in mesh.objects:
     if len(mesh_object.bone_influences) == 0:
         # Use the parent bone to create vertex weights.
         vertex_count = len(mesh_object.positions[0].data)
-        vertex_weights = [ssbh_data_py.mesh_data.VertexWeight(i, 1.0) for i in range(vertex_count)]
-        influence = ssbh_data_py.mesh_data.BoneInfluence(mesh_object.parent_bone_name, vertex_weights)
+        vertex_weights = [
+            ssbh_data_py.mesh_data.VertexWeight(i, 1.0) for i in range(vertex_count)
+        ]
+        influence = ssbh_data_py.mesh_data.BoneInfluence(
+            mesh_object.parent_bone_name, vertex_weights
+        )
 
         # Adding an influence enables vertex skinning.
         # This means that the mesh object will no longer appear at the same location as the parent bone.
@@ -39,21 +43,29 @@ for mesh_object in mesh.objects:
             # Transform the vertex positions.
             # Use the appropriate transform function to take into account translation.
             for position in mesh_object.positions:
-                position.data = ssbh_data_py.mesh_data.transform_points(position.data, transform)
+                position.data = ssbh_data_py.mesh_data.transform_points(
+                    position.data, transform
+                )
 
             # The mesh object may rotate, so transform the vectors as well.
             # This ensures the normals point in the correct direction and normal mapping works as expected.
             for normal in mesh_object.normals:
-                normal.data = ssbh_data_py.mesh_data.transform_vectors(normal.data, transform)
+                normal.data = ssbh_data_py.mesh_data.transform_vectors(
+                    normal.data, transform
+                )
 
             for tangent in mesh_object.tangents:
-                tangent.data = ssbh_data_py.mesh_data.transform_vectors(tangent.data, transform)
+                tangent.data = ssbh_data_py.mesh_data.transform_vectors(
+                    tangent.data, transform
+                )
 
             for binormal in mesh_object.binormals:
-                binormal.data = ssbh_data_py.mesh_data.transform_vectors(binormal.data, transform)
+                binormal.data = ssbh_data_py.mesh_data.transform_vectors(
+                    binormal.data, transform
+                )
 
         # The parent bone no longer needs to be set.
-        mesh_object.parent_bone_name = ''
+        mesh_object.parent_bone_name = ""
 
 
 # Save the result.

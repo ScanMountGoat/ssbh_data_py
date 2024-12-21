@@ -13,8 +13,8 @@ for object in mesh.objects:
     # Reverse the winding order of each triangle face.
     if reverse_winding_order:
         for i in range(0, len(object.vertex_indices), 3):
-            [v0, v1, v2] = object.vertex_indices[i:i+3]
-            object.vertex_indices[i:i+3] = [v0, v2, v1]
+            [v0, v1, v2] = object.vertex_indices[i : i + 3]
+            object.vertex_indices[i : i + 3] = [v0, v2, v1]
 
     # Flip the normals and related vectors.
     if flip_normals:

@@ -70,21 +70,21 @@ for i, bone_name in enumerate(bone_names):
     mesh_object.bone_influences = []
 
     # Add the vertex position data.
-    position0 = ssbh_data_py.mesh_data.AttributeData('Position0')
+    position0 = ssbh_data_py.mesh_data.AttributeData("Position0")
     position0.data = points
     mesh_object.positions = [position0]
 
     # Create additional attributes required by Smash Ultimate.
     # Normal and tangent generation is not currently supported by ssbh_data_py.
-    normal0 = ssbh_data_py.mesh_data.AttributeData('Normal0')
+    normal0 = ssbh_data_py.mesh_data.AttributeData("Normal0")
     normal0.data = [[0.5, 0.5, 0.5, 0.5]] * len(points)
     mesh_object.normals = [normal0]
 
-    tangent0 = ssbh_data_py.mesh_data.AttributeData('Tangent0')
+    tangent0 = ssbh_data_py.mesh_data.AttributeData("Tangent0")
     tangent0.data = [[0.5, 0.5, 0.5, 1.0]] * len(points)
     mesh_object.tangents = [tangent0]
 
-    map1 = ssbh_data_py.mesh_data.AttributeData('map1')
+    map1 = ssbh_data_py.mesh_data.AttributeData("map1")
     map1.data = [[0.5, 0.5]] * len(points)
     mesh_object.texture_coordinates = [map1]
 
@@ -107,7 +107,7 @@ modl.entries = []
 for i, bone_name in enumerate(bone_names):
     # Use the same naming conventions used for the mesh objects.
     # TODO: Creating custom matl files is not yet supported.
-    entry = ssbh_data_py.modl_data.ModlEntryData(str(i), 0, 'alp_mario_001')
+    entry = ssbh_data_py.modl_data.ModlEntryData(str(i), 0, "alp_mario_001")
     modl.entries.append(entry)
 
 # Save the result.

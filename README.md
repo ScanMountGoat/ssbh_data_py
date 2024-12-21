@@ -58,7 +58,7 @@ for bone in skel.bones:
     bone.transform = [[0.0] * 4] * 4
 
     # Python allows this, but this will cause an exception when saving.
-    bone.transform = [0, 'abc', []]
+    bone.transform = [0, "abc", []]
 
 # ssbh_data_py found an unexpected type, so this line will fail.
 skel.save("skel.nustkb")

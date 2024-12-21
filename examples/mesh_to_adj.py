@@ -7,7 +7,9 @@ mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
 # In practice, only certain mesh objects will need an entry in the adjb.
 adj = ssbh_data_py.adj_data.AdjData()
 for i, mesh_object in enumerate(mesh.objects):
-    adj.entries.append(ssbh_data_py.adj_data.AdjEntryData.from_mesh_object(i, mesh_object))
+    adj.entries.append(
+        ssbh_data_py.adj_data.AdjEntryData.from_mesh_object(i, mesh_object)
+    )
 
 # Save the new adjb file.
 adj.save("model.adjb")
