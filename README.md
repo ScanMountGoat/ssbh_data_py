@@ -25,15 +25,14 @@ Updating: `pip install ssbh_data_py --upgrade`
 The minimum supported pip version is 20.3. 
 
 ## Requirements
-The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, 3.9, and 3.10 for newer versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9 and 3.10. For other Python versions, build ssbh_data_py from source.
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, 3.9, and 3.10 for newer versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9 and 3.10. For other Python versions, build ssbh_data_py from source. ssbh_data_py requires the `numpy` package for transforms and attribute data.
 
 ## Getting Started
 Each supported SSBH type has an associated data struct that can be created reading from a file.
-Some files like meshes support reading the data as numpy arrays. Enabling numpy support in the read functions substantially reduces the overhead of converting the file data to Python. This requires the `numpy` package to be installed in the current Python environment when enabled.
 ```python
 import ssbh_data_py
 
-mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb", use_numpy=True)
+mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
 modl = ssbh_data_py.modl_data.read_modl("model.numdlb")
 skel = ssbh_data_py.skel_data.read_skel("model.nusktb")
 ```
@@ -63,7 +62,7 @@ for bone in skel.bones:
 # ssbh_data_py found an unexpected type, so this line will fail.
 skel.save("skel.nustkb")
 ```
-Numpy's `ndarray` type is supported for fields and arguments that expect matrices or lists of floats or integers.
+Numpy's `ndarray` type is used for fields and arguments that expect matrices or lists of floats or integers.
 ```python
 import numpy as np
 
@@ -71,12 +70,12 @@ import numpy as np
 for bone in skel.bones:
     bone.transform = np.eye((4))
 
-# Convert the positions to a numpy array.
+# Assign the X coordinate for positions
 for o in mesh.objects:
-    o.positions[0].data = np.array(o.positions[0].data)
+    o.positions[0].data[:, 0] += 1.0
 ```
 
-After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms. Numpy arrays use a faster exporting code path compared to Python lists or tuples. Using numpy arrays mainly benefits export time for larger lists like mesh vertex attributes. This works the best when the data is already a numpy array since converting from lists may be slow.
+After making any changes, the results can be saved back to a file. Using the same path used to read the files will overwrite the file. Even if no edits are made, the resulting file will likely not be binary identical with the original due to floating point rounding errors or the use of different algorithms.
 ```python
 mesh.save("model_new.numshb")
 modl.save("model_new.numdlb")
