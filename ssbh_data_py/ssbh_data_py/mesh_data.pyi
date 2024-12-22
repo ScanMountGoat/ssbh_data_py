@@ -3,7 +3,7 @@
 from typing import List, Tuple, Any, Optional, Union, ClassVar
 
 
-def read_mesh(path: str, use_numpy: bool = False) -> MeshData: ...
+def read_mesh(path: str) -> MeshData: ...
 
 
 def transform_points(
@@ -43,7 +43,7 @@ class MeshObjectData:
     disable_depth_test: bool
     disable_depth_write: bool
     sort_bias: int
-    vertex_indices: list[int]
+    vertex_indices: numpy.ndarray
     positions: list[AttributeData]
     normals: list[AttributeData]
     binormals: list[AttributeData]
@@ -60,7 +60,7 @@ class MeshObjectData:
         disable_depth_test: bool = False,
         disable_depth_write: bool = False,
         sort_bias: int = 0,
-        vertex_indices: list[int] = [],
+        vertex_indices: numpy.ndarray = numpy.array([]),
         positions: list[AttributeData] = [],
         normals: list[AttributeData] = [],
         binormals: list[AttributeData] = [],
@@ -73,12 +73,12 @@ class MeshObjectData:
 
 class AttributeData:
     name: str
-    data: list[list[float]]
+    data: numpy.ndarray
 
     def __init__(
         self,
         name: str,
-        data: list[list[float]] = []
+        data: numpy.ndarray = numpy.array([])
     ) -> None: ...
 
 

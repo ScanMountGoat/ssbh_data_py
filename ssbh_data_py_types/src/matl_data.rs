@@ -69,7 +69,7 @@ impl MatlData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
+        self.map_py(py)?
             .write_to_file(path)
             .map_err(|e| MatlDataError::new_err(format!("{}", e)))
     }
@@ -873,5 +873,5 @@ python_enum!(
 fn read_matl(py: Python, path: &str) -> PyResult<MatlData> {
     ssbh_data::matl_data::MatlData::from_file(path)
         .map_err(|e| MatlDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }

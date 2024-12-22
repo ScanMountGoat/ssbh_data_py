@@ -128,7 +128,7 @@ fn create_modify_bone_influence() {
 #[should_panic]
 fn vector2_from_pylist_invalid_type() {
     eval_python_code("[[0, 1], [2, 'a']]", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 
@@ -136,14 +136,14 @@ fn vector2_from_pylist_invalid_type() {
 #[should_panic]
 fn vector2_from_pylist_invalid_component_count() {
     eval_python_code("[[0.0, 1.0], [2.0]]", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 
 #[test]
 fn vector2_from_pylist_ints() {
     eval_python_code("[[0, 1], [2, 3]]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
     });
 }
@@ -151,7 +151,7 @@ fn vector2_from_pylist_ints() {
 #[test]
 fn vector2_from_ndarray_ints() {
     eval_python_code_numpy("np.array([[0, 1], [2, 3]],dtype=np.int8)", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
     });
 }
@@ -159,7 +159,7 @@ fn vector2_from_ndarray_ints() {
 #[test]
 fn vector2_from_pylist() {
     eval_python_code("[[0.0, 1.0], [2.0, 3.0]]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
     });
 }
@@ -167,7 +167,7 @@ fn vector2_from_pylist() {
 #[test]
 fn vector2_from_tuples() {
     eval_python_code("[(0.0, 1.0), (2.0, 3.0)]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
     });
 }
@@ -175,7 +175,7 @@ fn vector2_from_tuples() {
 #[test]
 fn vector2_from_ndarray() {
     eval_python_code_numpy("np.array([[0.0, 1.0], [2.0, 3.0]])", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
     });
 }
@@ -183,7 +183,7 @@ fn vector2_from_ndarray() {
 #[test]
 fn vector3_from_pylist() {
     eval_python_code("[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(
             VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
             value
@@ -194,7 +194,7 @@ fn vector3_from_pylist() {
 #[test]
 fn vector3_from_tuples() {
     eval_python_code("[(0.0, 1.0, 2.0), (3.0, 4.0, 5.0)]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(
             VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
             value
@@ -205,7 +205,7 @@ fn vector3_from_tuples() {
 #[test]
 fn vector3_from_ndarray() {
     eval_python_code_numpy("np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(
             VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
             value
@@ -216,7 +216,7 @@ fn vector3_from_ndarray() {
 #[test]
 fn vector4_from_pylist() {
     eval_python_code("[[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(
             VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
             value
@@ -227,7 +227,7 @@ fn vector4_from_pylist() {
 #[test]
 fn vector4_from_tuples() {
     eval_python_code("[(0.0, 1.0, 2.0, 3.0), (4.0, 5.0, 6.0, 7.0)]", |py, x| {
-        let value = PyObject::from(x).map_py(py, false).unwrap();
+        let value = PyObject::from(x).map_py(py).unwrap();
         assert_eq!(
             VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
             value
@@ -240,7 +240,7 @@ fn vector4_from_ndarray() {
     eval_python_code_numpy(
         "np.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]])",
         |py, x| {
-            let value = PyObject::from(x).map_py(py, false).unwrap();
+            let value = PyObject::from(x).map_py(py).unwrap();
             assert_eq!(
                 VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
                 value
@@ -254,7 +254,7 @@ fn vector4_from_ndarray() {
 fn vector_from_5x5_pylist() {
     // Vector5 is not a valid variant.
     eval_python_code("[[1.0,2.0,3.0,4.0,5.0]]", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 
@@ -263,7 +263,7 @@ fn vector_from_5x5_pylist() {
 fn vector_from_5x5_ndarray() {
     // Vector5 is not a valid variant.
     eval_python_code_numpy("np.zeros((5,5))", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 
@@ -273,7 +273,7 @@ fn vector_from_5x5_ndarray() {
 fn vector_from_empty_pylist() {
     // TODO: How to infer the type when there are no elements?
     eval_python_code("[]", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 
@@ -283,7 +283,7 @@ fn vector_from_empty_pylist() {
 fn vector_from_empty_ndarray() {
     // TODO: How to infer the type when there are no elements?
     eval_python_code_numpy("np.array()", |py, x| {
-        let _: VectorData = PyObject::from(x).map_py(py, false).unwrap();
+        let _: VectorData = PyObject::from(x).map_py(py).unwrap();
     });
 }
 

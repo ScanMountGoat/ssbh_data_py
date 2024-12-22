@@ -48,12 +48,12 @@ pub fn ssbh_data_py(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-pub(crate) fn create_py_list_from_slice<T, U>(py: Python, elements: &[T]) -> PyResult<Py<PyList>>
+pub(crate) fn create_py_list_from_slice<T>(py: Python, elements: &[T]) -> PyResult<Py<PyList>>
 where
-    T: IntoPy<U> + Copy,
-    for<'a> U: IntoPyObject<'a>,
+    T: Copy,
+    for<'a> T: IntoPyObject<'a>,
 {
-    PyList::new(py, elements.iter().map(|m| m.into_py(py))).map(Into::into)
+    PyList::new(py, elements.iter().copied()).map(Into::into)
 }
 
 #[macro_export]
@@ -82,7 +82,7 @@ macro_rules! python_enum {
         }
 
         impl MapPy<$ty_rs> for $ty_py {
-            fn map_py(&self, _py: Python, _use_numpy: bool) -> PyResult<$ty_rs> {
+            fn map_py(&self, _py: Python) -> PyResult<$ty_rs> {
                 <$ty_rs>::from_repr(self.value as usize).ok_or(<$ty_err>::new_err(format!(
                     "{} is not a supported variant.",
                     self.value
@@ -91,7 +91,7 @@ macro_rules! python_enum {
         }
 
         impl MapPy<$ty_py> for $ty_rs {
-            fn map_py(&self, _py: Python, _use_numpy: bool) -> PyResult<$ty_py> {
+            fn map_py(&self, _py: Python) -> PyResult<$ty_py> {
                 Ok((*self).into())
             }
         }

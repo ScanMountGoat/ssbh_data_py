@@ -43,16 +43,14 @@ impl MeshExData {
         ssbh_data::meshex_data::MeshExData::from_mesh_objects(
             &objects
                 .iter()
-                .map(|o| o.map_py(py, false))
+                .map(|o| o.map_py(py))
                 .collect::<Result<Vec<_>, _>>()?,
         )
-        .map_py(py, false)
+        .map_py(py)
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
-            .write_to_file(path)
-            .map_err(PyErr::from)
+        self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
     }
 
     fn __repr__(&self) -> String {
@@ -122,5 +120,5 @@ pub struct BoundingSphere {
 fn read_meshex(py: Python, path: &str) -> PyResult<MeshExData> {
     ssbh_data::meshex_data::MeshExData::from_file(path)
         .map_err(|e| MeshExDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }

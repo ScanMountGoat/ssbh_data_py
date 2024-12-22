@@ -88,14 +88,14 @@ impl SkelData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
+        self.map_py(py)?
             .write_to_file(path)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))
     }
 
     fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
-        let data: ssbh_data::skel_data::SkelData = self.map_py(py, false)?;
-        let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py, false)?;
+        let data: ssbh_data::skel_data::SkelData = self.map_py(py)?;
+        let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
         let transform = data
             .calculate_world_transform(&bone_data)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
@@ -121,7 +121,7 @@ python_enum!(
 fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
     ssbh_data::skel_data::SkelData::from_file(path)
         .map_err(|e| SkelDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }
 
 #[pyfunction]
@@ -130,11 +130,11 @@ fn calculate_relative_transform(
     world_transform: PyObject,
     parent_world_transform: Option<PyObject>,
 ) -> PyResult<Py<PyList>> {
-    let world_transform = world_transform.map_py(py, false)?;
+    let world_transform = world_transform.map_py(py)?;
     let transform = match parent_world_transform {
         Some(m) => ssbh_data::skel_data::calculate_relative_transform(
             &world_transform,
-            Some(&m.map_py(py, false)?),
+            Some(&m.map_py(py)?),
         ),
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };

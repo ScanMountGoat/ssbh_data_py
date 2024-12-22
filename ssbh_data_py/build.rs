@@ -93,7 +93,7 @@ fn main() {
     generate_pyi_file(
         "ssbh_data_py/mesh_data.pyi",
         &[
-            "def read_mesh(path: str, use_numpy: bool = False) -> MeshData: ...",
+            "def read_mesh(path: str) -> MeshData: ...",
             "def transform_points(
     points: list[list[float]], transform: list[list[float]]) -> list[list[float]]: ...",
             "def transform_vectors(

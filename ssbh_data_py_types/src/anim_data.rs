@@ -141,7 +141,7 @@ impl AnimData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
+        self.map_py(py)?
             .write_to_file(path)
             .map_err(|e| AnimDataError::new_err(format!("{}", e)))
     }
@@ -168,7 +168,7 @@ impl PyiMethods for AnimData {
 fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
     ssbh_data::anim_data::AnimData::from_file(path)
         .map_err(|e| AnimDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }
 
 python_enum!(
@@ -223,20 +223,20 @@ pub struct UvTransform {
 }
 
 impl MapPy<Py<PyList>> for TrackValuesRs {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<Py<PyList>> {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
         match self {
-            TrackValuesRs::Transform(v) => v.map_py(py, false),
-            TrackValuesRs::UvTransform(v) => v.map_py(py, false),
-            TrackValuesRs::Float(v) => v.map_py(py, false),
-            TrackValuesRs::PatternIndex(v) => v.map_py(py, false),
-            TrackValuesRs::Boolean(v) => v.map_py(py, false),
-            TrackValuesRs::Vector4(v) => v.map_py(py, false),
+            TrackValuesRs::Transform(v) => v.map_py(py),
+            TrackValuesRs::UvTransform(v) => v.map_py(py),
+            TrackValuesRs::Float(v) => v.map_py(py),
+            TrackValuesRs::PatternIndex(v) => v.map_py(py),
+            TrackValuesRs::Boolean(v) => v.map_py(py),
+            TrackValuesRs::Vector4(v) => v.map_py(py),
         }
     }
 }
 
 impl MapPy<TrackValuesRs> for Py<PyList> {
-    fn map_py(&self, py: Python, _use_numpy: bool) -> PyResult<TrackValuesRs> {
+    fn map_py(&self, py: Python) -> PyResult<TrackValuesRs> {
         create_track_values_rs(py, self)
     }
 }
@@ -264,7 +264,7 @@ pub fn create_track_values_rs(py: Python, values: &Py<PyList>) -> PyResult<Track
             let v = values.extract::<Vec<UvTransform>>(py)?;
             Ok(TrackValuesRs::UvTransform(
                 v.into_iter()
-                    .map(|t| t.map_py(py, false))
+                    .map(|t| t.map_py(py))
                     .collect::<Result<Vec<_>, _>>()?,
             ))
         })
@@ -272,7 +272,7 @@ pub fn create_track_values_rs(py: Python, values: &Py<PyList>) -> PyResult<Track
             let v = values.extract::<Vec<Transform>>(py)?;
             Ok(TrackValuesRs::Transform(
                 v.into_iter()
-                    .map(|t| t.map_py(py, false))
+                    .map(|t| t.map_py(py))
                     .collect::<Result<Vec<_>, _>>()?,
             ))
         })

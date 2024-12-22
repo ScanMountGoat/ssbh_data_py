@@ -51,9 +51,7 @@ impl HlpbData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
-            .write_to_file(path)
-            .map_err(PyErr::from)
+        self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
     }
 
     fn __repr__(&self) -> String {
@@ -189,5 +187,5 @@ pub struct OrientConstraintData {
 fn read_hlpb(py: Python, path: &str) -> PyResult<HlpbData> {
     ssbh_data::hlpb_data::HlpbData::from_file(path)
         .map_err(|e| HlpbDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }

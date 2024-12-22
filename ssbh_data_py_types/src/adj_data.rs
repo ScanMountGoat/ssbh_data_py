@@ -35,7 +35,7 @@ impl AdjData {
     }
 
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
-        self.map_py(py, false)?
+        self.map_py(py)?
             .write_to_file(path)
             .map_err(|e| AdjDataError::new_err(format!("{}", e)))
     }
@@ -87,13 +87,13 @@ impl AdjEntryData {
         let vertex_indices: Vec<u32> = mesh_object.vertex_indices.extract(py)?;
         let positions: Vec<mesh_data::AttributeData> = mesh_object.positions.extract(py)?;
         // TODO: Avoid unwrap?
-        let vertex_positions = positions.first().unwrap().data.map_py(py, false)?;
+        let vertex_positions = positions.first().unwrap().data.map_py(py)?;
         let entry = ssbh_data::adj_data::AdjEntryData::from_vector_data(
             mesh_object_index,
             &vertex_positions,
             &vertex_indices,
         );
-        entry.map_py(py, false)
+        entry.map_py(py)
     }
 
     fn __repr__(&self) -> String {
@@ -119,5 +119,5 @@ impl PyiMethods for AdjEntryData {
 fn read_adj(py: Python, path: &str) -> PyResult<AdjData> {
     ssbh_data::adj_data::AdjData::from_file(path)
         .map_err(|e| AdjDataError::new_err(format!("{}", e)))?
-        .map_py(py, false)
+        .map_py(py)
 }
