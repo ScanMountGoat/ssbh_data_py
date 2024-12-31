@@ -25,7 +25,7 @@ Updating: `pip install ssbh_data_py --upgrade`
 The minimum supported pip version is 20.3. 
 
 ## Requirements
-The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.7, 3.8, 3.9, and 3.10 for newer versions of Windows, Linux, and Mac OS. Apple Silicon support is currently only available for Python 3.9 and 3.10. For other Python versions, build ssbh_data_py from source. ssbh_data_py requires the `numpy` package for transforms and attribute data.
+The package is available on [PyPi](https://pypi.org/project/ssbh_data_py/) for Python 3.9, 3.10, 3.11, 3.12, and 3.13 for newer versions of Windows, Linux, and Mac OS. For other Python versions, build ssbh_data_py from source. ssbh_data_py requires the `numpy` package for transforms and attribute data.
 
 ## Getting Started
 Each supported SSBH type has an associated data struct that can be created reading from a file.
