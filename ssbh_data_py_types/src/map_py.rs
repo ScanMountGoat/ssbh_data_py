@@ -1,7 +1,5 @@
-use crate::create_py_list_from_slice;
-use num_traits::AsPrimitive;
-use numpy::{ndarray::Dim, PyArray, PyArray2, PyArrayMethods, ToPyArray};
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyList};
+use numpy::{IntoPyArray, PyArray, PyArray1, PyArray2, PyArrayMethods, ToPyArray};
+use pyo3::{prelude::*, types::PyList};
 
 // Define a mapping between types.
 // This allows for deriving the Python <-> Rust conversion.
@@ -101,6 +99,22 @@ impl MapPy<PyObject> for [[f32; 4]; 4] {
     }
 }
 
+impl MapPy<[[f32; 4]; 4]> for Py<PyArray2<f32>> {
+    fn map_py(&self, py: Python) -> PyResult<[[f32; 4]; 4]> {
+        self.extract::<[[f32; 4]; 4]>(py)
+    }
+}
+
+impl MapPy<Py<PyArray2<f32>>> for [[f32; 4]; 4] {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyArray2<f32>>> {
+        Ok(PyArray::from_slice(py, self.as_flattened())
+            .readwrite()
+            .reshape((4, 4))
+            .unwrap()
+            .into())
+    }
+}
+
 map_py_pyobject_impl!(Vec<u32>);
 impl MapPy<PyObject> for Vec<u32> {
     fn map_py(&self, py: Python) -> PyResult<PyObject> {
@@ -175,3 +189,62 @@ impl MapPy<Py<PyList>> for ssbh_data::Vector3 {
         PyList::new(py, self.to_array()).map(Into::into)
     }
 }
+
+macro_rules! map_py_vecn_ndarray_impl {
+    ($($n:expr),*) => {
+        $(
+            impl MapPy<Py<PyArray2<f32>>> for Vec<[f32; $n]> {
+                fn map_py(&self, py: Python) -> PyResult<Py<PyArray2<f32>>> {
+                    // This flatten will be optimized in Release mode.
+                    // This avoids needing unsafe code.
+                    // TODO: Double check this optimization.
+                    // TODO: faster to use bytemuck?
+                    let count = self.len();
+                    Ok(self
+                        .iter()
+                        .copied()
+                        .flat_map(|v| v)
+                        .collect::<Vec<f32>>()
+                        .into_pyarray(py)
+                        .reshape((count, $n))
+                        .unwrap()
+                        .into())
+                }
+            }
+
+            impl MapPy<Vec<[f32; $n]>> for Py<PyArray2<f32>> {
+                fn map_py(&self, py: Python) -> PyResult<Vec<[f32; $n]>> {
+                    let array = self.as_any().downcast_bound::<PyArray2<f32>>(py)?;
+                    Ok(array
+                        .readonly()
+                        .as_array()
+                        .rows()
+                        .into_iter()
+                        .map(|r| r.as_slice().unwrap().try_into().unwrap())
+                        .collect())
+                }
+            }
+        )*
+    };
+}
+map_py_vecn_ndarray_impl!(2, 3, 4);
+
+macro_rules! map_py_pyobject_ndarray_impl {
+    ($($t:ty),*) => {
+        $(
+            impl MapPy<Py<PyArray1<$t>>> for Vec<$t> {
+                fn map_py(&self, py: Python) -> PyResult<Py<PyArray1<$t>>> {
+                    Ok(self.to_pyarray(py).into())
+                }
+            }
+
+            impl MapPy<Vec<$t>> for Py<PyArray1<$t>> {
+                fn map_py(&self, py: Python) -> PyResult<Vec<$t>> {
+                    let array = self.as_any().downcast_bound::<PyArray1<$t>>(py)?;
+                    Ok(array.readonly().as_slice()?.to_vec())
+                }
+            }
+        )*
+    }
+}
+map_py_pyobject_ndarray_impl!(u16, u32, f32);

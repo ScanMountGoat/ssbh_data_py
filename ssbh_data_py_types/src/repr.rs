@@ -1,4 +1,4 @@
-use pyo3::{prelude::*, types::PyList};
+use pyo3::{prelude::*, PyTypeInfo};
 
 /// A trait to make it easier to implement the __repr__ method.
 pub trait PyRepr {
@@ -39,13 +39,7 @@ impl PyRepr for String {
 
 // Simply calling Display produces the correct formatting.
 // The tests below check that this doesn't break.
-impl PyRepr for Py<PyList> {
-    fn py_repr(&self) -> String {
-        format!("{}", self)
-    }
-}
-
-impl PyRepr for PyObject {
+impl<T: PyTypeInfo> PyRepr for Py<T> {
     fn py_repr(&self) -> String {
         format!("{}", self)
     }

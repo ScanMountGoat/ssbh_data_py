@@ -1,9 +1,6 @@
-use crate::create_py_list_from_slice;
 use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
-use num_traits::AsPrimitive;
-use numpy::PyArrayMethods;
-use numpy::{ndarray::Dim, IntoPyArray, PyArray, PyArray2};
-use pyo3::exceptions::PyValueError;
+use numpy::{IntoPyArray, PyArray2, PyUntypedArrayMethods};
+use numpy::{PyArray1, PyArrayMethods};
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::mesh_data::VectorData as VectorDataRs;
@@ -60,7 +57,7 @@ impl MeshData {
     fn save(&self, py: Python, path: &str) -> PyResult<()> {
         self.map_py(py)?
             .write_to_file(path)
-            .map_err(|e| MeshDataError::new_err(format!("{}", e)))
+            .map_err(|e| MeshDataError::new_err(format!("{e}")))
     }
 
     fn __repr__(&self) -> String {
@@ -113,9 +110,9 @@ pub struct MeshObjectData {
     pub sort_bias: i32,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyinit(default = "numpy::PyArray1::zeros(py, 0, false).into()")]
     #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
-    pub vertex_indices: PyObject,
+    pub vertex_indices: Py<PyArray1<u32>>,
 
     #[pyo3(get, set)]
     #[pyinit(default = "PyList::empty(py).into()")]
@@ -187,22 +184,12 @@ pub struct AttributeData {
     pub name: String,
 
     #[pyo3(get, set)]
-    #[pyinit(default = "PyList::empty(py).into()")]
+    #[pyinit(default = "numpy::PyArray2::zeros(py, [0, 0], false).into()")]
     #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
-    pub data: PyObject,
+    pub data: Py<PyArray2<f32>>,
 }
 
-impl MapPy<PyObject> for VectorDataRs {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
-        match self {
-            VectorDataRs::Vector2(v) => vectors_pyarray(py, v),
-            VectorDataRs::Vector3(v) => vectors_pyarray(py, v),
-            VectorDataRs::Vector4(v) => vectors_pyarray(py, v),
-        }
-    }
-}
-
-fn vectors_pyarray<const N: usize>(py: Python, values: &[[f32; N]]) -> PyResult<PyObject> {
+fn vectors_pyarray<const N: usize>(py: Python, values: &[[f32; N]]) -> PyResult<Py<PyArray2<f32>>> {
     // This flatten will be optimized in Release mode.
     // This avoids needing unsafe code.
     // TODO: Can we avoid flattening and then reshaping?
@@ -216,36 +203,46 @@ fn vectors_pyarray<const N: usize>(py: Python, values: &[[f32; N]]) -> PyResult<
         .into_pyarray(py)
         .reshape((count, N))
         .unwrap()
-        .into_any()
         .into())
 }
 
-impl MapPy<VectorDataRs> for PyObject {
+impl MapPy<Py<PyArray2<f32>>> for VectorDataRs {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyArray2<f32>>> {
+        match self {
+            VectorDataRs::Vector2(v) => vectors_pyarray(py, v),
+            VectorDataRs::Vector3(v) => vectors_pyarray(py, v),
+            VectorDataRs::Vector4(v) => vectors_pyarray(py, v),
+        }
+    }
+}
+
+impl MapPy<VectorDataRs> for Py<PyArray2<f32>> {
     fn map_py(&self, py: Python) -> PyResult<VectorDataRs> {
-        // We don't know the type from Python at this point.
-        // Try all the supported types and fail if all conversions fail.
-        // TODO: Is there an easy way to convert f64 to f32 for the entire array?
-        self.extract::<Vec<[f32; 2]>>(py)
-            .map(VectorDataRs::Vector2)
-            .or_else(|_| self.extract::<Vec<[f32; 3]>>(py).map(VectorDataRs::Vector3))
-            .or_else(|_| self.extract::<Vec<[f32; 4]>>(py).map(VectorDataRs::Vector4))
-        // .or_else(|_| self.extract::<&PyArray2<f32>>(py).and_then(vector_data))
-        // .or_else(|_| self.extract::<&PyArray2<f64>>(py).and_then(vector_data))
-        // .or_else(|_| self.extract::<&PyArray2<i8>>(py).and_then(vector_data))
-        // .or_else(|_| self.extract::<&PyArray2<i16>>(py).and_then(vector_data))
-        // .or_else(|_| self.extract::<&PyArray2<i32>>(py).and_then(vector_data))
+        let array = self.as_any().downcast_bound::<PyArray2<f32>>(py)?;
+        match array.readonly().shape()[1] {
+            2 => self.map_py(py).map(VectorDataRs::Vector2),
+            3 => self.map_py(py).map(VectorDataRs::Vector3),
+            4 => self.map_py(py).map(VectorDataRs::Vector4),
+            dim => Err(MeshDataError::new_err(format!(
+                "Unsupported vector dimensions {dim}"
+            ))),
+        }
     }
 }
 
 #[pyfunction]
 fn read_mesh(py: Python, path: &str) -> PyResult<MeshData> {
     ssbh_data::mesh_data::MeshData::from_file(path)
-        .map_err(|e| MeshDataError::new_err(format!("{}", e)))?
+        .map_err(|e| MeshDataError::new_err(format!("{e}")))?
         .map_py(py)
 }
 
 #[pyfunction]
-fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
+fn transform_points(
+    py: Python,
+    points: Py<PyArray2<f32>>,
+    transform: Py<PyArray2<f32>>,
+) -> PyResult<Py<PyArray2<f32>>> {
     let points = points.map_py(py)?;
     let transform = transform.map_py(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
@@ -253,7 +250,11 @@ fn transform_points(py: Python, points: PyObject, transform: PyObject) -> PyResu
 }
 
 #[pyfunction]
-fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyResult<PyObject> {
+fn transform_vectors(
+    py: Python,
+    points: Py<PyArray2<f32>>,
+    transform: Py<PyArray2<f32>>,
+) -> PyResult<Py<PyArray2<f32>>> {
     let points = points.map_py(py)?;
     let transform = transform.map_py(py)?;
     let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
@@ -263,23 +264,23 @@ fn transform_vectors(py: Python, points: PyObject, transform: PyObject) -> PyRes
 #[pyfunction]
 fn calculate_smooth_normals(
     py: Python,
-    positions: PyObject,
-    vertex_indices: PyObject,
-) -> PyResult<Py<PyList>> {
+    positions: Py<PyArray2<f32>>,
+    vertex_indices: Py<PyArray1<u32>>,
+) -> PyResult<Py<PyArray2<f32>>> {
     let positions = positions.map_py(py)?;
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
-    create_py_list_from_slice(py, &normals)
+    normals.map_py(py)
 }
 
 #[pyfunction]
 fn calculate_tangents_vec4(
     py: Python,
-    positions: PyObject,
-    normals: PyObject,
-    uvs: PyObject,
-    vertex_indices: PyObject,
-) -> PyResult<Py<PyList>> {
+    positions: Py<PyArray2<f32>>,
+    normals: Py<PyArray2<f32>>,
+    uvs: Py<PyArray2<f32>>,
+    vertex_indices: Py<PyArray1<u32>>,
+) -> PyResult<Py<PyArray2<f32>>> {
     let positions = positions.map_py(py)?;
     let normals = normals.map_py(py)?;
     let uvs = uvs.map_py(py)?;
@@ -287,7 +288,6 @@ fn calculate_tangents_vec4(
     let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
     let tangents =
         ssbh_data::mesh_data::calculate_tangents_vec4(&positions, &normals, &uvs, &vertex_indices)
-            .map_err(|e| MeshDataError::new_err(format!("{}", e)))?;
-
-    create_py_list_from_slice(py, &tangents)
+            .map_err(|e| MeshDataError::new_err(format!("{e}")))?;
+    tangents.map_py(py)
 }
