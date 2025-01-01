@@ -197,7 +197,7 @@ fn vectors_pyarray<const N: usize>(py: Python, values: &[[f32; N]]) -> PyResult<
     let count = values.len();
     Ok(values
         .iter()
-        .flat_map(|v| v)
+        .flatten()
         .copied()
         .collect::<Vec<f32>>()
         .into_pyarray(py)

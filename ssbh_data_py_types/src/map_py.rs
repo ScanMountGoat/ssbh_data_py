@@ -1,5 +1,5 @@
 use numpy::{IntoPyArray, PyArray, PyArray1, PyArray2, PyArrayMethods, ToPyArray};
-use pyo3::{prelude::*, types::PyList};
+use pyo3::{prelude::*, types::PyList, IntoPyObjectExt};
 
 // Define a mapping between types.
 // This allows for deriving the Python <-> Rust conversion.
@@ -54,7 +54,7 @@ macro_rules! map_py_impl {
                     &self,
                     py: Python,
                 ) -> PyResult<PyObject> {
-                    Ok(self.into_py(py))
+                    self.into_py_any(py)
                 }
             }
 
@@ -66,7 +66,6 @@ macro_rules! map_py_impl {
         )*
     }
 }
-
 map_py_impl!(bool, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, f32, f64, String);
 
 macro_rules! map_py_pyobject_impl {
