@@ -49,7 +49,7 @@ fn create_modify_mesh_object() {
         assert m.color_sets == []
         assert m.bone_influences == []
 
-        m.vertex_indices = np.array([1, 2, 3], dtype=np.uint32)
+        m.vertex_indices = numpy.array([1, 2, 3], dtype=numpy.uint32)
         assert m.vertex_indices.tolist() == [1,2,3]
     "#})
     .unwrap();
@@ -59,7 +59,7 @@ fn create_modify_mesh_object() {
 fn mesh_object_vertex_indices_ndarray() {
     run_python_code(indoc! {r#"
         m = ssbh_data_py.mesh_data.MeshObjectData("abc", 1)
-        m.vertex_indices = np.array([1, 2, 3], dtype=np.uint32)
+        m.vertex_indices = numpy.array([1, 2, 3], dtype=numpy.uint32)
         assert m.vertex_indices.tolist() == [1,2,3]
     "#})
     .unwrap();
@@ -73,7 +73,7 @@ fn create_modify_attribute_data() {
         assert a.data.tolist() == []
 
         a.name = "def"
-        a.data = np.array([[1.0, 2.0]], dtype=np.float32)
+        a.data = numpy.array([[1.0, 2.0]], dtype=numpy.float32)
         assert a.name == "def"
         assert a.data.tolist() == [[1.0, 2.0]]
 
@@ -122,7 +122,7 @@ fn create_modify_bone_influence() {
 #[test]
 fn vector2_from_ndarray() {
     eval_python_code(
-        "np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32)",
+        "numpy.array([[0.0, 1.0], [2.0, 3.0]], dtype=numpy.float32)",
         |py, x| {
             let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
             let value = x.as_unbound().map_py(py).unwrap();
@@ -134,7 +134,7 @@ fn vector2_from_ndarray() {
 #[test]
 fn vector3_from_ndarray() {
     eval_python_code(
-        "np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]], dtype=np.float32)",
+        "numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]], dtype=numpy.float32)",
         |py, x| {
             let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
             let value = x.as_unbound().map_py(py).unwrap();
@@ -149,7 +149,7 @@ fn vector3_from_ndarray() {
 #[test]
 fn vector4_from_ndarray() {
     eval_python_code(
-        "np.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]], dtype=np.float32)",
+        "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]], dtype=numpy.float32)",
         |py, x| {
             let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
             let value = x.as_unbound().map_py(py).unwrap();
@@ -165,7 +165,7 @@ fn vector4_from_ndarray() {
 #[should_panic]
 fn vector_from_5x5_ndarray() {
     // Vector5 is not a valid variant.
-    eval_python_code("np.zeros((5,5), dtype=np.float32)", |py, x| {
+    eval_python_code("numpy.zeros((5,5), dtype=numpy.float32)", |py, x| {
         let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
         let _: VectorData = x.as_unbound().map_py(py).unwrap();
     });
@@ -176,7 +176,7 @@ fn vector_from_5x5_ndarray() {
 #[should_panic]
 fn vector_from_empty_ndarray() {
     // TODO: How to infer the type when there are no elements?
-    eval_python_code("np.array()", |py, x| {
+    eval_python_code("numpy.array()", |py, x| {
         let x = x.downcast::<numpy::PyArray1<f32>>().unwrap();
         let _ = x.as_unbound().map_py(py).unwrap();
     });
@@ -185,13 +185,13 @@ fn vector_from_empty_ndarray() {
 #[test]
 fn transform_points_ndarray() {
     run_python_code(indoc! {r#"
-        points = np.array([[1,2,3],[4,5,6]], dtype=np.float32)
-        transform = np.array([
+        points = numpy.array([[1,2,3],[4,5,6]], dtype=numpy.float32)
+        transform = numpy.array([
             [1,0,0,0],
             [0,1,0,0],
             [0,0,1,0],
             [-1,-2,-3,1]
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         transformed = ssbh_data_py.mesh_data.transform_points(points, transform)
         assert transformed.tolist() == [[0,0,0],[3,3,3]]
     "#})
@@ -201,13 +201,13 @@ fn transform_points_ndarray() {
 #[test]
 fn transform_vectors_ndarray() {
     run_python_code(indoc! {r#"
-        points = np.array([[1,2,3],[4,5,6]], dtype=np.float32)
-        transform = np.array([
+        points = numpy.array([[1,2,3],[4,5,6]], dtype=numpy.float32)
+        transform = numpy.array([
             [1,0,0,0],
             [0,1,0,0],
             [0,0,1,0],
             [-1,-2,-3,1]
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         transformed = ssbh_data_py.mesh_data.transform_vectors(points, transform)
         assert transformed.tolist() == [[1,2,3],[4,5,6]]
     "#})
@@ -217,7 +217,7 @@ fn transform_vectors_ndarray() {
 #[test]
 fn calculate_smooth_normals_ndarray() {
     run_python_code(indoc! {r#"
-        ssbh_data_py.mesh_data.calculate_smooth_normals(np.zeros((12,4), dtype=np.float32), np.arange(12, dtype=np.uint32))
+        ssbh_data_py.mesh_data.calculate_smooth_normals(numpy.zeros((12,4), dtype=numpy.float32), numpy.arange(12, dtype=numpy.uint32))
     "#})
     .unwrap();
 }
@@ -225,6 +225,6 @@ fn calculate_smooth_normals_ndarray() {
 #[test]
 fn calculate_tangents_vec4_ndarray() {
     run_python_code(indoc! {r#"
-        ssbh_data_py.mesh_data.calculate_tangents_vec4(np.zeros((12,4), dtype=np.float32), np.zeros((12,4), dtype=np.float32), np.zeros((12,2), dtype=np.float32), np.arange(12, dtype=np.uint32))
+        ssbh_data_py.mesh_data.calculate_tangents_vec4(numpy.zeros((12,4), dtype=numpy.float32), numpy.zeros((12,4), dtype=numpy.float32), numpy.zeros((12,2), dtype=numpy.float32), numpy.arange(12, dtype=numpy.uint32))
     "#}).unwrap();
 }

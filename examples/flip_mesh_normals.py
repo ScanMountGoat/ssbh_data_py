@@ -3,6 +3,7 @@
 # If normals on a model appear "flipped" or inside out, this script may help.
 # Ideally, these should both be fixed in a 3D modeling program before exporting.
 import ssbh_data_py
+import numpy
 
 # It may not be necessary to reverse both normals and winding order in all cases.
 reverse_winding_order = True
@@ -19,16 +20,22 @@ for object in mesh.objects:
     # Flip the normals and related vectors.
     if flip_normals:
         for normal in object.normals:
-            normal.data = [[-x, -y, -z, 0.0] for [x, y, z, _] in normal.data]
-            # normal.data = [[-x, -y, -z] for [x, y, z] in normal.data] # 3-component normals
+            # Omit the 4th component to save 3-component normals
+            normal.data = numpy.array(
+                [[-x, -y, -z, 0.0] for [x, y, z, _] in normal.data], dtype=numpy.float32
+            )
 
         # Some models may also have tangents and binormals (bitangents) to flip as well.
         for binormal in object.binormals:
-            binormal.data = [[-x, -y, -z] for [x, y, z] in binormal.data]
-            # binormal.data = [[-x, -y, -z, 0.0] for [x, y, z, _] in binormal.data] # 4-component binormals
+            # Omit the 4th component to save 3-component binormals
+            binormal.data = numpy.array(
+                [[-x, -y, -z] for [x, y, z] in binormal.data], dtype=numpy.float32
+            )
 
         for tangent in object.tangents:
-            tangent.data = [[-x, -y, -z, w] for [x, y, z, w] in tangent.data]
-            # tangent.data = [[-x, -y, -z] for [x, y, z] in tangent.data] # 3-component tangents
+            # Omit the 4th component to save 3-component tangents
+            tangent.data = numpy.array(
+                [[-x, -y, -z, w] for [x, y, z, w] in tangent.data], dtype=numpy.float32
+            )
 
 mesh.save("model.numshb")

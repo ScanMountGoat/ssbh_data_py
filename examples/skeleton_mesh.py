@@ -5,6 +5,7 @@
 
 import sys
 import ssbh_data_py
+import numpy
 
 input_skel_path = sys.argv[1]
 output_mesh_path = sys.argv[2]
@@ -12,44 +13,47 @@ output_modl_path = sys.argv[3]
 
 # 3d points for a small cube centered at the origin.
 scale = 0.25
-points = [
-    [-scale, -scale, -scale],
-    [-scale, -scale, scale],
-    [-scale, scale, scale],
-    [scale, scale, -scale],
-    [-scale, -scale, -scale],
-    [-scale, scale, -scale],
-    [scale, -scale, scale],
-    [-scale, -scale, -scale],
-    [scale, -scale, -scale],
-    [scale, scale, -scale],
-    [scale, -scale, -scale],
-    [-scale, -scale, -scale],
-    [-scale, -scale, -scale],
-    [-scale, scale, scale],
-    [-scale, scale, -scale],
-    [scale, -scale, scale],
-    [-scale, -scale, scale],
-    [-scale, -scale, -scale],
-    [-scale, scale, scale],
-    [-scale, -scale, scale],
-    [scale, -scale, scale],
-    [scale, scale, scale],
-    [scale, -scale, -scale],
-    [scale, scale, -scale],
-    [scale, -scale, -scale],
-    [scale, scale, scale],
-    [scale, -scale, scale],
-    [scale, scale, scale],
-    [scale, scale, -scale],
-    [-scale, scale, -scale],
-    [scale, scale, scale],
-    [-scale, scale, -scale],
-    [-scale, scale, scale],
-    [scale, scale, scale],
-    [-scale, scale, scale],
-    [scale, -scale, scale],
-]
+points = numpy.array(
+    [
+        [-scale, -scale, -scale],
+        [-scale, -scale, scale],
+        [-scale, scale, scale],
+        [scale, scale, -scale],
+        [-scale, -scale, -scale],
+        [-scale, scale, -scale],
+        [scale, -scale, scale],
+        [-scale, -scale, -scale],
+        [scale, -scale, -scale],
+        [scale, scale, -scale],
+        [scale, -scale, -scale],
+        [-scale, -scale, -scale],
+        [-scale, -scale, -scale],
+        [-scale, scale, scale],
+        [-scale, scale, -scale],
+        [scale, -scale, scale],
+        [-scale, -scale, scale],
+        [-scale, -scale, -scale],
+        [-scale, scale, scale],
+        [-scale, -scale, scale],
+        [scale, -scale, scale],
+        [scale, scale, scale],
+        [scale, -scale, -scale],
+        [scale, scale, -scale],
+        [scale, -scale, -scale],
+        [scale, scale, scale],
+        [scale, -scale, scale],
+        [scale, scale, scale],
+        [scale, scale, -scale],
+        [-scale, scale, -scale],
+        [scale, scale, scale],
+        [-scale, scale, -scale],
+        [-scale, scale, scale],
+        [scale, scale, scale],
+        [-scale, scale, scale],
+        [scale, -scale, scale],
+    ],
+    dtype=numpy.float32,
+)
 
 # Collect the bone names from the skel.
 skel_data = ssbh_data_py.skel_data.read_skel(input_skel_path)
@@ -77,20 +81,24 @@ for i, bone_name in enumerate(bone_names):
     # Create additional attributes required by Smash Ultimate.
     # Normal and tangent generation is not currently supported by ssbh_data_py.
     normal0 = ssbh_data_py.mesh_data.AttributeData("Normal0")
-    normal0.data = [[0.5, 0.5, 0.5, 0.5]] * len(points)
+    normal0.data = numpy.array(
+        [[0.5, 0.5, 0.5, 0.5]] * len(points), dtype=numpy.float32
+    )
     mesh_object.normals = [normal0]
 
     tangent0 = ssbh_data_py.mesh_data.AttributeData("Tangent0")
-    tangent0.data = [[0.5, 0.5, 0.5, 1.0]] * len(points)
+    tangent0.data = numpy.array(
+        [[0.5, 0.5, 0.5, 1.0]] * len(points), dtype=numpy.float32
+    )
     mesh_object.tangents = [tangent0]
 
     map1 = ssbh_data_py.mesh_data.AttributeData("map1")
-    map1.data = [[0.5, 0.5]] * len(points)
+    map1.data = numpy.array([[0.5, 0.5]] * len(points), dtype=numpy.float32)
     mesh_object.texture_coordinates = [map1]
 
     # Generate an index for each point.
     # This wastes memory by not reusing vertices but is fine for this small example.
-    mesh_object.vertex_indices = list(range(len(points)))
+    mesh_object.vertex_indices = numpy.arange(len(points), dtype=numpy.uint32)
 
     mesh.objects.append(mesh_object)
 

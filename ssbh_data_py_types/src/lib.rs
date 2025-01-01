@@ -162,7 +162,7 @@ pub fn run_python_code(code: &str) -> PyResult<()> {
         // This may require some configuration to run tests with github actions.
         let ctx = [
             ("ssbh_data_py", module),
-            ("np", PyModule::import(py, "numpy").unwrap()),
+            ("numpy", PyModule::import(py, "numpy").unwrap()),
         ]
         .into_py_dict(py)
         .unwrap();
@@ -181,7 +181,7 @@ pub fn eval_python_code<F: Fn(Python, Bound<'_, PyAny>)>(code: &str, f: F) {
         // This may require some configuration to run tests with github actions.
         let ctx = [
             ("ssbh_data_py", module),
-            ("np", PyModule::import(py, "numpy").unwrap()),
+            ("numpy", PyModule::import(py, "numpy").unwrap()),
         ]
         .into_py_dict(py)
         .unwrap();

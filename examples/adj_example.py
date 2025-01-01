@@ -15,7 +15,9 @@ for entry in adj.entries:
     vertex_index = 3
     start = vertex_index * 18
     adjacent_vertices = entry.vertex_adjacency[start : start + 18]
-    print(f"Vertex: {vertex_index}, Adjacent: {adjacent_vertices}")
+    # This should always be numpy.int16
+    dtype = entry.vertex_adjacency.dtype
+    print(f"Vertex: {vertex_index}, Adjacent: {adjacent_vertices}, {dtype}")
     print()
 
 # Save any changes made to the adjb.

@@ -37,7 +37,7 @@ fn vertex_adjacency_numpy() {
     run_python_code(indoc! {r#"
             e = ssbh_data_py.adj_data.AdjEntryData(3)
             assert e.mesh_object_index == 3
-            e.vertex_adjacency = np.array([-1, 3, 7], dtype=np.int16)
+            e.vertex_adjacency = numpy.array([-1, 3, 7], dtype=numpy.int16)
             assert e.vertex_adjacency.tolist() == [-1, 3, 7]
         "#})
     .unwrap();

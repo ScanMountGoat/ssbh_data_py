@@ -1,4 +1,5 @@
 import ssbh_data_py
+import numpy
 
 # Open the mesh from a .numshb file.
 mesh = ssbh_data_py.mesh_data.read_mesh("model.numshb")
@@ -47,7 +48,9 @@ for o in mesh.objects:
     for texture_coordinate in o.texture_coordinates:
         print(texture_coordinate.name)
         # An example for how to flip the UVs vertically.
-        texture_coordinate.data = [[u, 1.0 - v] for [u, v] in texture_coordinate.data]
+        texture_coordinate.data = numpy.array(
+            [[u, 1.0 - v] for [u, v] in texture_coordinate.data], dtype=numpy.float32
+        )
 
     # Color sets are accessed as floating point values in the range 0.0 (black) to 0.5 (white).
     for color_set in o.color_sets:
@@ -56,12 +59,16 @@ for o in mesh.objects:
         # Set the vertex color RGB to white but keep the original alpha.
         # Note that looping over the elements individually can be slow.
         # List comprehension will be faster in many cases.
-        color_set.data = [[0.5, 0.5, 0.5, a] for [r, g, b, a] in color_set.data]
+        color_set.data = numpy.array(
+            [[0.5, 0.5, 0.5, a] for [r, g, b, a] in color_set.data], dtype=numpy.float32
+        )
 
     # Add a new color set attribute with the appropriate number of data elements.
     # The process is similar for for adding positions, normals, etc.
     new_color_set = ssbh_data_py.mesh_data.AttributeData("colorSet3")
-    new_color_set.data = [[0.5, 0.5, 0.5, 0.5]] * len(o.positions[0].data)
+    new_color_set.data = numpy.array(
+        [[0.5, 0.5, 0.5, 0.5]] * len(o.positions[0].data), dtype=numpy.float32
+    )
     o.color_sets.append(new_color_set)
 
     # The vertex data is indexed, so use the vertex indices to get the actual rendered vertices.

@@ -27,12 +27,12 @@ fn create_skel() {
 #[test]
 fn create_bone_data_numpy() {
     run_python_code(indoc! {r#"
-        b = ssbh_data_py.skel_data.BoneData("abc", np.zeros((4,4), dtype=np.float32), 5)
+        b = ssbh_data_py.skel_data.BoneData("abc", numpy.zeros((4,4), dtype=numpy.float32), 5)
         assert b.name == "abc"
         assert b.transform.tolist() == [[0,0,0,0]]*4
         assert b.parent_index == 5
 
-        b = ssbh_data_py.skel_data.BoneData("abc", np.ones((4,4), dtype=np.float32), None)
+        b = ssbh_data_py.skel_data.BoneData("abc", numpy.ones((4,4), dtype=numpy.float32), None)
         assert b.name == "abc"
         assert b.transform.tolist() == [[1,1,1,1]]*4
         assert b.parent_index == None
@@ -47,8 +47,8 @@ fn create_bone_data_numpy() {
 fn calculate_world_transform_no_parent() {
     run_python_code(indoc! {r#"
         s = ssbh_data_py.skel_data.SkelData()
-        b0 = ssbh_data_py.skel_data.BoneData("b0", np.zeros((4,4), dtype=np.float32), None)
-        b1 = ssbh_data_py.skel_data.BoneData("b1", np.ones((4,4), dtype=np.float32), None)
+        b0 = ssbh_data_py.skel_data.BoneData("b0", numpy.zeros((4,4), dtype=numpy.float32), None)
+        b1 = ssbh_data_py.skel_data.BoneData("b1", numpy.ones((4,4), dtype=numpy.float32), None)
         s.bones = [b0, b1]
 
         assert s.calculate_world_transform(b1).tolist() == b1.transform.tolist()
@@ -60,8 +60,8 @@ fn calculate_world_transform_no_parent() {
 fn calculate_world_transform_with_parent() {
     run_python_code(indoc! {r#"
         s = ssbh_data_py.skel_data.SkelData()
-        b0 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4), dtype=np.float32), None)
-        b1 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4), dtype=np.float32) * 2, 0)
+        b0 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4), dtype=numpy.float32), None)
+        b1 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4), dtype=numpy.float32) * 2, 0)
         s.bones = [b0, b1]
 
         assert s.calculate_world_transform(b1).tolist() == [[8,8,8,8]]*4
@@ -73,8 +73,8 @@ fn calculate_world_transform_with_parent() {
 fn calculate_world_transform_with_parent_ndarray() {
     run_python_code(indoc! {r#"
         s = ssbh_data_py.skel_data.SkelData()
-        b0 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4), dtype=np.float32), None)
-        b1 = ssbh_data_py.skel_data.BoneData("b0", np.ones((4,4), dtype=np.float32)*2, 0)
+        b0 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4), dtype=numpy.float32), None)
+        b1 = ssbh_data_py.skel_data.BoneData("b0", numpy.ones((4,4), dtype=numpy.float32)*2, 0)
         s.bones = [b0, b1]
 
         assert s.calculate_world_transform(b1).tolist() == [[8,8,8,8]]*4
@@ -85,24 +85,24 @@ fn calculate_world_transform_with_parent_ndarray() {
 #[test]
 fn calculate_relative_transform_with_parent() {
     run_python_code(indoc! {r#"
-        world_transform = np.array([
+        world_transform = numpy.array([
             [2, 0, 0, 0],
             [0, 4, 0, 0],
             [0, 0, 8, 0],
             [0, 0, 0, 1],
-        ], dtype=np.float32)
-        parent_world_transform = np.array([
+        ], dtype=numpy.float32)
+        parent_world_transform = numpy.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [1, 2, 3, 1],
-        ], dtype=np.float32)
-        relative_transform = np.array([
+        ], dtype=numpy.float32)
+        relative_transform = numpy.array([
             [2.0, 0, 0, 0],
             [0, 4, 0, 0],
             [0, 0, 8, 0],
             [-2, -8, -24, 1],
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, parent_world_transform).tolist() == relative_transform.tolist()
     "#})
     .unwrap();
@@ -111,12 +111,12 @@ fn calculate_relative_transform_with_parent() {
 #[test]
 fn calculate_relative_transform_no_parent() {
     run_python_code(indoc! {r#"
-        world_transform = np.array([
+        world_transform = numpy.array([
             [0, 1, 2, 3],
             [4, 5, 6, 7],
             [8, 9, 10, 11],
             [12, 13, 14, 15],
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None).tolist() == world_transform.tolist()
     "#})
     .unwrap();
@@ -126,12 +126,12 @@ fn calculate_relative_transform_no_parent() {
 fn calculate_relative_transform_no_parent_ndarray() {
     // TODO: This can also return a numpy array in the future.
     run_python_code(indoc! {r#"
-        world_transform = np.array([
+        world_transform = numpy.array([
             [0, 1, 2, 3],
             [4, 5, 6, 7],
             [8, 9, 10, 11],
             [12, 13, 14, 15],
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None).tolist() == world_transform.tolist()
     "#})
     .unwrap();
@@ -141,18 +141,18 @@ fn calculate_relative_transform_no_parent_ndarray() {
 fn calculate_relative_transform_no_parent_tuple() {
     // Tuples should be treated like sequences.
     run_python_code(indoc! {r#"
-        world_transform = np.array([
+        world_transform = numpy.array([
             (0, 1, 2, 3),
             (4, 5, 6, 7),
             (8, 9, 10, 11),
             (12, 13, 14, 15),
-        ], dtype=np.float32)
-        expected = np.array([
+        ], dtype=numpy.float32)
+        expected = numpy.array([
             [0, 1, 2, 3],
             [4, 5, 6, 7],
             [8, 9, 10, 11],
             [12, 13, 14, 15],
-        ], dtype=np.float32)
+        ], dtype=numpy.float32)
         assert ssbh_data_py.skel_data.calculate_relative_transform(world_transform, None).tolist() == expected.tolist()
     "#})
     .unwrap();
