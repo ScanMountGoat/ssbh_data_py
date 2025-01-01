@@ -48,7 +48,7 @@ skel = ssbh_data_py.skel_data.SkelData()
 ssbh_data_py uses standard Python types whenever possible. Conversion to the appropriate binary format is handled automatically on saving. For example, the 4x4 transformation matrix for bone data is simply a numpy array. 
 
 > [!IMPORTANT]
-> Specify the correct `dtype` to avoid conversion errors. Floating point numpy arrays always require `dtype=numpy.float32`. Integer numpy arrays typically require `dtype=numpy.uint32`. The one exception is `dtype=numpy.int16` for `ssbh_data_py.adj_data`.
+> Specify `dtype=numpy.float32` for float arrays and `dtype=numpy.uint32` for integer arrays to prevent conversion errors.
 
 ```python
 import numpy
