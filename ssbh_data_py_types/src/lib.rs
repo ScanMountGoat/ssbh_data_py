@@ -157,16 +157,6 @@ pub fn run_python_code(code: &str) -> PyResult<()> {
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();
         ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py).unwrap();
-        py.run(&std::ffi::CString::new(code).unwrap(), None, Some(&ctx))
-    })
-}
-
-pub fn run_python_code_numpy(code: &str) -> PyResult<()> {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
 
         // This requires numpy to be in the current Python environment.
         // This may require some configuration to run tests with github actions.
@@ -182,20 +172,6 @@ pub fn run_python_code_numpy(code: &str) -> PyResult<()> {
 }
 
 pub fn eval_python_code<F: Fn(Python, Bound<'_, PyAny>)>(code: &str, f: F) {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-        let ctx = [("ssbh_data_py", module)].into_py_dict(py).unwrap();
-
-        let result = py
-            .eval(&std::ffi::CString::new(code).unwrap(), None, Some(&ctx))
-            .unwrap();
-        f(py, result);
-    })
-}
-
-pub fn eval_python_code_numpy<F: Fn(Python, Bound<'_, PyAny>)>(code: &str, f: F) {
     pyo3::prepare_freethreaded_python();
     Python::with_gil(|py| {
         let module = PyModule::new(py, "ssbh_data_py").unwrap();

@@ -45,24 +45,11 @@ modl = ssbh_data_py.modl_data.ModlData()
 skel = ssbh_data_py.skel_data.SkelData()
 ```
 
-ssbh_data_py uses standard Python types whenever possible. Conversion to the appropriate binary format is handled automatically on saving. For example, the 4x4 transformation matrix for bone data is simply a list of lists of floats. 
-```python
-for bone in skel.bones:
-    bone.transform[2][1] = 0.5
-```
-Standard Python operations will work, but lists should always have the same type for each element.  
-```python
-for bone in skel.bones:
-    # Create a 4x4 matrix of all 0's.
-    bone.transform = [[0.0] * 4] * 4
+ssbh_data_py uses standard Python types whenever possible. Conversion to the appropriate binary format is handled automatically on saving. For example, the 4x4 transformation matrix for bone data is simply a numpy array. 
 
-    # Python allows this, but this will cause an exception when saving.
-    bone.transform = [0, "abc", []]
+> [!IMPORTANT]
+> Don't forget to specify the correct `dtype` to avoid conversion errors when assigning variables or saving files. Floating point numpy arrays should always use `dtype-numpy.float32`. Integer numpy arrays typically require `dtype=numpy.uint32` or `dtype=numpy.int16` for `ssbh_data_py.adj_data`.
 
-# ssbh_data_py found an unexpected type, so this line will fail.
-skel.save("skel.nustkb")
-```
-Numpy's `ndarray` type is used for fields and arguments that expect matrices or lists of floats or integers.
 ```python
 import numpy as np
 
