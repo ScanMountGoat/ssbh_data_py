@@ -1,7 +1,4 @@
-use pyo3::{
-    prelude::*,
-    types::{IntoPyDict, PyList},
-};
+use pyo3::{prelude::*, types::IntoPyDict};
 
 // External crates won't depend on ssbh_data_py, so just make everything public for convenience.
 pub mod adj_data;

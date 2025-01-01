@@ -138,15 +138,15 @@ impl<T: MapPy<U>, U> MapPy<Option<U>> for Option<T> {
     }
 }
 
-impl MapPy<ssbh_data::Color4f> for PyObject {
+impl MapPy<ssbh_data::Color4f> for Py<PyList> {
     fn map_py(&self, py: Python) -> PyResult<ssbh_data::Color4f> {
         let [r, g, b, a] = self.extract::<[f32; 4]>(py)?;
         Ok(ssbh_data::Color4f { r, g, b, a })
     }
 }
 
-impl MapPy<PyObject> for ssbh_data::Color4f {
-    fn map_py(&self, py: Python) -> PyResult<PyObject> {
+impl MapPy<Py<PyList>> for ssbh_data::Color4f {
+    fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
         PyList::new(py, [self.r, self.g, self.b, self.a]).map(Into::into)
     }
 }
@@ -247,4 +247,4 @@ macro_rules! map_py_pyobject_ndarray_impl {
         )*
     }
 }
-map_py_pyobject_ndarray_impl!(u16, u32, f32);
+map_py_pyobject_ndarray_impl!(i16, u16, u32, f32);

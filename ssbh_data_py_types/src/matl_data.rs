@@ -171,7 +171,7 @@ param_new_impl!(
     (BlendStateParam, BlendStateData),
     (FloatParam, f32),
     (BooleanParam, bool),
-    (Vector4Param, PyObject),
+    (Vector4Param, Py<PyList>),
     (RasterizerStateParam, RasterizerStateData),
     (SamplerParam, SamplerData),
     (TextureParam, String),
@@ -228,7 +228,7 @@ pub struct Vector4Param {
 
     #[pyo3(get, set)]
     #[pyi(python_type = "list[float]")]
-    pub data: PyObject,
+    pub data: Py<PyList>,
 }
 
 #[pyclass(module = "ssbh_data_py.matl_data")]
@@ -792,7 +792,7 @@ pub struct SamplerData {
 
     #[pyi(python_type = "list[float]")]
     #[pyo3(get, set)]
-    pub border_color: PyObject,
+    pub border_color: Py<PyList>,
 
     #[pyo3(get, set)]
     pub lod_bias: f32,

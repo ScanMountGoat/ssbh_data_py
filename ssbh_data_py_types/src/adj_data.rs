@@ -1,4 +1,5 @@
 use crate::{mesh_data, MapPy, PyRepr, Pyi, PyiMethods};
+use numpy::PyArray1;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
 
@@ -64,8 +65,8 @@ pub struct AdjEntryData {
     pub mesh_object_index: usize,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[int]")]
-    pub vertex_adjacency: PyObject,
+    #[pyi(python_type = "numpy.ndarray")]
+    pub vertex_adjacency: Py<PyArray1<i16>>,
 }
 
 #[pymethods]
@@ -74,7 +75,7 @@ impl AdjEntryData {
     fn new(py: Python, mesh_object_index: usize) -> PyResult<Self> {
         Ok(Self {
             mesh_object_index,
-            vertex_adjacency: PyList::empty(py).into(),
+            vertex_adjacency: PyArray1::from_slice(py, &[]).into(),
         })
     }
 

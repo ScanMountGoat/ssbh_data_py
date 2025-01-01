@@ -17,7 +17,7 @@ class AdjData:
 
 class AdjEntryData:
     mesh_object_index: int
-    vertex_adjacency: list[int]
+    vertex_adjacency: numpy.ndarray
 
     def __init__(
         self,
