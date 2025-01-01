@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 * Enabled numpy arrays by default for better performance and removed `use_numpy` argument from all relevant methods.
 
+### Added
+- Added support for Python 3.13 for PyPi builds.
+
 ## 0.8.4 - 2024-08-01
 ### Fixed
 - Fixed an issue where `ssbh_data_py.mesh_ex_data.EntryFlags` could not be instantiated from Python.
