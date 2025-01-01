@@ -1,8 +1,7 @@
 use crate::{python_enum, MapPy, PyInit, PyRepr, Pyi, PyiMethods};
+use numpy::PyArray2;
 use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::{prelude::*, types::PyList};
-
-use crate::create_py_list_from_slice;
 
 create_exception!(ssbh_data_py, SkelDataError, pyo3::exceptions::PyException);
 
@@ -45,8 +44,8 @@ pub struct BoneData {
     pub name: String,
 
     #[pyo3(get, set)]
-    #[pyi(python_type = "list[list[float]]")]
-    pub transform: PyObject,
+    #[pyi(python_type = "numpy.ndarray")]
+    pub transform: Py<PyArray2<f32>>,
 
     #[pyo3(get, set)]
     #[pyinit(default = "None")]
@@ -70,7 +69,7 @@ impl PyiMethods for SkelData {
     def save(self, path: str) -> None: ...
 
     def calculate_world_transform(
-        self, bone: BoneData) -> list[list[float]]: ..."#
+        self, bone: BoneData) -> numpy.ndarray: ..."#
             .to_string()
     }
 }
@@ -93,13 +92,17 @@ impl SkelData {
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))
     }
 
-    fn calculate_world_transform(&self, py: Python, bone: &BoneData) -> PyResult<Py<PyList>> {
+    fn calculate_world_transform(
+        &self,
+        py: Python,
+        bone: &BoneData,
+    ) -> PyResult<Py<PyArray2<f32>>> {
         let data: ssbh_data::skel_data::SkelData = self.map_py(py)?;
         let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
         let transform = data
             .calculate_world_transform(&bone_data)
             .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
-        create_py_list_from_slice(py, &transform)
+        transform.map_py(py)
     }
 }
 
@@ -127,9 +130,9 @@ fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
 #[pyfunction]
 fn calculate_relative_transform(
     py: Python,
-    world_transform: PyObject,
-    parent_world_transform: Option<PyObject>,
-) -> PyResult<Py<PyList>> {
+    world_transform: Py<PyArray2<f32>>,
+    parent_world_transform: Option<Py<PyArray2<f32>>>,
+) -> PyResult<Py<PyArray2<f32>>> {
     let world_transform = world_transform.map_py(py)?;
     let transform = match parent_world_transform {
         Some(m) => ssbh_data::skel_data::calculate_relative_transform(
@@ -138,5 +141,5 @@ fn calculate_relative_transform(
         ),
         None => ssbh_data::skel_data::calculate_relative_transform(&world_transform, None),
     };
-    create_py_list_from_slice(py, &transform)
+    transform.map_py(py)
 }

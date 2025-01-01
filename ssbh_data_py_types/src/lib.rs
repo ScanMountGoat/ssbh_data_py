@@ -48,14 +48,6 @@ pub fn ssbh_data_py(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-pub(crate) fn create_py_list_from_slice<T>(py: Python, elements: &[T]) -> PyResult<Py<PyList>>
-where
-    T: Copy,
-    for<'a> T: IntoPyObject<'a>,
-{
-    PyList::new(py, elements.iter().copied()).map(Into::into)
-}
-
 #[macro_export]
 macro_rules! python_enum {
     ($ty_py:ident, $ty_rs:ty, $ty_err:ty, $module:literal, $( $i:ident ),+) => {

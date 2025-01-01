@@ -25,6 +25,7 @@ fn generate_pyi_file(file_path: &str, functions: &[&str], class_definitions: &[S
         "from typing import List, Tuple, Any, Optional, Union, ClassVar"
     )
     .unwrap();
+    writeln!(&mut f, "import numpy").unwrap();
     writeln!(&mut f).unwrap();
     writeln!(&mut f).unwrap();
     for function in functions {
@@ -84,8 +85,8 @@ fn main() {
         &[
             "def read_skel(path: str) -> SkelData: ...",
             "def calculate_relative_transform(
-    world_transform: list[list[float]],
-    parent_world_transform: list[list[float]]) -> list[list[float]]: ...",
+    world_transform: numpy.ndarray,
+    parent_world_transform: numpy.ndarray) -> numpy.ndarray: ...",
         ],
         &[SkelData::pyi(), BoneData::pyi(), BillboardType::pyi()],
     );
@@ -95,13 +96,13 @@ fn main() {
         &[
             "def read_mesh(path: str) -> MeshData: ...",
             "def transform_points(
-    points: list[list[float]], transform: list[list[float]]) -> list[list[float]]: ...",
+    points: numpy.ndarray, transform: numpy.ndarray) -> numpy.ndarray: ...",
             "def transform_vectors(
-    points: list[list[float]], transform: list[list[float]]) -> list[list[float]]: ...",
+    points: numpy.ndarray, transform: numpy.ndarray) -> numpy.ndarray: ...",
             "def calculate_smooth_normals(
-    positions: list[list[float]], vertex_indices: list[int]) -> list[list[float]]: ...", 
+    positions: numpy.ndarray, vertex_indices: numpy.ndarray) -> numpy.ndarray: ...", 
             "def calculate_tangents_vec4(
-    positions: list[list[float]], normals: list[list[float]], uvs: list[list[float]], vertex_indices: list[int]) -> list[list[float]]: ..."
+    positions: numpy.ndarray, normals: numpy.ndarray, uvs: numpy.ndarray, vertex_indices: numpy.ndarray) -> numpy.ndarray: ..."
         ],
         &[
             MeshData::pyi(),
