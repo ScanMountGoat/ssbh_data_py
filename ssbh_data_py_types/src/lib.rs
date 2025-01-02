@@ -1,5 +1,3 @@
-use pyo3::{prelude::*, types::IntoPyDict};
-
 // External crates won't depend on ssbh_data_py, so just make everything public for convenience.
 pub mod adj_data;
 pub mod anim_data;
@@ -19,31 +17,6 @@ pub use map_py::*;
 mod repr;
 pub use repr::*;
 pub use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
-
-pub fn ssbh_data_py(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
-    crate::adj_data::adj_data(py, module)?;
-    crate::anim_data::anim_data(py, module)?;
-    crate::hlpb_data::hlpb_data(py, module)?;
-    crate::matl_data::matl_data(py, module)?;
-    crate::mesh_data::mesh_data(py, module)?;
-    crate::meshex_data::meshex_data(py, module)?;
-    crate::modl_data::modl_data(py, module)?;
-    crate::skel_data::skel_data(py, module)?;
-
-    module.add("AdjDataError", py.get_type::<adj_data::AdjDataError>())?;
-    module.add("AnimDataError", py.get_type::<anim_data::AnimDataError>())?;
-    module.add("HlpbDataError", py.get_type::<hlpb_data::HlpbDataError>())?;
-    module.add("MatlDataError", py.get_type::<matl_data::MatlDataError>())?;
-    module.add("MeshDataError", py.get_type::<mesh_data::MeshDataError>())?;
-    module.add(
-        "MeshExDataError",
-        py.get_type::<meshex_data::MeshExDataError>(),
-    )?;
-    module.add("ModlDataError", py.get_type::<modl_data::ModlDataError>())?;
-    module.add("SkelDataError", py.get_type::<skel_data::SkelDataError>())?;
-
-    Ok(())
-}
 
 #[macro_export]
 macro_rules! python_enum {
@@ -70,7 +43,7 @@ macro_rules! python_enum {
             }
         }
 
-        impl MapPy<$ty_rs> for $ty_py {
+        impl $crate::MapPy<$ty_rs> for $ty_py {
             fn map_py(&self, _py: Python) -> PyResult<$ty_rs> {
                 <$ty_rs>::from_repr(self.value as usize).ok_or(<$ty_err>::new_err(format!(
                     "{} is not a supported variant.",
@@ -79,7 +52,7 @@ macro_rules! python_enum {
             }
         }
 
-        impl MapPy<$ty_py> for $ty_rs {
+        impl $crate::MapPy<$ty_py> for $ty_rs {
             fn map_py(&self, _py: Python) -> PyResult<$ty_py> {
                 Ok((*self).into())
             }
@@ -150,45 +123,4 @@ macro_rules! python_enum {
             }
         }
     };
-}
-
-pub fn run_python_code(code: &str) -> PyResult<()> {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-
-        // This requires numpy to be in the current Python environment.
-        // This may require some configuration to run tests with github actions.
-        let ctx = [
-            ("ssbh_data_py", module),
-            ("numpy", PyModule::import(py, "numpy").unwrap()),
-        ]
-        .into_py_dict(py)
-        .unwrap();
-
-        py.run(&std::ffi::CString::new(code).unwrap(), None, Some(&ctx))
-    })
-}
-
-pub fn eval_python_code<F: Fn(Python, Bound<'_, PyAny>)>(code: &str, f: F) {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
-        let module = PyModule::new(py, "ssbh_data_py").unwrap();
-        ssbh_data_py(py, &module).unwrap();
-
-        // This requires numpy to be in the current Python environment.
-        // This may require some configuration to run tests with github actions.
-        let ctx = [
-            ("ssbh_data_py", module),
-            ("numpy", PyModule::import(py, "numpy").unwrap()),
-        ]
-        .into_py_dict(py)
-        .unwrap();
-
-        let result = py
-            .eval(&std::ffi::CString::new(code).unwrap(), None, Some(&ctx))
-            .unwrap();
-        f(py, result);
-    });
 }

@@ -1,10 +1,8 @@
 use indoc::indoc;
 use pyo3::{prelude::*, types::PyList};
 use ssbh_data::{Vector3, Vector4};
-use ssbh_data_py_types::{
-    anim_data::{create_track_values_rs, GroupType},
-    eval_python_code, run_python_code,
-};
+use ssbh_data_py::{eval_python_code, run_python_code};
+use ssbh_data_py_types::anim_data::anim_data::{create_track_values_rs, GroupType};
 
 #[test]
 fn read_anim() {

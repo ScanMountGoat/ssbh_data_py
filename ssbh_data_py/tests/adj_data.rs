@@ -1,5 +1,5 @@
 use indoc::indoc;
-use ssbh_data_py_types::run_python_code;
+use ssbh_data_py::run_python_code;
 
 #[test]
 fn read_adj() {

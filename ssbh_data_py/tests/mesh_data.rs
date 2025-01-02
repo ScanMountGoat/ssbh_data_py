@@ -1,7 +1,8 @@
 use indoc::indoc;
 use pyo3::prelude::*;
 use ssbh_data::mesh_data::VectorData;
-use ssbh_data_py_types::{eval_python_code, run_python_code, MapPy};
+use ssbh_data_py::{eval_python_code, run_python_code};
+use ssbh_data_py_types::MapPy;
 
 #[test]
 fn read_mesh() {

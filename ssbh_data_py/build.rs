@@ -1,11 +1,11 @@
-use ssbh_data_py_types::adj_data::*;
-use ssbh_data_py_types::anim_data::*;
-use ssbh_data_py_types::hlpb_data::*;
-use ssbh_data_py_types::matl_data::*;
-use ssbh_data_py_types::mesh_data::*;
-use ssbh_data_py_types::meshex_data::*;
-use ssbh_data_py_types::modl_data::*;
-use ssbh_data_py_types::skel_data::*;
+use ssbh_data_py_types::adj_data::adj_data::*;
+use ssbh_data_py_types::anim_data::anim_data::*;
+use ssbh_data_py_types::hlpb_data::hlpb_data::*;
+use ssbh_data_py_types::matl_data::matl_data::*;
+use ssbh_data_py_types::mesh_data::mesh_data::*;
+use ssbh_data_py_types::meshex_data::meshex_data::*;
+use ssbh_data_py_types::modl_data::modl_data::*;
+use ssbh_data_py_types::skel_data::skel_data::*;
 use ssbh_data_py_types::Pyi;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -59,7 +59,7 @@ fn main() {
             SamplerParam::pyi(),
             TextureParam::pyi(),
             UvTransformParam::pyi(),
-            ssbh_data_py_types::matl_data::UvTransform::pyi(),
+            ssbh_data_py_types::matl_data::matl_data::UvTransform::pyi(),
             BlendStateData::pyi(),
             RasterizerStateData::pyi(),
             SamplerData::pyi(),
@@ -123,7 +123,7 @@ fn main() {
             NodeData::pyi(),
             TrackData::pyi(),
             Transform::pyi(),
-            ssbh_data_py_types::anim_data::UvTransform::pyi(),
+            ssbh_data_py_types::anim_data::anim_data::UvTransform::pyi(),
             TransformFlags::pyi(),
         ],
     );
