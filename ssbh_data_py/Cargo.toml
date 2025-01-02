@@ -1,6 +1,6 @@
 [package]
 name = "ssbh_data_py"
-version = "0.8.4"
+version = "0.9.0"
 authors = ["ScanMountGoat"]
 edition = "2021"
 readme = "../README.md"
