@@ -9,23 +9,19 @@ pub mod hlpb_data {
     use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
     use pyo3::types::PyList;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::hlpb_data::HlpbData)]
     #[pyrepr("ssbh_data_py.hlpb_data")]
     #[pyi(has_methods = true)]
     pub struct HlpbData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[AimConstraintData]")]
         pub aim_constraints: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[OrientConstraintData]")]
         pub orient_constraints: Py<PyList>,
     }
@@ -67,110 +63,86 @@ pub mod hlpb_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::hlpb_data::AimConstraintData)]
     #[pyrepr("ssbh_data_py.hlpb_data")]
     pub struct AimConstraintData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         pub aim_bone_name1: String,
 
-        #[pyo3(get, set)]
         pub aim_bone_name2: String,
 
-        #[pyo3(get, set)]
         pub target_bone_name1: String,
 
-        #[pyo3(get, set)]
         pub target_bone_name2: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "\"DEFAULT\".into()")]
         #[pyi(default = "'Default'")]
         pub aim_type1: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "\"DEFAULT\".into()")]
         #[pyi(default = "'Default'")]
         pub aim_type2: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "0")]
         #[pyi(default = "0")]
         pub unk1: u32,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "0")]
         #[pyi(default = "0")]
         pub unk2: u32,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [1.0, 0.0, 0.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[1.0, 0.0, 0.0]")]
         pub aim: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [0.0, 1.0, 0.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[0.0, 1.0, 0.0]")]
         pub up: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
         pub quat1: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
         pub quat2: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::hlpb_data::OrientConstraintData)]
     #[pyrepr("ssbh_data_py.hlpb_data")]
     pub struct OrientConstraintData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         pub parent_bone_name1: String,
 
-        #[pyo3(get, set)]
         pub parent_bone_name2: String,
 
-        #[pyo3(get, set)]
         pub source_bone_name: String,
 
-        #[pyo3(get, set)]
         pub target_bone_name: String,
 
-        #[pyo3(get, set)]
         pub unk_type: u32,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub constraint_axes: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
         pub quat1: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
         pub quat2: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [-180.0, -180.0, -180.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[-180.0, -180.0, -180.0]")]
         pub range_min: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::new(py, [180.0, 180.0, 180.0])?.into()")]
         #[pyi(python_type = "list[float]", default = "[180.0, 180.0, 180.0]")]
         pub range_max: Py<PyList>,

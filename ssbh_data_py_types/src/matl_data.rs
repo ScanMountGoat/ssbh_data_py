@@ -487,19 +487,16 @@ pub mod matl_data {
     #[pymodule_export]
     pub use super::MaxAnisotropy;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::MatlData)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct MatlData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[MatlEntryData]")]
         pub entries: Py<PyList>,
     }
@@ -536,53 +533,43 @@ pub mod matl_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::matl_data::MatlEntryData)]
     #[pyrepr("ssbh_data_py.matl_data")]
     pub struct MatlEntryData {
-        #[pyo3(get, set)]
         pub material_label: String,
 
-        #[pyo3(get, set)]
         pub shader_label: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[BlendStateParam]")]
         pub blend_states: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[FloatParam]")]
         pub floats: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[BooleanParam]")]
         pub booleans: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[Vector4Param]")]
         pub vectors: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[RasterizerStateParam]")]
         pub rasterizer_states: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[SamplerParam]")]
         pub samplers: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[TextureParam]")]
         pub textures: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[UvTransformParam]")]
         pub uv_transforms: Py<PyList>,
@@ -626,166 +613,139 @@ r#"    def __init__(
         (UvTransformParam, UvTransform)
     );
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::BlendStateParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct BlendStateParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: BlendStateData,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::FloatParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct FloatParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: f32,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::BooleanParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct BooleanParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: bool,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::Vector4Param)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct Vector4Param {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub data: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::RasterizerStateParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct RasterizerStateParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: RasterizerStateData,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::SamplerParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct SamplerParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: SamplerData,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::TextureParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct TextureParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: String,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::UvTransformParam)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct UvTransformParam {
-        #[pyo3(get, set)]
         pub param_id: ParamId,
 
-        #[pyo3(get, set)]
         pub data: UvTransform,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::matl_data::UvTransform)]
     #[pyrepr("ssbh_data_py.matl_data")]
     pub struct UvTransform {
-        #[pyo3(get, set)]
         pub scale_u: f32,
 
-        #[pyo3(get, set)]
         pub scale_v: f32,
 
-        #[pyo3(get, set)]
         pub rotation: f32,
 
-        #[pyo3(get, set)]
         pub translate_u: f32,
 
-        #[pyo3(get, set)]
         pub translate_v: f32,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::matl_data::BlendStateData)]
     #[pyrepr("ssbh_data_py.matl_data")]
     pub struct BlendStateData {
-        #[pyo3(get, set)]
         #[pyinit(default = "BlendFactor::One()")]
         #[pyi(default = "BlendFactor.One")]
         pub source_color: BlendFactor,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "BlendFactor::Zero()")]
         #[pyi(default = "BlendFactor.Zero")]
         pub destination_color: BlendFactor,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub alpha_sample_to_coverage: bool,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::RasterizerStateData)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct RasterizerStateData {
-        #[pyo3(get, set)]
         pub fill_mode: FillMode,
 
-        #[pyo3(get, set)]
         pub cull_mode: CullMode,
 
-        #[pyo3(get, set)]
         pub depth_bias: f32,
     }
 
@@ -807,35 +767,27 @@ r#"    def __init__(
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::matl_data::SamplerData)]
     #[pyrepr("ssbh_data_py.matl_data")]
     #[pyi(has_methods = true)]
     pub struct SamplerData {
-        #[pyo3(get, set)]
         pub wraps: WrapMode,
 
-        #[pyo3(get, set)]
         pub wrapt: WrapMode,
 
-        #[pyo3(get, set)]
         pub wrapr: WrapMode,
 
-        #[pyo3(get, set)]
         pub min_filter: MinFilter,
 
-        #[pyo3(get, set)]
         pub mag_filter: MagFilter,
 
         #[pyi(python_type = "list[float]")]
-        #[pyo3(get, set)]
         pub border_color: Py<PyList>,
 
-        #[pyo3(get, set)]
         pub lod_bias: f32,
 
-        #[pyo3(get, set)]
         pub max_anisotropy: Option<MaxAnisotropy>,
     }
 

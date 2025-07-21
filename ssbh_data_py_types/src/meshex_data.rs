@@ -11,13 +11,12 @@ pub mod meshex_data {
     use pyo3::types::PyList;
 
     // TODO: Add static methods for constructing types.
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::meshex_data::MeshExData)]
     #[pyrepr("ssbh_data_py.meshex_data")]
     #[pyi(has_methods = true)]
     pub struct MeshExData {
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[MeshObjectGroupData]")]
         pub mesh_object_groups: Py<PyList>,
     }
@@ -65,47 +64,39 @@ pub mod meshex_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::meshex_data::MeshObjectGroupData)]
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct MeshObjectGroupData {
-        #[pyo3(get, set)]
         pub bounding_sphere: BoundingSphere,
 
-        #[pyo3(get, set)]
         pub mesh_object_name: String,
 
-        #[pyo3(get, set)]
         pub mesh_object_full_name: String,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[EntryFlags]")]
         pub entry_flags: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::meshex_data::EntryFlags)]
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct EntryFlags {
-        #[pyo3(get, set)]
         pub draw_model: bool,
 
-        #[pyo3(get, set)]
         pub cast_shadow: bool,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::meshex_data::BoundingSphere)]
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct BoundingSphere {
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub center: Py<PyList>,
 
-        #[pyo3(get, set)]
         pub radius: f32,
     }
 

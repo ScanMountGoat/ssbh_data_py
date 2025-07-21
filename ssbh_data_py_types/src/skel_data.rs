@@ -28,41 +28,34 @@ pub mod skel_data {
     #[pymodule_export]
     pub use super::BillboardType;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::skel_data::SkelData)]
     #[pyrepr("ssbh_data_py.skel_data")]
     #[pyi(has_methods = true)]
     pub struct SkelData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[BoneData]")]
         pub bones: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::skel_data::BoneData)]
     #[pyrepr("ssbh_data_py.skel_data")]
     pub struct BoneData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "numpy.ndarray")]
         pub transform: Py<PyArray2<f32>>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "None")]
         #[pyi(default = "None")]
         pub parent_index: Option<usize>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "ssbh_data::skel_data::BillboardType::Disabled.into()")]
         #[pyi(default = "BillboardType.Disabled")]
         pub billboard_type: BillboardType,

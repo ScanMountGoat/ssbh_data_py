@@ -11,13 +11,12 @@ pub mod adj_data {
     use numpy::PyArray1;
     use pyo3::types::PyList;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::adj_data::AdjData)]
     #[pyrepr("ssbh_data_py.adj_data")]
     #[pyi(has_methods = true)]
     pub struct AdjData {
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[AdjEntryData]")]
         pub entries: Py<PyList>,
     }
@@ -51,16 +50,14 @@ pub mod adj_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::adj_data::AdjEntryData)]
     #[pyrepr("ssbh_data_py.adj_data")]
     #[pyi(has_methods = true)]
     pub struct AdjEntryData {
-        #[pyo3(get, set)]
         pub mesh_object_index: usize,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "numpy.ndarray")]
         pub vertex_adjacency: Py<PyArray1<i16>>,
     }

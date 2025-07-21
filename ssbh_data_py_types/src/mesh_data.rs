@@ -12,19 +12,16 @@ pub mod mesh_data {
     use pyo3::types::PyList;
     use ssbh_data::mesh_data::VectorData as VectorDataRs;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::mesh_data::MeshData)]
     #[pyrepr("ssbh_data_py.mesh_data")]
     #[pyi(has_methods = true)]
     pub struct MeshData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[MeshObjectData]")]
         pub objects: Py<PyList>,
     }
@@ -65,112 +62,92 @@ pub mod mesh_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::mesh_data::MeshObjectData)]
     #[pyrepr("ssbh_data_py.mesh_data")]
     pub struct MeshObjectData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         pub subindex: u64,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "String::new()")]
         #[pyi(default = "''")]
         pub parent_bone_name: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub disable_depth_test: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub disable_depth_write: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "0")]
         #[pyi(default = "0")]
         pub sort_bias: i32,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "numpy::PyArray1::zeros(py, 0, false).into()")]
         #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
         pub vertex_indices: Py<PyArray1<u32>>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub positions: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub normals: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub binormals: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub tangents: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub texture_coordinates: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[AttributeData]")]
         pub color_sets: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[BoneInfluence]")]
         pub bone_influences: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::mesh_data::BoneInfluence)]
     #[pyrepr("ssbh_data_py.mesh_data")]
     pub struct BoneInfluence {
-        #[pyo3(get, set)]
         pub bone_name: String,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[VertexWeight]")]
         pub vertex_weights: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::mesh_data::VertexWeight)]
     #[pyrepr("ssbh_data_py.mesh_data")]
     pub struct VertexWeight {
-        #[pyo3(get, set)]
         pub vertex_index: u32,
 
-        #[pyo3(get, set)]
         pub vertex_weight: f32,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::mesh_data::AttributeData)]
     #[pyrepr("ssbh_data_py.mesh_data")]
     pub struct AttributeData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "numpy::PyArray2::zeros(py, [0, 0], false).into()")]
         #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
         pub data: Py<PyArray2<f32>>,

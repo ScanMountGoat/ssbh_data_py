@@ -9,35 +9,27 @@ pub mod modl_data {
     use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
     use pyo3::types::PyList;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::modl_data::ModlData)]
     #[pyrepr("ssbh_data_py.modl_data")]
     #[pyi(has_methods = true)]
     pub struct ModlData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         pub model_name: String,
 
-        #[pyo3(get, set)]
         pub skeleton_file_name: String,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[str]")]
         pub material_file_names: Py<PyList>,
 
-        #[pyo3(get, set)]
         pub animation_file_name: Option<String>,
 
-        #[pyo3(get, set)]
         pub mesh_file_name: String,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[ModlEntryData]")]
         pub entries: Py<PyList>,
     }
@@ -83,18 +75,15 @@ pub mod modl_data {
         }
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::modl_data::ModlEntryData)]
     #[pyrepr("ssbh_data_py.modl_data")]
     pub struct ModlEntryData {
-        #[pyo3(get, set)]
         pub mesh_object_name: String,
 
-        #[pyo3(get, set)]
         pub mesh_object_subindex: u64,
 
-        #[pyo3(get, set)]
         pub material_label: String,
     }
 

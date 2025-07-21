@@ -25,68 +25,57 @@ pub mod anim_data {
     #[pymodule_export]
     pub use super::GroupType;
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::anim_data::AnimData)]
     #[pyrepr("ssbh_data_py.anim_data")]
     #[pyi(has_methods = true)]
     pub struct AnimData {
-        #[pyo3(get, set)]
         pub major_version: u16,
 
-        #[pyo3(get, set)]
         pub minor_version: u16,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[GroupData]")]
         pub groups: Py<PyList>,
 
-        #[pyo3(get, set)]
         pub final_frame_index: f32,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::GroupData)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct GroupData {
-        #[pyo3(get, set)]
         pub group_type: GroupType,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[NodeData]")]
         pub nodes: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::NodeData)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct NodeData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(default = "[]", python_type = "list[TrackData]")]
         pub tracks: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::TrackData)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct TrackData {
-        #[pyo3(get, set)]
         pub name: String,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub compensate_scale: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(
             default = "TransformFlags { override_translation: false, override_rotation: false, override_scale: false, override_compensate_scale: false}"
         )]
@@ -94,7 +83,6 @@ pub mod anim_data {
         pub transform_flags: TransformFlags,
 
         // TODO: Does it make sense to use numpy here?
-        #[pyo3(get, set)]
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(
             default = "[]",
@@ -104,27 +92,23 @@ pub mod anim_data {
         pub values: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::TransformFlags)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct TransformFlags {
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub override_translation: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub override_rotation: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub override_scale: bool,
 
-        #[pyo3(get, set)]
         #[pyinit(default = "false")]
         #[pyi(default = "False")]
         pub override_compensate_scale: bool,
@@ -175,42 +159,34 @@ pub mod anim_data {
     }
 
     // TODO: Document what component counts are expected.
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::Transform)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct Transform {
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub scale: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub rotation: Py<PyList>,
 
-        #[pyo3(get, set)]
         #[pyi(python_type = "list[float]")]
         pub translation: Py<PyList>,
     }
 
-    #[pyclass]
+    #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
     #[map(ssbh_data::anim_data::UvTransform)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct UvTransform {
-        #[pyo3(get, set)]
         pub scale_u: f32,
 
-        #[pyo3(get, set)]
         pub scale_v: f32,
 
-        #[pyo3(get, set)]
         pub rotation: f32,
 
-        #[pyo3(get, set)]
         pub translate_u: f32,
 
-        #[pyo3(get, set)]
         pub translate_v: f32,
     }
 
