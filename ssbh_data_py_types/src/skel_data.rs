@@ -43,7 +43,7 @@ pub mod skel_data {
     }
 
     #[pyclass(get_all, set_all)]
-    #[derive(Debug, Clone, MapPy, Pyi, PyRepr, PyInit)]
+    #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
     #[map(ssbh_data::skel_data::BoneData)]
     #[pyrepr("ssbh_data_py.skel_data")]
     pub struct BoneData {
@@ -52,13 +52,36 @@ pub mod skel_data {
         #[pyi(python_type = "numpy.ndarray")]
         pub transform: Py<PyArray2<f32>>,
 
-        #[pyinit(default = "None")]
         #[pyi(default = "None")]
         pub parent_index: Option<usize>,
 
-        #[pyinit(default = "ssbh_data::skel_data::BillboardType::Disabled.into()")]
         #[pyi(default = "BillboardType.Disabled")]
         pub billboard_type: BillboardType,
+    }
+
+    // TODO: Derive this?
+    #[pymethods]
+    impl BoneData {
+        #[new]
+        #[pyo3(signature = (name, transform, parent_index=None::<usize>, billboard_type=None))]
+        fn new(
+            py: Python,
+            name: String,
+            transform: Py<PyArray2<f32>>,
+            parent_index: Option<Option<usize>>,
+            billboard_type: Option<BillboardType>,
+        ) -> PyResult<Self> {
+            Ok(Self {
+                name,
+                transform,
+                parent_index: parent_index.unwrap_or(None),
+                billboard_type: billboard_type
+                    .unwrap_or(ssbh_data::skel_data::BillboardType::Disabled.into()),
+            })
+        }
+        fn __repr__(&self) -> String {
+            self.py_repr()
+        }
     }
 
     impl PyiMethods for SkelData {

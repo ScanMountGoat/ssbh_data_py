@@ -6,8 +6,8 @@ edition = "2021"
 
 [dependencies]
 ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", rev = "936808c", features=["strum"] }
-pyo3 = { version = "0.23.3", features = ["py-clone"] }
-numpy = "0.23.0"
+pyo3 = { version = "0.25.1", features = ["py-clone"] }
+numpy = "0.25.0"
 ssbh_data_py_derive = { path = "../ssbh_data_py_derive" }
 num-traits = "0.2.15"
 

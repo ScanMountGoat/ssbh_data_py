@@ -213,8 +213,9 @@ fn generate_map_py(name: &Ident, map_type: &syn::Path, map_data: &TokenStream2) 
                 py: pyo3::Python,
 
             ) -> pyo3::prelude::PyResult<pyo3::PyObject> {
+                use pyo3::IntoPyObjectExt;
                 let x: #name = self.map_py(py)?;
-                Ok(x.into_py(py))
+                x.into_py_any(py)
             }
         }
 
@@ -290,9 +291,6 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Unsupported type"),
     };
 
-    // PyO3 treats parameters of type Option<T> as optional parameters in Python.
-    // This allows Class(), Class(param=value), and Class(param=None) in Python.
-    // This avoids complications trying to generate the #[args(...)] attribute.
     let field_params: Vec<_> = fields
         .iter()
         .map(|f| {
@@ -311,29 +309,43 @@ pub fn py_init_derive(input: TokenStream) -> TokenStream {
         })
         .collect();
 
-    // The field is initialized as "field: field.unwrap_or(default)" or "field".
-    // TODO: This code is shared with above.
     let field_names: Vec<_> = fields
         .iter()
         .map(|f| {
             let name = &f.ident;
-
-            // HACK: Use string literals to avoid parsing the default value tokens.
-            // This allows using Rust syntax like "Default::default()".
             let default = find_string_literal_attr(&f.attrs, "pyinit", "default")
                 .map(|s| TokenStream2::from_str(&s).unwrap());
-
             default
                 .map(|default| quote! { #name: #name.unwrap_or(#default) })
                 .unwrap_or(quote! {#name})
         })
         .collect();
 
+    let params: Vec<_> = fields
+        .iter()
+        .map(|f| {
+            let name = &f.ident;
+
+            // HACK: Use string literals to avoid parsing the default value tokens.
+            // This allows using Rust syntax like "Default::default()".
+            let default = find_string_literal_attr(&f.attrs, "pyinit", "default");
+
+            if default.is_some() {
+                quote!(#name=None)
+            } else {
+                quote!(#name)
+            }
+        })
+        .collect();
+
+    let signature = quote!((#(#params),*));
+
     let expanded = quote! {
         #[allow(clippy::too_many_arguments)]
         #[pymethods]
         impl #name {
             #[new]
+            #[pyo3(signature = #signature)]
             fn new(
                 py: Python,
                 #(#field_params),*
