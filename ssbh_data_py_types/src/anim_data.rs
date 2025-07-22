@@ -18,7 +18,11 @@ python_enum!(
 pub mod anim_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
+    use crate::{
+        map_from_vector3, map_from_vector4, map_into_vector3, map_into_vector4, PyInit, PyRepr,
+        Pyi, PyiMethods,
+    };
+    use map_py::{map_vec, MapPy, TypedList};
     use pyo3::types::PyList;
     use ssbh_data::anim_data::TrackValues as TrackValuesRs;
 
@@ -32,12 +36,8 @@ pub mod anim_data {
     #[pyi(has_methods = true)]
     pub struct AnimData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
-        #[pyi(python_type = "list[GroupData]")]
-        pub groups: Py<PyList>,
-
+        pub groups: TypedList<GroupData>,
         pub final_frame_index: f32,
     }
 
@@ -48,9 +48,9 @@ pub mod anim_data {
     pub struct GroupData {
         pub group_type: GroupType,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[NodeData]")]
-        pub nodes: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub nodes: TypedList<NodeData>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -60,9 +60,9 @@ pub mod anim_data {
     pub struct NodeData {
         pub name: String,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[TrackData]")]
-        pub tracks: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub tracks: TypedList<TrackData>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -82,13 +82,13 @@ pub mod anim_data {
         #[pyi(default = "TransformFlags()")]
         pub transform_flags: TransformFlags,
 
-        // TODO: Does it make sense to use numpy here?
         #[pyinit(default = "PyList::empty(py).into()")]
         #[pyi(
             default = "[]",
             python_type = "Union[list[UvTransform], list[Transform],
                       list[float], list[bool], list[int], list[list[float]]]"
         )]
+        #[map(from(map_from_track_values), into(map_into_track_values))]
         pub values: Py<PyList>,
     }
 
@@ -122,13 +122,14 @@ pub mod anim_data {
             Ok(Self {
                 major_version,
                 minor_version,
-                groups: PyList::empty(py).into(),
+                groups: TypedList::empty(py),
                 final_frame_index: 0.0,
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?
+            self.clone()
+                .map_py(py)?
                 .write_to_file(path)
                 .map_err(|e| AnimDataError::new_err(format!("{}", e)))
         }
@@ -164,14 +165,14 @@ pub mod anim_data {
     #[map(ssbh_data::anim_data::Transform)]
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct Transform {
-        #[pyi(python_type = "list[float]")]
-        pub scale: Py<PyList>,
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub scale: TypedList<f32>,
 
-        #[pyi(python_type = "list[float]")]
-        pub rotation: Py<PyList>,
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub rotation: TypedList<f32>,
 
-        #[pyi(python_type = "list[float]")]
-        pub translation: Py<PyList>,
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub translation: TypedList<f32>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -180,33 +181,37 @@ pub mod anim_data {
     #[pyrepr("ssbh_data_py.anim_data")]
     pub struct UvTransform {
         pub scale_u: f32,
-
         pub scale_v: f32,
-
         pub rotation: f32,
-
         pub translate_u: f32,
-
         pub translate_v: f32,
     }
 
-    impl MapPy<Py<PyList>> for TrackValuesRs {
-        fn map_py(&self, py: Python) -> PyResult<Py<PyList>> {
-            match self {
-                TrackValuesRs::Transform(v) => v.map_py(py),
-                TrackValuesRs::UvTransform(v) => v.map_py(py),
-                TrackValuesRs::Float(v) => v.map_py(py),
-                TrackValuesRs::PatternIndex(v) => v.map_py(py),
-                TrackValuesRs::Boolean(v) => v.map_py(py),
-                TrackValuesRs::Vector4(v) => v.map_py(py),
+    fn map_from_track_values(value: TrackValuesRs, py: Python) -> PyResult<Py<PyList>> {
+        match value {
+            TrackValuesRs::Transform(v) => map_vec(v, py),
+            TrackValuesRs::UvTransform(v) => map_vec(v, py),
+            TrackValuesRs::Float(v) => map_vec(v, py),
+            TrackValuesRs::PatternIndex(v) => map_vec(v, py),
+            TrackValuesRs::Boolean(v) => map_vec(v, py),
+            TrackValuesRs::Vector4(v) => {
+                PyList::new(
+                    py,
+                    v.into_iter()
+                        .map(|v| {
+                            let u = map_from_vector4(v, py)?;
+                            // TODO: avoid unwrap.
+                            Ok(u.into_pyobject(py).unwrap())
+                        })
+                        .collect::<PyResult<Vec<_>>>()?,
+                )
+                .map(Into::into)
             }
         }
     }
 
-    impl MapPy<TrackValuesRs> for Py<PyList> {
-        fn map_py(&self, py: Python) -> PyResult<TrackValuesRs> {
-            create_track_values_rs(py, self)
-        }
+    fn map_into_track_values(value: Py<PyList>, py: Python) -> PyResult<TrackValuesRs> {
+        create_track_values_rs(py, &value)
     }
 
     pub fn create_track_values_rs(py: Python, values: &Py<PyList>) -> PyResult<TrackValuesRs> {

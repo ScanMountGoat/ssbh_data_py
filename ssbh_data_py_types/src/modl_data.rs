@@ -6,8 +6,8 @@ create_exception!(ssbh_data_py, ModlDataError, pyo3::exceptions::PyException);
 pub mod modl_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
-    use pyo3::types::PyList;
+    use crate::{PyInit, PyRepr, Pyi, PyiMethods};
+    use map_py::{MapPy, TypedList};
 
     #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
@@ -16,22 +16,13 @@ pub mod modl_data {
     #[pyi(has_methods = true)]
     pub struct ModlData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
         pub model_name: String,
-
         pub skeleton_file_name: String,
-
-        #[pyi(python_type = "list[str]")]
-        pub material_file_names: Py<PyList>,
-
+        pub material_file_names: TypedList<String>,
         pub animation_file_name: Option<String>,
-
         pub mesh_file_name: String,
-
-        #[pyi(python_type = "list[ModlEntryData]")]
-        pub entries: Py<PyList>,
+        pub entries: TypedList<ModlEntryData>,
     }
 
     #[pymethods]
@@ -44,15 +35,18 @@ pub mod modl_data {
                 minor_version,
                 model_name: "".into(),
                 skeleton_file_name: "".into(),
-                material_file_names: PyList::empty(py).into(),
+                material_file_names: TypedList::empty(py),
                 animation_file_name: None,
                 mesh_file_name: "".into(),
-                entries: PyList::empty(py).into(),
+                entries: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
+            self.clone()
+                .map_py(py)?
+                .write_to_file(path)
+                .map_err(PyErr::from)
         }
 
         fn __repr__(&self) -> String {
@@ -81,9 +75,7 @@ pub mod modl_data {
     #[pyrepr("ssbh_data_py.modl_data")]
     pub struct ModlEntryData {
         pub mesh_object_name: String,
-
         pub mesh_object_subindex: u64,
-
         pub material_label: String,
     }
 

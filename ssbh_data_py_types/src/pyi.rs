@@ -1,3 +1,5 @@
+use map_py::TypedList;
+use numpy::PyArray;
 use pyo3::{prelude::*, types::PyList};
 
 /// A trait for generating a type's corresponding Python class for Python type stub files (.pyi).
@@ -54,9 +56,27 @@ impl<T: PyTypeString> PyTypeString for Option<T> {
     }
 }
 
+impl<T: PyTypeString> PyTypeString for TypedList<T> {
+    fn py_type_string() -> String {
+        format!("list[{}]", T::py_type_string())
+    }
+}
+
+impl<T: PyTypeString> PyTypeString for Py<T> {
+    fn py_type_string() -> String {
+        T::py_type_string()
+    }
+}
+
+impl<T, D> PyTypeString for PyArray<T, D> {
+    fn py_type_string() -> String {
+        "numpy.ndarray".to_string()
+    }
+}
+
 // This will likely be set manually using the Pyi derive helper attribute.
 // Defaulting to "Any" essentially disables type checking.
-impl PyTypeString for Py<PyList> {
+impl PyTypeString for PyList {
     fn py_type_string() -> String {
         "list[Any]".to_string()
     }

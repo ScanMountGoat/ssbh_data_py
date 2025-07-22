@@ -1,6 +1,6 @@
 use indoc::indoc;
 use pyo3::{create_exception, prelude::*, types::IntoPyDict};
-use ssbh_data_py_types::{python_enum, MapPy};
+use ssbh_data_py_types::python_enum;
 use strum::{Display, FromRepr};
 
 fn run_test_python(code: &str) -> PyResult<()> {

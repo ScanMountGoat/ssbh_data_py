@@ -1,4 +1,7 @@
+use map_py::MapPy;
+use numpy::{IntoPyArray, PyArray2, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::{create_exception, prelude::*};
+use ssbh_data::mesh_data::VectorData as VectorDataRs;
 
 create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
 
@@ -6,11 +9,9 @@ create_exception!(ssbh_data_py, MeshDataError, pyo3::exceptions::PyException);
 pub mod mesh_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
-    use numpy::{IntoPyArray, PyArray2, PyUntypedArrayMethods};
-    use numpy::{PyArray1, PyArrayMethods};
-    use pyo3::types::PyList;
-    use ssbh_data::mesh_data::VectorData as VectorDataRs;
+    use crate::{PyInit, PyRepr, Pyi, PyiMethods};
+    use map_py::{MapPy, TypedList};
+    use numpy::{PyArray1, PyArray2};
 
     #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
@@ -19,11 +20,8 @@ pub mod mesh_data {
     #[pyi(has_methods = true)]
     pub struct MeshData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
-        #[pyi(python_type = "list[MeshObjectData]")]
-        pub objects: Py<PyList>,
+        pub objects: TypedList<MeshObjectData>,
     }
 
     #[pymethods]
@@ -34,12 +32,13 @@ pub mod mesh_data {
             Ok(MeshData {
                 major_version,
                 minor_version,
-                objects: PyList::empty(py).into(),
+                objects: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?
+            self.clone()
+                .map_py(py)?
                 .write_to_file(path)
                 .map_err(|e| MeshDataError::new_err(format!("{e}")))
         }
@@ -88,36 +87,36 @@ pub mod mesh_data {
         pub sort_bias: i32,
 
         #[pyinit(default = "numpy::PyArray1::zeros(py, 0, false).into()")]
-        #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
+        #[pyi(default = "numpy.array([])")]
         pub vertex_indices: Py<PyArray1<u32>>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub positions: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub positions: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub normals: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub normals: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub binormals: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub binormals: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub tangents: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub tangents: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub texture_coordinates: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub texture_coordinates: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[AttributeData]")]
-        pub color_sets: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub color_sets: TypedList<AttributeData>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[BoneInfluence]")]
-        pub bone_influences: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub bone_influences: TypedList<BoneInfluence>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -126,9 +125,7 @@ pub mod mesh_data {
     #[pyrepr("ssbh_data_py.mesh_data")]
     pub struct BoneInfluence {
         pub bone_name: String,
-
-        #[pyi(python_type = "list[VertexWeight]")]
-        pub vertex_weights: Py<PyList>,
+        pub vertex_weights: TypedList<VertexWeight>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -149,52 +146,9 @@ pub mod mesh_data {
         pub name: String,
 
         #[pyinit(default = "numpy::PyArray2::zeros(py, [0, 0], false).into()")]
-        #[pyi(default = "numpy.array([])", python_type = "numpy.ndarray")]
+        #[pyi(default = "numpy.array([])")]
+        #[map(from(map_from_vector_data), into(map_into_vector_data))]
         pub data: Py<PyArray2<f32>>,
-    }
-
-    fn vectors_pyarray<const N: usize>(
-        py: Python,
-        values: &[[f32; N]],
-    ) -> PyResult<Py<PyArray2<f32>>> {
-        // This flatten will be optimized in Release mode.
-        // This avoids needing unsafe code.
-        // TODO: Can we avoid flattening and then reshaping?
-        // TODO: Handle errors?
-        let count = values.len();
-        Ok(values
-            .iter()
-            .flatten()
-            .copied()
-            .collect::<Vec<f32>>()
-            .into_pyarray(py)
-            .reshape((count, N))
-            .unwrap()
-            .into())
-    }
-
-    impl MapPy<Py<PyArray2<f32>>> for VectorDataRs {
-        fn map_py(&self, py: Python) -> PyResult<Py<PyArray2<f32>>> {
-            match self {
-                VectorDataRs::Vector2(v) => vectors_pyarray(py, v),
-                VectorDataRs::Vector3(v) => vectors_pyarray(py, v),
-                VectorDataRs::Vector4(v) => vectors_pyarray(py, v),
-            }
-        }
-    }
-
-    impl MapPy<VectorDataRs> for Py<PyArray2<f32>> {
-        fn map_py(&self, py: Python) -> PyResult<VectorDataRs> {
-            let array = self.as_any().downcast_bound::<PyArray2<f32>>(py)?;
-            match array.readonly().shape()[1] {
-                2 => self.map_py(py).map(VectorDataRs::Vector2),
-                3 => self.map_py(py).map(VectorDataRs::Vector3),
-                4 => self.map_py(py).map(VectorDataRs::Vector4),
-                dim => Err(MeshDataError::new_err(format!(
-                    "Unsupported vector dimensions {dim}"
-                ))),
-            }
-        }
     }
 
     #[pyfunction]
@@ -210,10 +164,10 @@ pub mod mesh_data {
         points: Py<PyArray2<f32>>,
         transform: Py<PyArray2<f32>>,
     ) -> PyResult<Py<PyArray2<f32>>> {
-        let points = points.map_py(py)?;
+        let points = map_into_vector_data(points, py)?;
         let transform = transform.map_py(py)?;
         let transformed_points = ssbh_data::mesh_data::transform_points(&points, &transform);
-        transformed_points.map_py(py)
+        map_from_vector_data(transformed_points, py)
     }
 
     #[pyfunction]
@@ -222,10 +176,10 @@ pub mod mesh_data {
         points: Py<PyArray2<f32>>,
         transform: Py<PyArray2<f32>>,
     ) -> PyResult<Py<PyArray2<f32>>> {
-        let points = points.map_py(py)?;
+        let points = map_into_vector_data(points, py)?;
         let transform = transform.map_py(py)?;
         let transformed_points = ssbh_data::mesh_data::transform_vectors(&points, &transform);
-        transformed_points.map_py(py)
+        map_from_vector_data(transformed_points, py)
     }
 
     #[pyfunction]
@@ -234,7 +188,7 @@ pub mod mesh_data {
         positions: Py<PyArray2<f32>>,
         vertex_indices: Py<PyArray1<u32>>,
     ) -> PyResult<Py<PyArray2<f32>>> {
-        let positions = positions.map_py(py)?;
+        let positions = map_into_vector_data(positions, py)?;
         let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
         let normals = ssbh_data::mesh_data::calculate_smooth_normals(&positions, &vertex_indices);
         normals.map_py(py)
@@ -248,9 +202,9 @@ pub mod mesh_data {
         uvs: Py<PyArray2<f32>>,
         vertex_indices: Py<PyArray1<u32>>,
     ) -> PyResult<Py<PyArray2<f32>>> {
-        let positions = positions.map_py(py)?;
-        let normals = normals.map_py(py)?;
-        let uvs = uvs.map_py(py)?;
+        let positions = map_into_vector_data(positions, py)?;
+        let normals = map_into_vector_data(normals, py)?;
+        let uvs = map_into_vector_data(uvs, py)?;
 
         let vertex_indices = vertex_indices.extract::<Vec<u32>>(py)?;
         let tangents = ssbh_data::mesh_data::calculate_tangents_vec4(
@@ -262,4 +216,41 @@ pub mod mesh_data {
         .map_err(|e| MeshDataError::new_err(format!("{e}")))?;
         tangents.map_py(py)
     }
+}
+
+pub fn map_from_vector_data(value: VectorDataRs, py: Python) -> PyResult<Py<PyArray2<f32>>> {
+    match &value {
+        VectorDataRs::Vector2(v) => vectors_pyarray(py, v),
+        VectorDataRs::Vector3(v) => vectors_pyarray(py, v),
+        VectorDataRs::Vector4(v) => vectors_pyarray(py, v),
+    }
+}
+
+pub fn map_into_vector_data(value: Py<PyArray2<f32>>, py: Python) -> PyResult<VectorDataRs> {
+    let array = value.as_any().downcast_bound::<PyArray2<f32>>(py)?;
+    match array.readonly().shape()[1] {
+        2 => value.map_py(py).map(VectorDataRs::Vector2),
+        3 => value.map_py(py).map(VectorDataRs::Vector3),
+        4 => value.map_py(py).map(VectorDataRs::Vector4),
+        dim => Err(MeshDataError::new_err(format!(
+            "Unsupported vector dimensions {dim}"
+        ))),
+    }
+}
+
+fn vectors_pyarray<const N: usize>(py: Python, values: &[[f32; N]]) -> PyResult<Py<PyArray2<f32>>> {
+    // This flatten will be optimized in Release mode.
+    // This avoids needing unsafe code.
+    // TODO: Can we avoid flattening and then reshaping?
+    // TODO: Handle errors?
+    let count = values.len();
+    Ok(values
+        .iter()
+        .flatten()
+        .copied()
+        .collect::<Vec<f32>>()
+        .into_pyarray(py)
+        .reshape((count, N))
+        .unwrap()
+        .into())
 }

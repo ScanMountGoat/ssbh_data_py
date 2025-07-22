@@ -21,9 +21,9 @@ python_enum!(
 pub mod skel_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
+    use crate::{PyRepr, Pyi, PyiMethods};
+    use map_py::{MapPy, TypedList};
     use numpy::PyArray2;
-    use pyo3::types::PyList;
 
     #[pymodule_export]
     pub use super::BillboardType;
@@ -35,11 +35,8 @@ pub mod skel_data {
     #[pyi(has_methods = true)]
     pub struct SkelData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
-        #[pyi(python_type = "list[BoneData]")]
-        pub bones: Py<PyList>,
+        pub bones: TypedList<BoneData>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -49,7 +46,6 @@ pub mod skel_data {
     pub struct BoneData {
         pub name: String,
 
-        #[pyi(python_type = "numpy.ndarray")]
         pub transform: Py<PyArray2<f32>>,
 
         #[pyi(default = "None")]
@@ -65,7 +61,7 @@ pub mod skel_data {
         #[new]
         #[pyo3(signature = (name, transform, parent_index=None::<usize>, billboard_type=None))]
         fn new(
-            py: Python,
+            _py: Python,
             name: String,
             transform: Py<PyArray2<f32>>,
             parent_index: Option<Option<usize>>,
@@ -108,12 +104,13 @@ pub mod skel_data {
             Ok(SkelData {
                 major_version,
                 minor_version,
-                bones: PyList::empty(py).into(),
+                bones: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?
+            self.clone()
+                .map_py(py)?
                 .write_to_file(path)
                 .map_err(|e| SkelDataError::new_err(format!("{}", e)))
         }
@@ -121,9 +118,9 @@ pub mod skel_data {
         fn calculate_world_transform(
             &self,
             py: Python,
-            bone: &BoneData,
+            bone: BoneData,
         ) -> PyResult<Py<PyArray2<f32>>> {
-            let data: ssbh_data::skel_data::SkelData = self.map_py(py)?;
+            let data: ssbh_data::skel_data::SkelData = self.clone().map_py(py)?;
             let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
             let transform = data
                 .calculate_world_transform(&bone_data)

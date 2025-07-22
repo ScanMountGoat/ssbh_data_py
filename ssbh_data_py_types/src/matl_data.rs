@@ -460,8 +460,10 @@ python_enum!(
 pub mod matl_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, PyTypeString, Pyi, PyiMethods};
-    use pyo3::types::PyList;
+    use crate::{map_from_color4f, map_from_vector4, map_into_color4f, map_into_vector4};
+    use crate::{PyInit, PyRepr, PyTypeString, Pyi, PyiMethods};
+    use map_py::MapPy;
+    use map_py::TypedList;
 
     #[pymodule_export]
     pub use super::ParamId;
@@ -494,11 +496,8 @@ pub mod matl_data {
     #[pyi(has_methods = true)]
     pub struct MatlData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
-        #[pyi(python_type = "list[MatlEntryData]")]
-        pub entries: Py<PyList>,
+        pub entries: TypedList<MatlEntryData>,
     }
 
     #[pymethods]
@@ -509,12 +508,13 @@ pub mod matl_data {
             Ok(MatlData {
                 major_version,
                 minor_version,
-                entries: PyList::empty(py).into(),
+                entries: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?
+            self.clone()
+                .map_py(py)?
                 .write_to_file(path)
                 .map_err(|e| MatlDataError::new_err(format!("{}", e)))
         }
@@ -542,37 +542,37 @@ pub mod matl_data {
 
         pub shader_label: String,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[BlendStateParam]")]
-        pub blend_states: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub blend_states: TypedList<BlendStateParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[FloatParam]")]
-        pub floats: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub floats: TypedList<FloatParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[BooleanParam]")]
-        pub booleans: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub booleans: TypedList<BooleanParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[Vector4Param]")]
-        pub vectors: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub vectors: TypedList<Vector4Param>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[RasterizerStateParam]")]
-        pub rasterizer_states: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub rasterizer_states: TypedList<RasterizerStateParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[SamplerParam]")]
-        pub samplers: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub samplers: TypedList<SamplerParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[TextureParam]")]
-        pub textures: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub textures: TypedList<TextureParam>,
 
-        #[pyinit(default = "PyList::empty(py).into()")]
-        #[pyi(default = "[]", python_type = "list[UvTransformParam]")]
-        pub uv_transforms: Py<PyList>,
+        #[pyinit(default = "TypedList::empty(py)")]
+        #[pyi(default = "[]")]
+        pub uv_transforms: TypedList<UvTransformParam>,
     }
 
     macro_rules! param_new_impl {
@@ -606,7 +606,7 @@ r#"    def __init__(
         (BlendStateParam, BlendStateData),
         (FloatParam, f32),
         (BooleanParam, bool),
-        (Vector4Param, Py<PyList>),
+        (Vector4Param, TypedList<f32>),
         (RasterizerStateParam, RasterizerStateData),
         (SamplerParam, SamplerData),
         (TextureParam, String),
@@ -654,8 +654,8 @@ r#"    def __init__(
     pub struct Vector4Param {
         pub param_id: ParamId,
 
-        #[pyi(python_type = "list[float]")]
-        pub data: Py<PyList>,
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub data: TypedList<f32>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -774,20 +774,16 @@ r#"    def __init__(
     #[pyi(has_methods = true)]
     pub struct SamplerData {
         pub wraps: WrapMode,
-
         pub wrapt: WrapMode,
-
         pub wrapr: WrapMode,
 
         pub min_filter: MinFilter,
-
         pub mag_filter: MagFilter,
 
-        #[pyi(python_type = "list[float]")]
-        pub border_color: Py<PyList>,
+        #[map(from(map_from_color4f), into(map_into_color4f))]
+        pub border_color: TypedList<f32>,
 
         pub lod_bias: f32,
-
         pub max_anisotropy: Option<MaxAnisotropy>,
     }
 
@@ -803,7 +799,7 @@ r#"    def __init__(
                 wrapr: ssbh_data::matl_data::WrapMode::ClampToEdge.into(),
                 min_filter: ssbh_data::matl_data::MinFilter::LinearMipmapLinear.into(),
                 mag_filter: ssbh_data::matl_data::MagFilter::Linear.into(),
-                border_color: PyList::new(py, [0.0; 4])?.into(),
+                border_color: vec![0.0; 4].map_py(py)?,
                 lod_bias: 0.0,
                 max_anisotropy: Some(ssbh_data::matl_data::MaxAnisotropy::Two.into()),
             })

@@ -7,9 +7,9 @@ create_exception!(ssbh_data_py, AdjDataError, pyo3::exceptions::PyException);
 pub mod adj_data {
     pub use super::*;
 
-    use crate::{MapPy, PyRepr, Pyi, PyiMethods};
+    use crate::{mesh_data::map_into_vector_data, PyRepr, Pyi, PyiMethods};
+    use map_py::{MapPy, TypedList};
     use numpy::PyArray1;
-    use pyo3::types::PyList;
 
     #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
@@ -17,8 +17,7 @@ pub mod adj_data {
     #[pyrepr("ssbh_data_py.adj_data")]
     #[pyi(has_methods = true)]
     pub struct AdjData {
-        #[pyi(python_type = "list[AdjEntryData]")]
-        pub entries: Py<PyList>,
+        pub entries: TypedList<AdjEntryData>,
     }
 
     #[pymethods]
@@ -26,12 +25,13 @@ pub mod adj_data {
         #[new]
         fn new(py: Python) -> PyResult<Self> {
             Ok(AdjData {
-                entries: PyList::empty(py).into(),
+                entries: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?
+            self.clone()
+                .map_py(py)?
                 .write_to_file(path)
                 .map_err(|e| AdjDataError::new_err(format!("{}", e)))
         }
@@ -57,8 +57,6 @@ pub mod adj_data {
     #[pyi(has_methods = true)]
     pub struct AdjEntryData {
         pub mesh_object_index: usize,
-
-        #[pyi(python_type = "numpy.ndarray")]
         pub vertex_adjacency: Py<PyArray1<i16>>,
     }
 
@@ -80,9 +78,9 @@ pub mod adj_data {
         ) -> PyResult<Self> {
             let vertex_indices: Vec<u32> = mesh_object.vertex_indices.extract(py)?;
             let positions: Vec<crate::mesh_data::mesh_data::AttributeData> =
-                mesh_object.positions.extract(py)?;
+                mesh_object.positions.list.extract(py)?;
             // TODO: Avoid unwrap?
-            let vertex_positions = positions.first().unwrap().data.map_py(py)?;
+            let vertex_positions = map_into_vector_data(positions[0].data.clone(), py)?;
             let entry = ssbh_data::adj_data::AdjEntryData::from_vector_data(
                 mesh_object_index,
                 &vertex_positions,

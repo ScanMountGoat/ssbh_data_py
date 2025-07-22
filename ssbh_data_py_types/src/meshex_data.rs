@@ -7,8 +7,8 @@ pub mod meshex_data {
     pub use super::*;
 
     use crate::mesh_data::mesh_data::MeshObjectData;
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
-    use pyo3::types::PyList;
+    use crate::{map_from_vector3, map_into_vector3, PyInit, PyRepr, Pyi, PyiMethods};
+    use map_py::{MapPy, TypedList};
 
     // TODO: Add static methods for constructing types.
     #[pyclass(get_all, set_all)]
@@ -17,8 +17,7 @@ pub mod meshex_data {
     #[pyrepr("ssbh_data_py.meshex_data")]
     #[pyi(has_methods = true)]
     pub struct MeshExData {
-        #[pyi(python_type = "list[MeshObjectGroupData]")]
-        pub mesh_object_groups: Py<PyList>,
+        pub mesh_object_groups: TypedList<MeshObjectGroupData>,
     }
 
     #[pymethods]
@@ -26,7 +25,7 @@ pub mod meshex_data {
         #[new]
         fn new(py: Python) -> PyResult<Self> {
             Ok(MeshExData {
-                mesh_object_groups: PyList::empty(py).into(),
+                mesh_object_groups: TypedList::empty(py),
             })
         }
 
@@ -34,7 +33,7 @@ pub mod meshex_data {
         fn from_mesh_objects(py: Python, objects: Vec<MeshObjectData>) -> PyResult<Self> {
             ssbh_data::meshex_data::MeshExData::from_mesh_objects(
                 &objects
-                    .iter()
+                    .into_iter()
                     .map(|o| o.map_py(py))
                     .collect::<Result<Vec<_>, _>>()?,
             )
@@ -42,7 +41,10 @@ pub mod meshex_data {
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
+            self.clone()
+                .map_py(py)?
+                .write_to_file(path)
+                .map_err(PyErr::from)
         }
 
         fn __repr__(&self) -> String {
@@ -70,13 +72,9 @@ pub mod meshex_data {
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct MeshObjectGroupData {
         pub bounding_sphere: BoundingSphere,
-
         pub mesh_object_name: String,
-
         pub mesh_object_full_name: String,
-
-        #[pyi(python_type = "list[EntryFlags]")]
-        pub entry_flags: Py<PyList>,
+        pub entry_flags: TypedList<EntryFlags>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -85,7 +83,6 @@ pub mod meshex_data {
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct EntryFlags {
         pub draw_model: bool,
-
         pub cast_shadow: bool,
     }
 
@@ -94,8 +91,8 @@ pub mod meshex_data {
     #[map(ssbh_data::meshex_data::BoundingSphere)]
     #[pyrepr("ssbh_data_py.meshex_data")]
     pub struct BoundingSphere {
-        #[pyi(python_type = "list[float]")]
-        pub center: Py<PyList>,
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub center: TypedList<f32>,
 
         pub radius: f32,
     }

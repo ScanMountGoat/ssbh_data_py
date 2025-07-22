@@ -1,8 +1,5 @@
 use indoc::indoc;
-use pyo3::prelude::*;
-use ssbh_data::mesh_data::VectorData;
-use ssbh_data_py::{eval_python_code, run_python_code};
-use ssbh_data_py_types::MapPy;
+use ssbh_data_py::run_python_code;
 
 #[test]
 fn read_mesh() {
@@ -122,54 +119,39 @@ fn create_modify_bone_influence() {
 
 #[test]
 fn vector2_from_ndarray() {
-    eval_python_code(
-        "numpy.array([[0.0, 1.0], [2.0, 3.0]], dtype=numpy.float32)",
-        |py, x| {
-            let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
-            let value = x.as_unbound().map_py(py).unwrap();
-            assert_eq!(VectorData::Vector2(vec![[0.0, 1.0], [2.0, 3.0]]), value);
-        },
-    );
+    run_python_code(indoc! {r#"
+        a = ssbh_data_py.mesh_data.AttributeData("Position0", numpy.array([[0.0, 1.0], [2.0, 3.0]], dtype=numpy.float32))
+        assert a.data.tolist() == [[0.0, 1.0], [2.0, 3.0]]
+    "#})
+    .unwrap();
 }
 
 #[test]
 fn vector3_from_ndarray() {
-    eval_python_code(
-        "numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]], dtype=numpy.float32)",
-        |py, x| {
-            let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
-            let value = x.as_unbound().map_py(py).unwrap();
-            assert_eq!(
-                VectorData::Vector3(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]),
-                value
-            );
-        },
-    );
+    run_python_code(indoc! {r#"
+        a = ssbh_data_py.mesh_data.AttributeData("Position0", numpy.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]], dtype=numpy.float32))
+        assert a.data.tolist() == [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]
+    "#})
+    .unwrap();
 }
 
 #[test]
 fn vector4_from_ndarray() {
-    eval_python_code(
-        "numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]], dtype=numpy.float32)",
-        |py, x| {
-            let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
-            let value = x.as_unbound().map_py(py).unwrap();
-            assert_eq!(
-                VectorData::Vector4(vec![[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]),
-                value
-            );
-        },
-    );
+    run_python_code(indoc! {r#"
+        a = ssbh_data_py.mesh_data.AttributeData("Position0", numpy.array([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]], dtype=numpy.float32))
+        assert a.data.tolist() == [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]
+    "#})
+    .unwrap();
 }
 
 #[test]
 #[should_panic]
 fn vector_from_5x5_ndarray() {
     // Vector5 is not a valid variant.
-    eval_python_code("numpy.zeros((5,5), dtype=numpy.float32)", |py, x| {
-        let x = x.downcast::<numpy::PyArray2<f32>>().unwrap();
-        let _: VectorData = x.as_unbound().map_py(py).unwrap();
-    });
+    run_python_code(indoc! {r#"
+        a = ssbh_data_py.mesh_data.AttributeData("Position0", numpy.zeros((5,5), dtype=numpy.float32))
+    "#})
+    .unwrap();
 }
 
 #[test]
@@ -177,10 +159,11 @@ fn vector_from_5x5_ndarray() {
 #[should_panic]
 fn vector_from_empty_ndarray() {
     // TODO: How to infer the type when there are no elements?
-    eval_python_code("numpy.array()", |py, x| {
-        let x = x.downcast::<numpy::PyArray1<f32>>().unwrap();
-        let _ = x.as_unbound().map_py(py).unwrap();
-    });
+    run_python_code(indoc! {r#"
+        a = ssbh_data_py.mesh_data.AttributeData("Position0", numpy.array([]))
+        assert a.data.tolist() == []
+    "#})
+    .unwrap();
 }
 
 #[test]

@@ -14,6 +14,7 @@ indoc = "2.0"
 strum = "0.24.1"
 ssbh_data = { git = "https://github.com/ultimate-research/ssbh_lib", rev = "936808c", features=["strum"] }
 numpy = "0.25.0"
+map_py = { git = "https://github.com/ScanMountGoat/map_py", rev = "2053b55" }
 
 [lib]
 name = "ssbh_data_py"

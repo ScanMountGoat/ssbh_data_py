@@ -6,8 +6,11 @@ create_exception!(ssbh_data_py, HlpbDataError, pyo3::exceptions::PyException);
 pub mod hlpb_data {
     pub use super::*;
 
-    use crate::{MapPy, PyInit, PyRepr, Pyi, PyiMethods};
-    use pyo3::types::PyList;
+    use crate::{
+        map_from_vector3, map_from_vector4, map_into_vector3, map_into_vector4, PyInit, PyRepr,
+        Pyi, PyiMethods,
+    };
+    use map_py::{MapPy, TypedList};
 
     #[pyclass(get_all, set_all)]
     #[derive(Debug, Clone, MapPy, Pyi, PyRepr)]
@@ -16,14 +19,9 @@ pub mod hlpb_data {
     #[pyi(has_methods = true)]
     pub struct HlpbData {
         pub major_version: u16,
-
         pub minor_version: u16,
-
-        #[pyi(python_type = "list[AimConstraintData]")]
-        pub aim_constraints: Py<PyList>,
-
-        #[pyi(python_type = "list[OrientConstraintData]")]
-        pub orient_constraints: Py<PyList>,
+        pub aim_constraints: TypedList<AimConstraintData>,
+        pub orient_constraints: TypedList<OrientConstraintData>,
     }
 
     #[pymethods]
@@ -34,13 +32,16 @@ pub mod hlpb_data {
             Ok(HlpbData {
                 major_version,
                 minor_version,
-                aim_constraints: PyList::empty(py).into(),
-                orient_constraints: PyList::empty(py).into(),
+                aim_constraints: TypedList::empty(py),
+                orient_constraints: TypedList::empty(py),
             })
         }
 
         fn save(&self, py: Python, path: &str) -> PyResult<()> {
-            self.map_py(py)?.write_to_file(path).map_err(PyErr::from)
+            self.clone()
+                .map_py(py)?
+                .write_to_file(path)
+                .map_err(PyErr::from)
         }
 
         fn __repr__(&self) -> String {
@@ -94,21 +95,25 @@ pub mod hlpb_data {
         #[pyi(default = "0")]
         pub unk2: u32,
 
-        #[pyinit(default = "PyList::new(py, [1.0, 0.0, 0.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[1.0, 0.0, 0.0]")]
-        pub aim: Py<PyList>,
+        #[pyinit(default = "vec![1.0, 0.0, 0.0].map_py(py)?")]
+        #[pyi(default = "[1.0, 0.0, 0.0]")]
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub aim: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [0.0, 1.0, 0.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[0.0, 1.0, 0.0]")]
-        pub up: Py<PyList>,
+        #[pyinit(default = "vec![0.0, 1.0, 0.0].map_py(py)?")]
+        #[pyi(default = "[0.0, 1.0, 0.0]")]
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub up: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
-        pub quat1: Py<PyList>,
+        #[pyinit(default = "vec![0.0, 0.0, 0.0, 1.0].map_py(py)?")]
+        #[pyi(default = "[0.0, 0.0, 0.0, 1.0]")]
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub quat1: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
-        pub quat2: Py<PyList>,
+        #[pyinit(default = "vec![0.0, 0.0, 0.0, 1.0].map_py(py)?")]
+        #[pyi(default = "[0.0, 0.0, 0.0, 1.0]")]
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub quat2: TypedList<f32>,
     }
 
     #[pyclass(get_all, set_all)]
@@ -128,24 +133,28 @@ pub mod hlpb_data {
 
         pub unk_type: u32,
 
-        #[pyi(python_type = "list[float]")]
-        pub constraint_axes: Py<PyList>,
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub constraint_axes: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
-        pub quat1: Py<PyList>,
+        #[pyinit(default = "vec![0.0, 0.0, 0.0, 1.0].map_py(py)?")]
+        #[pyi(default = "[0.0, 0.0, 0.0, 1.0]")]
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub quat1: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [0.0, 0.0, 0.0, 1.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[0.0, 0.0, 0.0, 1.0]")]
-        pub quat2: Py<PyList>,
+        #[pyinit(default = "vec![0.0, 0.0, 0.0, 1.0].map_py(py)?")]
+        #[pyi(default = "[0.0, 0.0, 0.0, 1.0]")]
+        #[map(from(map_from_vector4), into(map_into_vector4))]
+        pub quat2: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [-180.0, -180.0, -180.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[-180.0, -180.0, -180.0]")]
-        pub range_min: Py<PyList>,
+        #[pyinit(default = "vec![-180.0, -180.0, -180.0].map_py(py)?")]
+        #[pyi(default = "[-180.0, -180.0, -180.0]")]
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub range_min: TypedList<f32>,
 
-        #[pyinit(default = "PyList::new(py, [180.0, 180.0, 180.0])?.into()")]
-        #[pyi(python_type = "list[float]", default = "[180.0, 180.0, 180.0]")]
-        pub range_max: Py<PyList>,
+        #[pyinit(default = "vec![180.0, 180.0, 180.0].map_py(py)?")]
+        #[pyi(default = "[180.0, 180.0, 180.0]")]
+        #[map(from(map_from_vector3), into(map_into_vector3))]
+        pub range_max: TypedList<f32>,
     }
 
     #[pyfunction]

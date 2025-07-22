@@ -1,3 +1,4 @@
+use map_py::TypedList;
 use pyo3::{prelude::*, PyTypeInfo};
 
 /// A trait to make it easier to implement the __repr__ method.
@@ -50,5 +51,11 @@ impl<T: PyRepr> PyRepr for Option<T> {
         self.as_ref()
             .map(|t| t.py_repr())
             .unwrap_or_else(|| "None".to_string())
+    }
+}
+
+impl<T> PyRepr for TypedList<T> {
+    fn py_repr(&self) -> String {
+        self.list.py_repr()
     }
 }

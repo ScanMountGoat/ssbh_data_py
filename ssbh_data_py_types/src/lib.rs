@@ -9,14 +9,13 @@ pub mod modl_data;
 pub mod skel_data;
 
 mod pyi;
+use map_py::{MapPy, TypedList};
 pub use pyi::*;
 
-mod map_py;
-pub use map_py::*;
-
 mod repr;
+use pyo3::prelude::*;
 pub use repr::*;
-pub use ssbh_data_py_derive::{MapPy, PyInit, PyRepr, Pyi};
+pub use ssbh_data_py_derive::{PyInit, PyRepr, Pyi};
 
 #[macro_export]
 macro_rules! python_enum {
@@ -43,8 +42,8 @@ macro_rules! python_enum {
             }
         }
 
-        impl $crate::MapPy<$ty_rs> for $ty_py {
-            fn map_py(&self, _py: Python) -> PyResult<$ty_rs> {
+        impl ::map_py::MapPy<$ty_rs> for $ty_py {
+            fn map_py(self, _py: Python) -> PyResult<$ty_rs> {
                 <$ty_rs>::from_repr(self.value as usize).ok_or(<$ty_err>::new_err(format!(
                     "{} is not a supported variant.",
                     self.value
@@ -52,9 +51,9 @@ macro_rules! python_enum {
             }
         }
 
-        impl $crate::MapPy<$ty_py> for $ty_rs {
-            fn map_py(&self, _py: Python) -> PyResult<$ty_py> {
-                Ok((*self).into())
+        impl ::map_py::MapPy<$ty_py> for $ty_rs {
+            fn map_py(self, _py: Python) -> PyResult<$ty_py> {
+                Ok(self.into())
             }
         }
 
@@ -123,4 +122,34 @@ macro_rules! python_enum {
             }
         }
     };
+}
+
+fn map_from_vector3(value: ssbh_data::Vector3, py: Python) -> PyResult<TypedList<f32>> {
+    vec![value.x, value.y, value.z].map_py(py)
+}
+
+fn map_into_vector3(value: TypedList<f32>, py: Python) -> PyResult<ssbh_data::Vector3> {
+    let values: [f32; 3] = value.list.extract(py)?;
+    let [x, y, z] = values;
+    Ok(ssbh_data::Vector3 { x, y, z })
+}
+
+fn map_from_vector4(value: ssbh_data::Vector4, py: Python) -> PyResult<TypedList<f32>> {
+    vec![value.x, value.y, value.z, value.w].map_py(py)
+}
+
+fn map_into_vector4(value: TypedList<f32>, py: Python) -> PyResult<ssbh_data::Vector4> {
+    let values: [f32; 4] = value.list.extract(py)?;
+    let [x, y, z, w] = values;
+    Ok(ssbh_data::Vector4 { x, y, z, w })
+}
+
+fn map_from_color4f(value: ssbh_data::Color4f, py: Python) -> PyResult<TypedList<f32>> {
+    vec![value.r, value.g, value.b, value.a].map_py(py)
+}
+
+fn map_into_color4f(value: TypedList<f32>, py: Python) -> PyResult<ssbh_data::Color4f> {
+    let values: [f32; 4] = value.list.extract(py)?;
+    let [r, g, b, a] = values;
+    Ok(ssbh_data::Color4f { r, g, b, a })
 }
