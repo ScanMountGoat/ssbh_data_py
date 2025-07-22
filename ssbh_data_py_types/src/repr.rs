@@ -34,7 +34,7 @@ impl PyRepr for bool {
 impl PyRepr for String {
     fn py_repr(&self) -> String {
         // Python uses single quotes instead of Rust's double quotes.
-        format!("'{}'", self)
+        format!("'{self}'")
     }
 }
 
@@ -42,7 +42,7 @@ impl PyRepr for String {
 // The tests below check that this doesn't break.
 impl<T: PyTypeInfo> PyRepr for Py<T> {
     fn py_repr(&self) -> String {
-        format!("{}", self)
+        format!("{self}")
     }
 }
 

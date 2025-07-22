@@ -100,7 +100,7 @@ pub mod meshex_data {
     #[pyfunction]
     fn read_meshex(py: Python, path: &str) -> PyResult<MeshExData> {
         ssbh_data::meshex_data::MeshExData::from_file(path)
-            .map_err(|e| MeshExDataError::new_err(format!("{}", e)))?
+            .map_err(|e| MeshExDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 }

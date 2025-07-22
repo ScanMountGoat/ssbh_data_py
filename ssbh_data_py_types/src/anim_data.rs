@@ -131,7 +131,7 @@ pub mod anim_data {
             self.clone()
                 .map_py(py)?
                 .write_to_file(path)
-                .map_err(|e| AnimDataError::new_err(format!("{}", e)))
+                .map_err(|e| AnimDataError::new_err(format!("{e}")))
         }
 
         fn __repr__(&self) -> String {
@@ -155,7 +155,7 @@ pub mod anim_data {
     #[pyfunction]
     fn read_anim(py: Python, path: &str) -> PyResult<AnimData> {
         ssbh_data::anim_data::AnimData::from_file(path)
-            .map_err(|e| AnimDataError::new_err(format!("{}", e)))?
+            .map_err(|e| AnimDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 

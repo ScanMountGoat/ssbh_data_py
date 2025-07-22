@@ -29,7 +29,7 @@ fn generate_pyi_file(file_path: &str, functions: &[&str], class_definitions: &[S
     writeln!(&mut f).unwrap();
     writeln!(&mut f).unwrap();
     for function in functions {
-        writeln!(&mut f, "{}", function).unwrap();
+        writeln!(&mut f, "{function}").unwrap();
         writeln!(&mut f).unwrap();
         writeln!(&mut f).unwrap();
     }

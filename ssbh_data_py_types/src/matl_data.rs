@@ -516,7 +516,7 @@ pub mod matl_data {
             self.clone()
                 .map_py(py)?
                 .write_to_file(path)
-                .map_err(|e| MatlDataError::new_err(format!("{}", e)))
+                .map_err(|e| MatlDataError::new_err(format!("{e}")))
         }
     }
 
@@ -815,7 +815,7 @@ r#"    def __init__(
     #[pyfunction]
     fn read_matl(py: Python, path: &str) -> PyResult<MatlData> {
         ssbh_data::matl_data::MatlData::from_file(path)
-            .map_err(|e| MatlDataError::new_err(format!("{}", e)))?
+            .map_err(|e| MatlDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 }

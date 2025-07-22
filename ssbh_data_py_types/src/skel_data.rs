@@ -112,7 +112,7 @@ pub mod skel_data {
             self.clone()
                 .map_py(py)?
                 .write_to_file(path)
-                .map_err(|e| SkelDataError::new_err(format!("{}", e)))
+                .map_err(|e| SkelDataError::new_err(format!("{e}")))
         }
 
         fn calculate_world_transform(
@@ -124,7 +124,7 @@ pub mod skel_data {
             let bone_data: ssbh_data::skel_data::BoneData = bone.map_py(py)?;
             let transform = data
                 .calculate_world_transform(&bone_data)
-                .map_err(|e| SkelDataError::new_err(format!("{}", e)))?;
+                .map_err(|e| SkelDataError::new_err(format!("{e}")))?;
             transform.map_py(py)
         }
     }
@@ -132,7 +132,7 @@ pub mod skel_data {
     #[pyfunction]
     fn read_skel(py: Python, path: &str) -> PyResult<SkelData> {
         ssbh_data::skel_data::SkelData::from_file(path)
-            .map_err(|e| SkelDataError::new_err(format!("{}", e)))?
+            .map_err(|e| SkelDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 

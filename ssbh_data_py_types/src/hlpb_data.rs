@@ -160,7 +160,7 @@ pub mod hlpb_data {
     #[pyfunction]
     fn read_hlpb(py: Python, path: &str) -> PyResult<HlpbData> {
         ssbh_data::hlpb_data::HlpbData::from_file(path)
-            .map_err(|e| HlpbDataError::new_err(format!("{}", e)))?
+            .map_err(|e| HlpbDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 }

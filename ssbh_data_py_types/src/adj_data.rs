@@ -33,7 +33,7 @@ pub mod adj_data {
             self.clone()
                 .map_py(py)?
                 .write_to_file(path)
-                .map_err(|e| AdjDataError::new_err(format!("{}", e)))
+                .map_err(|e| AdjDataError::new_err(format!("{e}")))
         }
 
         fn __repr__(&self) -> String {
@@ -111,7 +111,7 @@ pub mod adj_data {
     #[pyfunction]
     fn read_adj(py: Python, path: &str) -> PyResult<AdjData> {
         ssbh_data::adj_data::AdjData::from_file(path)
-            .map_err(|e| AdjDataError::new_err(format!("{}", e)))?
+            .map_err(|e| AdjDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 }

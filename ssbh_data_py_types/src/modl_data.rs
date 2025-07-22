@@ -82,7 +82,7 @@ pub mod modl_data {
     #[pyfunction]
     fn read_modl(py: Python, path: &str) -> PyResult<ModlData> {
         ssbh_data::modl_data::ModlData::from_file(path)
-            .map_err(|e| ModlDataError::new_err(format!("{}", e)))?
+            .map_err(|e| ModlDataError::new_err(format!("{e}")))?
             .map_py(py)
     }
 }
