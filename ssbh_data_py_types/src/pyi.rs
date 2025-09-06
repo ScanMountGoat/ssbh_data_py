@@ -82,7 +82,7 @@ impl PyTypeString for PyList {
     }
 }
 
-impl PyTypeString for PyObject {
+impl PyTypeString for Py<PyAny> {
     fn py_type_string() -> String {
         "Any".to_string()
     }

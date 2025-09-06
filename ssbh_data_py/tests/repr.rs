@@ -6,8 +6,8 @@ use pyo3::{
 use ssbh_data_py_types::PyRepr;
 
 fn run_test_python(code: &str) -> PyResult<()> {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
+    Python::initialize();
+    Python::attach(|py| {
         let module = PyModule::new(py, "test_module").unwrap();
         module.add_class::<TestClass>().unwrap();
         module.add_class::<TestClassInner>().unwrap();
@@ -27,7 +27,7 @@ pub struct TestClass {
     pub b: Py<PyList>,
 
     #[pyo3(get, set)]
-    pub c: PyObject,
+    pub c: Py<PyAny>,
 
     #[pyo3(get, set)]
     pub d: String,
@@ -59,7 +59,7 @@ impl TestClassInner {
 #[pymethods]
 impl TestClass {
     #[new]
-    fn new(_py: Python, a: f32, b: Py<PyList>, c: PyObject, d: String) -> PyResult<Self> {
+    fn new(_py: Python, a: f32, b: Py<PyList>, c: Py<PyAny>, d: String) -> PyResult<Self> {
         Ok(Self { a, b, c, d })
     }
 

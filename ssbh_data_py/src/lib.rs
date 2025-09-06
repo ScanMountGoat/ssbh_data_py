@@ -56,8 +56,8 @@ pub fn run_python_code(code: &str) -> PyResult<()> {
     if unsafe { pyo3::ffi::Py_IsInitialized() } == 0 {
         pyo3::append_to_inittab!(ssbh_data_py);
     }
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
+    Python::initialize();
+    Python::attach(|py| {
         // This requires numpy to be in the current Python environment.
         // This may require some configuration to run tests with github actions.
         let ctx = [
@@ -79,8 +79,8 @@ pub fn eval_python_code<F: Fn(Python, Bound<'_, PyAny>)>(code: &str, f: F) {
     if unsafe { pyo3::ffi::Py_IsInitialized() } == 0 {
         pyo3::append_to_inittab!(ssbh_data_py);
     }
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
+    Python::initialize();
+    Python::attach(|py| {
         // This requires numpy to be in the current Python environment.
         // This may require some configuration to run tests with github actions.
         let ctx = [

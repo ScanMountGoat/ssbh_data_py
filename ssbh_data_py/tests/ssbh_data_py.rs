@@ -4,8 +4,8 @@ use ssbh_data_py_types::python_enum;
 use strum::{Display, FromRepr};
 
 fn run_test_python(code: &str) -> PyResult<()> {
-    pyo3::prepare_freethreaded_python();
-    Python::with_gil(|py| {
+    Python::initialize();
+    Python::attach(|py| {
         let module = PyModule::new(py, "test_module").unwrap();
         module.add_class::<TestEnumPy>().unwrap();
         let ctx = [("test_module", module)].into_py_dict(py).unwrap();
