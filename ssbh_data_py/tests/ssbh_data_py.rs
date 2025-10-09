@@ -1,7 +1,7 @@
 use indoc::indoc;
 use pyo3::{create_exception, prelude::*, types::IntoPyDict};
 use ssbh_data_py_types::python_enum;
-use strum::{Display, FromRepr};
+use strum::{Display, EnumString, FromRepr};
 
 fn run_test_python(code: &str) -> PyResult<()> {
     Python::initialize();
@@ -15,7 +15,7 @@ fn run_test_python(code: &str) -> PyResult<()> {
 
 create_exception!(ssbh_data_py, TestError, pyo3::exceptions::PyException);
 
-#[derive(Display, FromRepr, Clone, Copy)]
+#[derive(Display, FromRepr, EnumString, Clone, Copy)]
 enum TestEnumRs {
     A = 2,
     B = 7,

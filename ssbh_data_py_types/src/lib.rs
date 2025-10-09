@@ -87,6 +87,17 @@ macro_rules! python_enum {
                 }
             }
 
+            #[staticmethod]
+            pub fn from_value(value: usize) -> Option<$ty_py> {
+                <$ty_rs>::from_repr(value).map(Into::into)
+            }
+
+            #[staticmethod]
+            pub fn from_str(value: &str) -> Option<$ty_py> {
+                use std::str::FromStr;
+                <$ty_rs>::from_str(value).ok().map(Into::into)
+            }
+
             // The function name casing should match the variant name.
             $(
                 #[allow(non_snake_case)]
